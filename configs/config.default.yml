@@ -1,0 +1,26 @@
+# generated-from:bdff160dac5e04e8111c0514da785eb85220957c32d862f07da7a2b8aa9918ee DO NOT REMOVE, DO UPDATE
+
+ACH Conductor:
+  Servers:
+    Public:
+      Bind:
+        Address: ":8484"
+    Admin:
+      Bind:
+        Address: ":9494"
+  Database:
+    DatabaseName: "ach-conductor"
+    MySQL:
+      Address: "tcp(localhost:0)"
+      User: "ach-conductor"
+      Password: "ach-conductor"
+  Gateway:
+    ServiceName: "ach-conductor"
+    # Examples of how to set up this config.
+    # keys:
+    #   http:
+    #    urls:
+    #    - http://tumbler:8204/.well-known/jwks.json
+    #   file:
+    #     paths: 
+    #     - ./configs/gateway-jwks-sig-pub.json

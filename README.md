@@ -1,175 +1,53 @@
-# ach-conductor
+<!--generated-from:11badeae7f5171e6ec312a610718a7a4ac276e18df06d4d715e771702f50aba8 DO NOT REMOVE, DO UPDATE -->
+moovfinancial/ach-conductor
+===
 
-## Goals
+[![GoDoc](https://godoc.org/github.com/moovfinancial/ach-conductor?status.svg)](https://godoc.org/github.com/moovfinancial/ach-conductor)
+[![Build Status](https://github.com/moovfinancial/ach-conductor/workflows/Go/badge.svg)](https://github.com/moovfinancial/ach-conductor/actions)
+[![Coverage Status](https://codecov.io/gh/moovfinancial/ach-conductor/branch/master/graph/badge.svg)](https://codecov.io/gh/moovfinancial/ach-conductor)
+[![Go Report Card](https://goreportcard.com/badge/github.com/moovfinancial/ach-conductor)](https://goreportcard.com/report/github.com/moovfinancial/ach-conductor)
+[![Apache 2 licensed](https://img.shields.io/badge/license-Apache2-blue.svg)](https://raw.githubusercontent.com/moovfinancial/ach-conductor/master/LICENSE)
 
-- Extensible submission of ACH files (and partial requests) for upload at cutoff times
-- Merging multiple pending files for optimized cutoff time submission
-- Custom filename templating on uploaded files
-- Audit storage of uploaded and downloaded files
-- Notifications on successful file upload or errors
-   - Slack, PagerDuty, Emails, etc
+An extensible, highly available, distributed, and fault tolerant ACH uploader and downloader.
+ACH Conductor creates events for outside services and transforms files prior to upload to fit real-world
+requirements of production systems.
 
-## Non-Goals
 
-- UI for viewing, editing, etc ACH files
+Docs: [docs](https://moovfinancial.github.io/ach-conductor/) | [open api specification](api/api.yml)
 
-## Plans
+## Project Status
 
-Currently `paygate-worker` accepts the following messages on a kafka topic:
+This project is currently under development and could introduce breaking changes to reach a stable status. We are looking for community feedback so please try out our code or give us feedback!
 
-```go
-type Xfer struct {
-	TenantID string            `json:"tenantID"`
-	Transfer *paygate.Transfer `json:"transfer"`
-	File     *ach.File         `json:"file"`
-}
-```
+## Getting Started
 
-```go
-type CanceledTransfer struct {
-	TenantID   string `json:"tenantID"`
-	TransferID string `json:"transferID"`
-}
-```
+Read through the [project docs](docs/README.md) over here to get an understanding of the purpose of this project and how to run it.
 
-From here we aggregate, merge, and upload ACH files according to cutoff times configured.
-Let's start from that and have an interface to transform these kafka messages into, so we
-could accept other input forms (HTTP POST, other messages, etc).
+## Getting Help
 
-```go
-type ACHFile struct {
-    ID       string
-    ShardKey string
-    File     *ach.File
-}
-```
+ channel | info
+ ------- | -------
+ [Project Documentation](docs/README.md) | Our project documentation available online.
+Twitter [@moov_io](https://twitter.com/moov_io)	| You can follow Moov.IO's Twitter feed to get updates on our project(s). You can also tweet us questions or just share blogs or stories.
+[GitHub Issue](https://github.com/moovfinancial/ach-conductor/issues) | If you are able to reproduce a problem please open a GitHub Issue under the specific project that caused the error.
+[moov-io slack](https://slack.moov.io/) | Join our slack channel (`#ach-conductor`) to have an interactive discussion about the development of the project.
 
-```go
-type CancelACHFile struct {
-    ID       string
-    ShardKey string
-}
-```
+## Supported and Tested Platforms
 
-Configuration shifts from "TenantID" over to "ShardKey" where one leader is elected prior to
-upload times, but all replicas consume the files. Leave the configuration extensible so we can
-throttle this replication.
+- 64-bit Linux (Ubuntu, Debian), macOS, and Windows
 
-Multiple instances are setup and initiate elections for a shardkey when encountered. This leader
-has the responsibility for uploading files at a cutoff time.
+## Contributing
 
-Each instance heartbeats that leader and reports the status. There could be a prometheus metric
-checking for `count(up{instance="..."}) < 1` (or checking each instance's status of heartbeating).
+Yes please! Please review our [Contributing guide](CONTRIBUTING.md) and [Code of Conduct](https://github.com/moov-io/ach/blob/master/CODE_OF_CONDUCT.md) to get started! Checkout our [issues for first time contributors](https://github.com/moovfinancial/ach-conductor/contribute) for something to help out with.
 
-## Configuration
+This project uses [Go Modules](https://github.com/golang/go/wiki/Modules) and uses Go 1.14 or higher. See [Golang's install instructions](https://golang.org/doc/install) for help setting up Go. You can download the source code and we offer [tagged and released versions](https://github.com/moovfinancial/ach-conductor/releases/latest) as well. We highly recommend you use a tagged release for production.
 
-```yaml
-inbound:
-  http:
-    bindAddress: ":8080"
-  kafka:
-    brokers:
-      - <string>
-    key: <string>
-    secret: <string>
-    group: <string>
+### Test Coverage
 
-shards:
-  - id: "veridian"
-    upload:
-      agent: "sftp:prod"
-    cutoffs:
-      timezone: "America/New_York"
-      windows:
-        - "12:30"
-    output:
-      format: "nacha"
-    notifications:
-      email:
-        - "email:prod"
-      slack:
-        - "slack:prod"
-      pagerduty:
-        - "pagerduty:prod"
-    auditTrail:
-      id: "audit:prod"
+Improving test coverage is a good candidate for new contributors while also allowing the project to move more quickly by reducing regressions issues that might not be caught before a release is pushed out to our users. One great way to improve coverage is by adding edge cases and different inputs to functions (or [contributing and running fuzzers](https://github.com/dvyukov/go-fuzz)).
 
-  - id: "testing"
-    upload:
-      agent: "ftp:test"
-    cutoffs:
-      # ...
-    notifications:
-      email:
-        - "email:test"
-      slack:
-        - "slack:test"
-    auditTrail:
-      id: "audit:test"
+Tests can run processes (like sqlite databases), but should only do so locally.
 
-  - id: "micro-deposits"
-    upload:
-      agent: "sftp:prod"
-    cutoffs:
-      timezone: "America/New_York"
-      windows:
-        - "16:30" # Last cutoff for the day
-    output:
-      format: "nacha"
-    notifications:
-      email:
-        - "email:prod"
-      slack:
-        - "slack:prod"
-      pagerduty:
-        - "pagerduty:prod"
-    auditTrail:
-      id: "audit:prod"
+## License
 
-upload:
-  agents:
-    - id: "sftp:prod"
-      sftp:
-        username: <string>
-        # ...
-      paths:
-        outbound: <string>
-        # ...
-    - id: "ftp:test"
-      ftp:
-        username: <string>
-        # ...
-      paths:
-        # ...
-
-notifications:
-  email:
-    - id: "email:prod"
-      from: noreply@moov.io
-      # ...
-  slack:
-    - id: "slack:prod"
-      webhookURL: <string>
-    - id: "slack:test"
-      webhookURL: <string>
-  pagerduty:
-    - id: "pagerduty:prod"
-      apiKey: <string>
-
-auditTrail:
-  - id: "audit:prod"
-    gcs:
-      bucketURI: <string>
-```
-
-### Database
-
-Inside a `shard_configs` table:
-
-| `shard_key`      | `shard_id`       |
-|------------------|------------------|
-| `tenant`         | `veridian`       |
-| `tenant1`        | `veridian`       |
-| `moov-tenant`    | `testing`        |
-| `beta-tenant`    | `testing`        |
-| `micro-deposits` | `micro-deposits` |
+Apache License 2.0 See [LICENSE](LICENSE) for details.
