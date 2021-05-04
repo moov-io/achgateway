@@ -14,8 +14,6 @@ import (
 	"github.com/moov-io/base/log"
 
 	_ "github.com/moov-io/ach-conductor"
-
-	"github.com/moovfinancial/go-observability/pkg/observe"
 )
 
 // RunServers - Boots up all the servers and awaits till they are stopped.
@@ -32,13 +30,10 @@ func (env *Environment) RunServers(terminationListener chan error) func() {
 }
 
 func bootHTTPServer(name string, routes *mux.Router, errs chan<- error, logger log.Logger, config HTTPConfig) (*http.Server, func()) {
-
-	observedHandler := observe.Server(routes, logger, "http")
-
 	// Create main HTTP server
 	serve := &http.Server{
 		Addr:    config.Bind.Address,
-		Handler: observedHandler,
+		Handler: routes,
 		TLSConfig: &tls.Config{
 			InsecureSkipVerify:       false,
 			PreferServerCipherSuites: true,

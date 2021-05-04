@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/moov-io/base/log"
-	"github.com/moovfinancial/go-observability/pkg/observe"
 	"github.com/moovfinancial/go-zero-trust/pkg/middleware"
 )
 
@@ -42,9 +41,6 @@ func NewInternalClient(logger log.Logger, config *ClientConfig, name string) *ht
 			MaxConnsPerHost:     config.MaxConnsPerHost,
 		},
 	}
-
-	// Add observability to the client calls
-	internalClient = observe.Client(internalClient, logger, name)
 
 	// Add auth to the client calls
 	internalClient = middleware.UseClient(internalClient)
