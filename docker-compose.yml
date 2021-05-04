@@ -1,0 +1,7 @@
+# generated-from:417eda58ef45b7bc37123b3a89af65524aeb39e9ec7b624c7fed05d9d2013660 DO NOT REMOVE, DO UPDATE
+
+version: '3'
+
+services:
+networks:
+    intranet:
