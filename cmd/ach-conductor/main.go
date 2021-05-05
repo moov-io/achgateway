@@ -7,13 +7,13 @@ import (
 
 	"github.com/moov-io/base/log"
 
-	"github.com/moov-io/ach-conductor"
+	achconductor "github.com/moov-io/ach-conductor"
 	"github.com/moov-io/ach-conductor/pkg/service"
 )
 
 func main() {
 	env := &service.Environment{
-		Logger: log.NewDefaultLogger().Set("app", log.String("ach-conductor")).Set("version", log.String(ach-conductor.Version)),
+		Logger: log.NewDefaultLogger().Set("app", log.String("ach-conductor")).Set("version", log.String(achconductor.Version)),
 	}
 
 	env, err := service.NewEnvironment(env)

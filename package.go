@@ -1,7 +1,7 @@
 // generated-from:1dd2ac7fe241da3af183f088973ca7f741dd0db98766f993593f717f108e47a4 DO NOT REMOVE, DO UPDATE
 
 // stub to get pkger to work
-package ach-conductor
+package achconductor
 
 import (
 	"github.com/markbates/pkger"

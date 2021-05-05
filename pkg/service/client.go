@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/moov-io/base/log"
-	"github.com/moovfinancial/go-zero-trust/pkg/middleware"
 )
 
 type ClientConfig struct {
@@ -27,10 +26,6 @@ func NewInternalClient(logger log.Logger, config *ClientConfig, name string) *ht
 		}
 	}
 
-	if name == "" {
-		name = "internal-client"
-	}
-
 	// Default settings we approve of
 	internalClient := &http.Client{
 		Timeout: config.Timeout,
@@ -41,9 +36,5 @@ func NewInternalClient(logger log.Logger, config *ClientConfig, name string) *ht
 			MaxConnsPerHost:     config.MaxConnsPerHost,
 		},
 	}
-
-	// Add auth to the client calls
-	internalClient = middleware.UseClient(internalClient)
-
 	return internalClient
 }

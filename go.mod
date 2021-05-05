@@ -9,7 +9,7 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/gorilla/mux v1.8.0
-	github.com/markbates/pkger v0.17.1 // indirect
+	github.com/markbates/pkger v0.17.1
 	github.com/moov-io/base v0.18.3
 	github.com/stretchr/testify v1.7.0
 )
