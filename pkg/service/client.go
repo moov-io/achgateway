@@ -1,4 +1,4 @@
-// generated-from:9e5795883635a80199c38497589e39b956ddfa90e17e6597be4077b792f076f1 DO NOT REMOVE, DO UPDATE
+// generated-from:aac4f94179a969295e94b4572607e42b1419ca91e6a2c905c76717dc6a2f2525 DO NOT REMOVE, DO UPDATE
 
 package service
 
@@ -36,5 +36,6 @@ func NewInternalClient(logger log.Logger, config *ClientConfig, name string) *ht
 			MaxConnsPerHost:     config.MaxConnsPerHost,
 		},
 	}
+
 	return internalClient
 }

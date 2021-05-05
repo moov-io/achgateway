@@ -1,4 +1,4 @@
-// generated-from:6c62685618fbd7c946c61faefe6c173341f2d84dd8ff1fc5d7d4a18402ee3577 DO NOT REMOVE, DO UPDATE
+// generated-from:830f6303750b0b2de97694207e0c9ef2e7fda1b1cb2c97b8fdcea65d3b08a234 DO NOT REMOVE, DO UPDATE
 
 package service
 
@@ -30,10 +30,12 @@ func (env *Environment) RunServers(terminationListener chan error) func() {
 }
 
 func bootHTTPServer(name string, routes *mux.Router, errs chan<- error, logger log.Logger, config HTTPConfig) (*http.Server, func()) {
+
 	// Create main HTTP server
 	serve := &http.Server{
 		Addr:    config.Bind.Address,
 		Handler: routes,
+
 		TLSConfig: &tls.Config{
 			InsecureSkipVerify:       false,
 			PreferServerCipherSuites: true,

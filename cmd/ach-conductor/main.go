@@ -1,4 +1,4 @@
-// generated-from:53c455c5ea974145b23e7d49a5af26ae1861929796fda440b273d9b03946a7cb DO NOT REMOVE, DO UPDATE
+// generated-from:9d2e1a7aff438bb75e877b034d21b525c8c10efee44288edf6ce935500a9fe76 DO NOT REMOVE, DO UPDATE
 
 package main
 
@@ -7,7 +7,7 @@ import (
 
 	"github.com/moov-io/base/log"
 
-	achconductor "github.com/moov-io/ach-conductor"
+	"github.com/moov-io/ach-conductor"
 	"github.com/moov-io/ach-conductor/pkg/service"
 )
 
