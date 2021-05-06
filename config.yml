@@ -14,6 +14,9 @@ Project:
   CodeOwners: "@adamdecaf @darwinz @alexjplant"
   OpenSource: true
 
+MySQL:
+  Port: 3306
+
 Templates:
   MoovProject:
     Run: true

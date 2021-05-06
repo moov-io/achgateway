@@ -1,7 +1,22 @@
-# generated-from:417eda58ef45b7bc37123b3a89af65524aeb39e9ec7b624c7fed05d9d2013660 DO NOT REMOVE, DO UPDATE
+# generated-from:1d9b3d94f4b0f679e8204c4f14fd573e2c00d860e17d10925ff98c096101bc5e DO NOT REMOVE, DO UPDATE
 
 version: '3'
 
 services:
+  mysql:
+    image: mysql:latest
+    restart: always
+    ports:
+    - "3306:3306"
+    environment: 
+    - MYSQL_DATABASE=ach-conductor
+    - MYSQL_USER=ach-conductor
+    - MYSQL_PASSWORD=ach-conductor
+    - MYSQL_ROOT_PASSWORD=root
+    networks:
+    - intranet
+    tmpfs: # Run this mysql in memory as its used for testing
+      - /var/lib/mysql
+
 networks:
     intranet:

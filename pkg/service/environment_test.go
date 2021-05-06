@@ -5,10 +5,11 @@ package service_test
 import (
 	"testing"
 
-	"github.com/moov-io/base/log"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/moov-io/ach-conductor/pkg/service"
+	"github.com/moov-io/ach-conductor/pkg/test"
+	"github.com/moov-io/base/log"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_Environment_Startup(t *testing.T) {
@@ -16,6 +17,9 @@ func Test_Environment_Startup(t *testing.T) {
 
 	env := &service.Environment{
 		Logger: log.NewDefaultLogger(),
+		Config: &service.Config{
+			Database: test.TestDatabaseConfig(),
+		},
 	}
 
 	env, err := service.NewEnvironment(env)

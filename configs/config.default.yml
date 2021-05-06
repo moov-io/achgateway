@@ -1,4 +1,4 @@
-# generated-from:bdff160dac5e04e8111c0514da785eb85220957c32d862f07da7a2b8aa9918ee DO NOT REMOVE, DO UPDATE
+# generated-from:8e00a406fe64314786fe91ca66cb20ee864e4f95ce4ec9f6611623fae7ea6db3 DO NOT REMOVE, DO UPDATE
 
 ACH Conductor:
   Servers:
@@ -11,7 +11,7 @@ ACH Conductor:
   Database:
     DatabaseName: "ach-conductor"
     MySQL:
-      Address: "tcp(localhost:0)"
+      Address: "tcp(localhost:3306)"
       User: "ach-conductor"
       Password: "ach-conductor"
   Gateway:

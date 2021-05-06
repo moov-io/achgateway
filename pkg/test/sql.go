@@ -1,4 +1,4 @@
-// generated-from:5ed38d1bae26bebdabf59e51a33b06e28d2a9eca4a44dafb76e2df50c693d378 DO NOT REMOVE, DO UPDATE
+// generated-from:5ab038b99443ce42535e7fe7fa6c5a8cdb79a918bc36f1900ae5e3165a160f55 DO NOT REMOVE, DO UPDATE
 
 package test
 
@@ -16,9 +16,9 @@ import (
 
 func TestDatabaseConfig() database.DatabaseConfig {
 	return database.DatabaseConfig{
-		DatabaseName: "0",
+		DatabaseName: "ach-conductor",
 		MySQL: &database.MySQLConfig{
-			Address:  "tcp(localhost:0)",
+			Address:  "tcp(127.0.0.1:3306)",
 			User:     "root",
 			Password: "root",
 		},
@@ -26,7 +26,6 @@ func TestDatabaseConfig() database.DatabaseConfig {
 }
 
 func CreateTestDatabase(t *testing.T, config database.DatabaseConfig) database.DatabaseConfig {
-
 	open := func() (*sql.DB, error) {
 		db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@%s/", config.MySQL.User, config.MySQL.Password, config.MySQL.Address))
 		if err != nil {
