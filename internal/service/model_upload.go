@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/moov-io/ach-conductor/internal/mask"
 )
 
 type UploadAgents struct {
@@ -102,7 +104,7 @@ func (cfg *FTP) String() string {
 	var buf bytes.Buffer
 	buf.WriteString(fmt.Sprintf("FTP{Hostname=%s, ", cfg.Hostname))
 	buf.WriteString(fmt.Sprintf("Username=%s, ", cfg.Username))
-	buf.WriteString(fmt.Sprintf("Password=%s}", cfg.Password)) // TODO(adam): mask.Password(..)
+	buf.WriteString(fmt.Sprintf("Password=%s}", mask.Password(cfg.Password)))
 	return buf.String()
 }
 
@@ -144,7 +146,7 @@ func (cfg *SFTP) String() string {
 	var buf bytes.Buffer
 	buf.WriteString(fmt.Sprintf("SFTP{Hostname=%s, ", cfg.Hostname))
 	buf.WriteString(fmt.Sprintf("Username=%s, ", cfg.Username))
-	buf.WriteString(fmt.Sprintf("Password=%s, ", cfg.Password)) // TODO(adam): mask.Password(..)
+	buf.WriteString(fmt.Sprintf("Password=%s, ", mask.Password(cfg.Password)))
 	buf.WriteString(fmt.Sprintf("ClientPrivateKey:%v, ", cfg.ClientPrivateKey != ""))
 	buf.WriteString(fmt.Sprintf("HostPublicKey:%v}, ", cfg.HostPublicKey != ""))
 	return buf.String()
