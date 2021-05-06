@@ -1,4 +1,4 @@
-// generated-from:9d2e1a7aff438bb75e877b034d21b525c8c10efee44288edf6ce935500a9fe76 DO NOT REMOVE, DO UPDATE
+// generated-from:441ae94818c824e252f84ad979ce3b376d077307353125e1e53d4b1343013dc4 DO NOT REMOVE, DO UPDATE
 
 // Licensed to The Moov Authors under one or more contributor
 // license agreements. See the NOTICE file distributed with
@@ -17,33 +17,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package main
+package service_test
 
 import (
-	"os"
+	"testing"
 
+	"github.com/moov-io/base/config"
 	"github.com/moov-io/base/log"
+	"github.com/stretchr/testify/require"
 
-	achconductor "github.com/moov-io/ach-conductor"
 	"github.com/moov-io/ach-conductor/internal/service"
 )
 
-func main() {
-	env := &service.Environment{
-		Logger: log.NewDefaultLogger().Set("app", log.String("ach-conductor")).Set("version", log.String(achconductor.Version)),
-	}
+func Test_ConfigLoading(t *testing.T) {
+	logger := log.NewNopLogger()
 
-	env, err := service.NewEnvironment(env)
-	if err != nil {
-		env.Logger.Fatal().LogErrorf("Error loading up environment: %v", err)
-		os.Exit(1)
-	}
-	defer env.Shutdown()
+	ConfigService := config.NewService(logger)
 
-	termListener := service.NewTerminationListener()
-
-	stopServers := env.RunServers(termListener)
-	defer stopServers()
-
-	service.AwaitTermination(env.Logger, termListener)
+	gc := &service.GlobalConfig{}
+	err := ConfigService.Load(gc)
+	require.Nil(t, err)
 }

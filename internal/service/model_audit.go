@@ -1,5 +1,3 @@
-// generated-from:9d2e1a7aff438bb75e877b034d21b525c8c10efee44288edf6ce935500a9fe76 DO NOT REMOVE, DO UPDATE
-
 // Licensed to The Moov Authors under one or more contributor
 // license agreements. See the NOTICE file distributed with
 // this work for additional information regarding copyright
@@ -17,33 +15,47 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package main
+package service
 
 import (
+	"errors"
 	"os"
 
-	"github.com/moov-io/base/log"
-
-	achconductor "github.com/moov-io/ach-conductor"
-	"github.com/moov-io/ach-conductor/internal/service"
+	"github.com/moov-io/paygate/pkg/util"
 )
 
-func main() {
-	env := &service.Environment{
-		Logger: log.NewDefaultLogger().Set("app", log.String("ach-conductor")).Set("version", log.String(achconductor.Version)),
+type AuditTrails []AuditTrail
+
+func (cfg AuditTrails) Validate() error {
+	return nil // TODO(adam):
+}
+
+type AuditTrail struct {
+	ID        string
+	BucketURI string
+	GPG       *GPG
+}
+
+func (cfg *AuditTrail) Validate() error {
+	if cfg == nil {
+		return nil
 	}
-
-	env, err := service.NewEnvironment(env)
-	if err != nil {
-		env.Logger.Fatal().LogErrorf("Error loading up environment: %v", err)
-		os.Exit(1)
+	if cfg.BucketURI == "" {
+		return errors.New("missing bucket_uri")
 	}
-	defer env.Shutdown()
+	return nil
+}
 
-	termListener := service.NewTerminationListener()
+type GPG struct {
+	KeyFile string
+	Signer  *Signer
+}
 
-	stopServers := env.RunServers(termListener)
-	defer stopServers()
+type Signer struct {
+	KeyFile     string
+	KeyPassword string
+}
 
-	service.AwaitTermination(env.Logger, termListener)
+func (cfg *Signer) Password() string {
+	return util.Or(os.Getenv("PIPELINE_SIGNING_KEY_PASSWORD"), cfg.KeyPassword)
 }
