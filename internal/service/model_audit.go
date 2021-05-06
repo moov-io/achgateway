@@ -21,7 +21,7 @@ import (
 	"errors"
 	"os"
 
-	"github.com/moov-io/paygate/pkg/util"
+	"github.com/moov-io/base/strx"
 )
 
 type AuditTrails []AuditTrail
@@ -57,5 +57,5 @@ type Signer struct {
 }
 
 func (cfg *Signer) Password() string {
-	return util.Or(os.Getenv("PIPELINE_SIGNING_KEY_PASSWORD"), cfg.KeyPassword)
+	return strx.Or(os.Getenv("PIPELINE_SIGNING_KEY_PASSWORD"), cfg.KeyPassword)
 }
