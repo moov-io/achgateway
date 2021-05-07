@@ -46,4 +46,8 @@ jobs:
 
     - name: Docker Build
       if: runner.os == 'Linux'
-      run: make docker
+      run: make dev-docker
+
+    - name: Docker Push
+      if: runner.os == 'Linux'
+      run: make dev-push
