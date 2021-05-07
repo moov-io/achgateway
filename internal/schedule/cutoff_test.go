@@ -1,0 +1,50 @@
+// Copyright 2020 The Moov Authors
+// Use of this source code is governed by an Apache License
+// license that can be found in the LICENSE file.
+
+package schedule
+
+import (
+	"testing"
+	"time"
+
+	"github.com/moov-io/base"
+	"github.com/stretchr/testify/require"
+)
+
+func TestCutoffTimes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("this test can take up to 60s, skipping")
+	}
+	if now := base.Now(time.UTC); now.IsWeekend() || !now.IsBankingDay() {
+		t.Skip("not a banking day")
+	}
+
+	next := time.Now().UTC().Add(time.Minute).Format("15:04")
+
+	cutoffs, err := ForCutoffTimes("UTC", []string{next})
+	require.NoError(t, err)
+	defer cutoffs.Stop()
+
+	tt := <-cutoffs.C // block on channel read
+
+	expected := tt.Format("15:04")
+	if next != expected {
+		t.Errorf("next=%q expected=%q", next, expected)
+	}
+}
+
+func TestCutoffTimesErr(t *testing.T) {
+	_, err := ForCutoffTimes("bad_zone", nil)
+	if err == nil {
+		t.Error("expected error")
+	}
+	_, err = ForCutoffTimes(time.Local.String(), nil)
+	if err == nil {
+		t.Error("expected error")
+	}
+	_, err = ForCutoffTimes(time.Local.String(), []string{"bad:time"})
+	if err == nil {
+		t.Error("expected error")
+	}
+}

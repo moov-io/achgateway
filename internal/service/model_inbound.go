@@ -1,5 +1,3 @@
-// generated-from:9d2e1a7aff438bb75e877b034d21b525c8c10efee44288edf6ce935500a9fe76 DO NOT REMOVE, DO UPDATE
-
 // Licensed to The Moov Authors under one or more contributor
 // license agreements. See the NOTICE file distributed with
 // this work for additional information regarding copyright
@@ -17,33 +15,36 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package main
+package service
 
-import (
-	"os"
+type Inbound struct {
+	HTTP  HTTPConfig
+	InMem *InMemory
+	Kafka *KafkaConfig
+}
 
-	"github.com/moov-io/base/log"
+func (cfg Inbound) Validate() error {
+	return nil // TODO(adam):
+}
 
-	achconductor "github.com/moov-io/ach-conductor"
-	"github.com/moov-io/ach-conductor/internal/service"
-)
+type HTTPConfig struct {
+	BindAddress string
+}
 
-func main() {
-	env := &service.Environment{
-		Logger: log.NewDefaultLogger().Set("app", log.String("ach-conductor")).Set("version", log.String(achconductor.Version)),
-	}
+type InMemory struct {
+	URL string
+}
 
-	env, err := service.NewEnvironment(env)
-	if err != nil {
-		env.Logger.Fatal().LogErrorf("Error loading up environment: %v", err)
-		os.Exit(1)
-	}
-	defer env.Shutdown()
+type KafkaConfig struct {
+	Brokers []string
+	Key     string
+	Secret  string
+	Group   string
+	Topic   string
+	TLS     bool
 
-	termListener := service.NewTerminationListener()
-
-	stopServers := env.RunServers(termListener)
-	defer stopServers()
-
-	service.AwaitTermination(env.Logger, termListener)
+	// AutoCommit in Sarama refers to "automated publishing of consumer offsets
+	// to the broker" rather than a Kafka broker's meaning of "commit consumer
+	// offsets on read" which leads to "at-most-once" delivery.
+	AutoCommit bool
 }

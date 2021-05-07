@@ -28,6 +28,9 @@ jobs:
     - name: Install
       run: make install
 
+    - name: Setup
+      run: make setup
+
     - name: Check
       run: make check
 

@@ -50,30 +50,19 @@ teardown:
 	-docker-compose down --remove-orphans
 
 docker: update
-	docker build --pull --build-arg VERSION=${VERSION} -t moov-io/ach-conductor:${VERSION} -f Dockerfile .
-	docker tag moov-io/ach-conductor:${VERSION} moov-io/ach-conductor:latest
-	
-	docker tag moov-io/ach-conductor:${VERSION} moov/ach-conductor:${VERSION}
-	docker tag moov-io/ach-conductor:${VERSION} moov/ach-conductor:latest
-	
+	docker build --pull --build-arg VERSION=${VERSION} -t moov/ach-conductor:${VERSION} -f Dockerfile .
 
 docker-push:
-	
 	docker push moov/ach-conductor:${VERSION}
 	docker push moov/ach-conductor:latest
-	
+
 .PHONY: dev-docker
 dev-docker: update
-	docker build --pull --build-arg VERSION=${DEV_VERSION} -t moov-io/ach-conductor:${DEV_VERSION} -f Dockerfile .
-	
-	docker tag moov-io/ach-conductor:${DEV_VERSION} moov/ach-conductor:${DEV_VERSION}
-	
+	docker build --pull --build-arg VERSION=${DEV_VERSION} -t moov/ach-conductor:${DEV_VERSION} -f Dockerfile .
 
 .PHONY: dev-push
 dev-push:
-	
 	docker push moov/ach-conductor:${DEV_VERSION}
-	
 
 # Extra utilities not needed for building
 
@@ -110,4 +99,3 @@ ifeq ($(OS),Windows_NT)
 else
 	CGO_ENABLED=1 GOOS=$(PLATFORM) go build -o bin/ach-conductor-$(PLATFORM)-amd64 cmd/ach-conductor/*
 endif
-
