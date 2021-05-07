@@ -19,6 +19,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/moov-io/base/strx"
@@ -27,7 +28,12 @@ import (
 type AuditTrails []AuditTrail
 
 func (cfg AuditTrails) Validate() error {
-	return nil // TODO(adam):
+	for i := range cfg {
+		if err := cfg[i].Validate(); err != nil {
+			return fmt.Errorf("audittrail[%d]: %v", i, err)
+		}
+	}
+	return nil
 }
 
 type AuditTrail struct {

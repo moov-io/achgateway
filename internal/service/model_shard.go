@@ -37,7 +37,12 @@ var (
 type Shards []Shard
 
 func (cfg Shards) Validate() error {
-	return nil // TODO(adam):
+	for i := range cfg {
+		if err := cfg[i].Validate(); err != nil {
+			return fmt.Errorf("shard[%d]: %v", i, err)
+		}
+	}
+	return nil
 }
 
 type Shard struct {
