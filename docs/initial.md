@@ -69,6 +69,21 @@ has the responsibility for uploading files at a cutoff time.
 Each instance heartbeats that leader and reports the status. There could be a prometheus metric
 checking for `count(up{instance="..."}) < 1` (or checking each instance's status of heartbeating).
 
+### Use-Cases
+
+#### ACH uploads as a service
+
+ach-conductor can be used with multiple ODFI's or a desire to separate ACH uploads. The shard key that is included
+on every submitted file allows for both of these usecases. Shards are designed to be mixed and used across reused
+across multiple uploaders.
+
+#### micro-deposits
+
+Validating accounts is often done with small credits submitted to an account. The experience can be improved
+by originating same-day batches so the amounts are ready quickly. To implement this submission of ACH files with a
+shard key of `micro-deposit` could be used and configured to upload the end of every day. This will attempt to
+minimize the files submitted along with their cost and performance.
+
 ## Configuration
 
 ```yaml
