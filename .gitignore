@@ -19,3 +19,6 @@ lint-project.sh
 misspell*
 staticcheck*
 coverage.txt
+
+pkged.go
+/vendor/
