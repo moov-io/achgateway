@@ -11,7 +11,7 @@
    1. Save merged file
       - `storage/pending/:shard-key:/uploaded/*.ach`
    1. Persist to audittrail storage
-      - `gcs://ach-conductor-audittrail/files/2021-05-12/:shard-key:/*.ach`
+      - `gcs://achgateway-audittrail/files/2021-05-12/:shard-key:/*.ach`
    1. Notify via Slack, PD, Email, etc
 
 Notes:
@@ -21,11 +21,11 @@ Notes:
 
 ## Queue
 
-Currently the input into ach-conductor is a pre-built ACH file that can be uploaded on its own.
-This allows ach-conductor to optimize multiple groupable files for upload. The first example of this
+Currently the input into achgateway is a pre-built ACH file that can be uploaded on its own.
+This allows achgateway to optimize multiple groupable files for upload. The first example of this
 is the shard key associated to every file.
 
-ach-conductor can operate multiple input vectors which are merged into a singular Queue. This allows
+achgateway can operate multiple input vectors which are merged into a singular Queue. This allows
 an HTTP endpoint, kafka consumer, and other inputs.
 
 The following messages are produced out of the Queue.
@@ -68,8 +68,8 @@ A `for { select { ... } }` loop over multiple Queue types.
 
 ## Sharding
 
-ach-conductor is a distributed system that coordinates with other instances of itself to upload files.
-As a design choice we make a few claims about each instance of ach-conductor:
+achgateway is a distributed system that coordinates with other instances of itself to upload files.
+As a design choice we make a few claims about each instance of achgateway:
 
 1. Each instance will consume ALL files encountered
    - In the future we can have them consume a fraction of shard keys (or specific values) to shed load
@@ -79,10 +79,10 @@ As a design choice we make a few claims about each instance of ach-conductor:
 
 ### Leader Election
 
-When an instance of ach-conductor receives a new `ACHFile` it will attempt a write into consul.
+When an instance of achgateway receives a new `ACHFile` it will attempt a write into consul.
 (See [part 4 of this article](https://clivern.com/leader-election-with-consul-and-golang/))
 
-Writing to a path such as `/ach-conductor/shards/:key` is unique and offers this election capability.
+Writing to a path such as `/achgateway/shards/:key` is unique and offers this election capability.
 Periodic refreshing of this lock is required so instance crashing is discovered after expiration.
 
 If this write fails a read can be performed to discover the current leader.
@@ -94,7 +94,7 @@ attempt self-election. Aggressive elections and watching should maintain an acti
 
 ## Local Storage
 
-Since every instance of ach-conductor consumes all files they will persist them to a local filesystem. This functions
+Since every instance of achgateway consumes all files they will persist them to a local filesystem. This functions
 as a "read replica" of all ACH files and allows them to take over in the event of a failed instance/leader.
 
 Writing files to disk is similar to what paygate-worker does and would be done in a path like: `storage/pending/:shard-key:/*.ach`
@@ -120,7 +120,7 @@ When a cutoff time is tirggered there are several steps to be performed for each
 ## AuditTrail
 
 Part of Nacha's guidelines and operational best practices is to save ACH files we send off for a period of time. This allows us to
-investigate customer issues and calculate analytics on those files. ach-conductor stores these files in an S3 compatiable bucket
+investigate customer issues and calculate analytics on those files. achgateway stores these files in an S3 compatiable bucket
 and encrypts the files with a GPG key.
 
-Example GCS storage location: `gcs://ach-conductor-audittrail/files/2021-05-12/:shard-key:/*.ach`
+Example GCS storage location: `gcs://achgateway-audittrail/files/2021-05-12/:shard-key:/*.ach`

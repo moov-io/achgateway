@@ -16,7 +16,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/moov-io/ach-conductor/internal/service"
+	"github.com/moov-io/achgateway/internal/service"
 
 	"github.com/go-kit/kit/metrics/prometheus"
 	"github.com/jlaffaye/ftp"

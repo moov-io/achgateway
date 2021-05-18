@@ -8,10 +8,10 @@ services:
     restart: always
     ports:
     - "3306:3306"
-    environment: 
-    - MYSQL_DATABASE=ach-conductor
-    - MYSQL_USER=ach-conductor
-    - MYSQL_PASSWORD=ach-conductor
+    environment:
+    - MYSQL_DATABASE=achgateway
+    - MYSQL_USER=achgateway
+    - MYSQL_PASSWORD=achgateway
     - MYSQL_ROOT_PASSWORD=root
     networks:
     - intranet

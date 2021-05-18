@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/moov-io/ach-conductor/internal/service"
+	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/docker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

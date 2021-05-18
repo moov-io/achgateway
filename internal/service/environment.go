@@ -31,7 +31,7 @@ import (
 	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/stime"
 
-	_ "github.com/moov-io/ach-conductor"
+	_ "github.com/moov-io/achgateway"
 )
 
 // Environment - Contains everything thats been instantiated for this service.
@@ -110,7 +110,7 @@ func LoadConfig(logger log.Logger) (*Config, error) {
 		return nil, err
 	}
 
-	cfg := &global.ACHConductor
+	cfg := &global.ACHGateway
 
 	return cfg, nil
 }

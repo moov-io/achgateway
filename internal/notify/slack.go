@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	achconductor "github.com/moov-io/ach-conductor"
-	"github.com/moov-io/ach-conductor/internal/service"
+	"github.com/moov-io/achgateway"
+	"github.com/moov-io/achgateway/internal/service"
 )
 
 type Slack struct {
@@ -87,7 +87,7 @@ func (s *Slack) send(msg string) error {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", fmt.Sprintf("moov/paygate %v slack notifier", achconductor.Version))
+	req.Header.Set("User-Agent", fmt.Sprintf("moov/paygate %v slack notifier", achgateway.Version))
 
 	resp, err := s.client.Do(req)
 	if err != nil {

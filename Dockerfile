@@ -18,7 +18,7 @@ WORKDIR /
 RUN apt-get update && apt-get install -y ca-certificates curl \
 	&& rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /src/bin/ach-conductor /app/
+COPY --from=builder /src/bin/achgateway /app/
 
 ENV HTTP_PORT=8484
 ENV HEALTH_PORT=9494
@@ -31,4 +31,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 
 VOLUME [ "/data", "/configs" ]
 
-ENTRYPOINT ["/app/ach-conductor"]
+ENTRYPOINT ["/app/achgateway"]

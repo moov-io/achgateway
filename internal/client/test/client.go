@@ -25,7 +25,7 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 
-	client "github.com/moov-io/ach-conductor/internal/client"
+	client "github.com/moov-io/achgateway/internal/client"
 )
 
 func NewTestClient(handler http.Handler) *client.APIClient {

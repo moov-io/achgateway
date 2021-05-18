@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/moov-io/ach"
-	"github.com/moov-io/ach-conductor/internal/service"
+	"github.com/moov-io/achgateway/internal/service"
 
 	gomail "github.com/ory/mail/v3"
 )

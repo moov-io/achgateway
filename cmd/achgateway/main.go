@@ -24,13 +24,13 @@ import (
 
 	"github.com/moov-io/base/log"
 
-	achconductor "github.com/moov-io/ach-conductor"
-	"github.com/moov-io/ach-conductor/internal/service"
+	"github.com/moov-io/achgateway"
+	"github.com/moov-io/achgateway/internal/service"
 )
 
 func main() {
 	env := &service.Environment{
-		Logger: log.NewDefaultLogger().Set("app", log.String("ach-conductor")).Set("version", log.String(achconductor.Version)),
+		Logger: log.NewDefaultLogger().Set("app", log.String("achgateway")).Set("version", log.String(achgateway.Version)),
 	}
 
 	env, err := service.NewEnvironment(env)

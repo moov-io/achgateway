@@ -28,24 +28,24 @@ We use GitHub to manage reviews of pull requests.
 
 Before starting please make sure you have Go setup and can build our projects from source.
 
-This project uses [Go Modules](https://github.com/golang/go/wiki/Modules) and uses Go 1.14 or higher. See [Golang's install instructions](https://golang.org/doc/install) for help setting up Go. You can download the source code and we offer [tagged and released versions](https://github.com/moov-io/ach-conductor/releases/latest) as well. We highly recommend you use a tagged release for production.
+This project uses [Go Modules](https://github.com/golang/go/wiki/Modules) and uses Go 1.14 or higher. See [Golang's install instructions](https://golang.org/doc/install) for help setting up Go. You can download the source code and we offer [tagged and released versions](https://github.com/moov-io/achgateway/releases/latest) as well. We highly recommend you use a tagged release for production.
 
 You can pull a working repository of our code code with git:
 
 ```
 $ midir -p $GOPATH/src/github.com/moov-io/
 $ cd $GOPATH/src/github.com/moov-io/
-$ git clone git@github.com:moov-io/ach-conductor.git
+$ git clone git@github.com:moov-io/achgateway.git
 ```
 
 We recommend using additional git remote's for pushing/pulling code. This allows you to use the same repository for submitting patches as tracking our code.
 
-First, [Fork our project](https://github.com/moov-io/ach-conductor) somewhere and after that's done add the remote:
+First, [Fork our project](https://github.com/moov-io/achgateway) somewhere and after that's done add the remote:
 
 ```
-$ cd $GOPATH/src/github.com/moov-io/ach-conductor # Whereever this project's source code is
+$ cd $GOPATH/src/github.com/moov-io/achgateway # Whereever this project's source code is
 
-$ git remote add $user git@github.com:$user/ach-conductor.git # After
+$ git remote add $user git@github.com:$user/achgateway.git # After
 
 $ git fetch $user
 ```
@@ -70,4 +70,4 @@ A good quality PR will have the following characteristics:
 
 A good PR should be able to flow through a peer review system easily and quickly.
 
-Our Build pipeline utilizes [Github Actions](https://github.com/moov-io/ach-conductor/actions) to enforce many tools that you should add to your editor before issuing a pull request.
+Our Build pipeline utilizes [Github Actions](https://github.com/moov-io/achgateway/actions) to enforce many tools that you should add to your editor before issuing a pull request.

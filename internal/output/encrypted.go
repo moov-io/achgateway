@@ -7,7 +7,7 @@ package output
 import (
 	"bytes"
 
-	"github.com/moov-io/ach-conductor/internal/transform"
+	"github.com/moov-io/achgateway/internal/transform"
 )
 
 type Encrypted struct{}

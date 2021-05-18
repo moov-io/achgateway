@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/moov-io/ach-conductor/internal/service"
+	"github.com/moov-io/achgateway/internal/service"
 
 	"github.com/PagerDuty/go-pagerduty"
 )

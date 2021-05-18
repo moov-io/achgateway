@@ -33,7 +33,7 @@ import (
 
 func TestDatabaseConfig() database.DatabaseConfig {
 	return database.DatabaseConfig{
-		DatabaseName: "ach-conductor",
+		DatabaseName: "achgateway",
 		MySQL: &database.MySQLConfig{
 			Address:  "tcp(127.0.0.1:3306)",
 			User:     "root",

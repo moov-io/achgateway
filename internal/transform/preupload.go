@@ -7,7 +7,7 @@ package transform
 import (
 	"github.com/moov-io/ach"
 
-	"github.com/moov-io/ach-conductor/internal/service"
+	"github.com/moov-io/achgateway/internal/service"
 
 	"github.com/moov-io/base/log"
 )

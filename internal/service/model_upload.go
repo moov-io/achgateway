@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/moov-io/ach-conductor/internal/mask"
+	"github.com/moov-io/achgateway/internal/mask"
 )
 
 type UploadAgents struct {

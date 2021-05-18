@@ -29,7 +29,7 @@ update:
 	go mod vendor
 
 build:
-	go build -mod=vendor -ldflags "-X github.com/moov-io/ach-conductor.Version=${VERSION}" -o bin/ach-conductor github.com/moov-io/ach-conductor/cmd/ach-conductor
+	go build -mod=vendor -ldflags "-X github.com/moov-io/achgateway.Version=${VERSION}" -o bin/achgateway github.com/moov-io/achgateway/cmd/achgateway
 
 .PHONY: setup
 setup:
@@ -50,30 +50,30 @@ teardown:
 	-docker-compose down --remove-orphans
 
 docker: update
-	docker build --pull --build-arg VERSION=${VERSION} -t moov/ach-conductor:${VERSION} -f Dockerfile .
+	docker build --pull --build-arg VERSION=${VERSION} -t moov/achgateway:${VERSION} -f Dockerfile .
 
 docker-push:
-	docker push moov/ach-conductor:${VERSION}
-	docker push moov/ach-conductor:latest
+	docker push moov/achgateway:${VERSION}
+	docker push moov/achgateway:latest
 
 .PHONY: dev-docker
 dev-docker: update
-	docker build --pull --build-arg VERSION=${DEV_VERSION} -t moov/ach-conductor:${DEV_VERSION} -f Dockerfile .
+	docker build --pull --build-arg VERSION=${DEV_VERSION} -t moov/achgateway:${DEV_VERSION} -f Dockerfile .
 
 .PHONY: dev-push
 dev-push:
-	docker push moov/ach-conductor:${DEV_VERSION}
+	docker push moov/achgateway:${DEV_VERSION}
 
 # Extra utilities not needed for building
 
 run: update build
-	./bin/ach-conductor
+	./bin/achgateway
 
 docker-run:
-	docker run -v ${PWD}/data:/data -v ${PWD}/configs:/configs --env APP_CONFIG="/configs/config.yml" -it --rm moov-io/ach-conductor:${VERSION}
+	docker run -v ${PWD}/data:/data -v ${PWD}/configs:/configs --env APP_CONFIG="/configs/config.yml" -it --rm moov-io/achgateway:${VERSION}
 
 test: update
-	go test -cover github.com/moov-io/ach-conductor/...
+	go test -cover github.com/moov-io/achgateway/...
 
 .PHONY: clean
 clean:
@@ -95,7 +95,7 @@ AUTHORS:
 
 dist: clean build
 ifeq ($(OS),Windows_NT)
-	CGO_ENABLED=1 GOOS=windows go build -o bin/ach-conductor.exe cmd/ach-conductor/*
+	CGO_ENABLED=1 GOOS=windows go build -o bin/achgateway.exe cmd/achgateway/*
 else
-	CGO_ENABLED=1 GOOS=$(PLATFORM) go build -o bin/ach-conductor-$(PLATFORM)-amd64 cmd/ach-conductor/*
+	CGO_ENABLED=1 GOOS=$(PLATFORM) go build -o bin/achgateway-$(PLATFORM)-amd64 cmd/achgateway/*
 endif

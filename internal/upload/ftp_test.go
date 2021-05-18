@@ -16,9 +16,9 @@ import (
 	"testing"
 	"time"
 
-	mhttptest "github.com/moov-io/ach-conductor/internal/httptest"
-	"github.com/moov-io/ach-conductor/internal/service"
-	"github.com/moov-io/ach-conductor/internal/util"
+	mhttptest "github.com/moov-io/achgateway/internal/httptest"
+	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/internal/util"
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/log"
 

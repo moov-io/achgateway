@@ -1,5 +1,5 @@
 <!-- generated-from:c55598a61b9a43ce98e8500432e597669da2f8955b40d9e772eac6011e2bb1c5 DO NOT REMOVE, DO UPDATE -->
-# ACH Conductor
+# ACH Gateway
 **[Purpose](README.md)** | **Configuration** | **[Running](RUNNING.md)** | **[Client](../pkg/client/README.md)**
 
 ---
@@ -11,7 +11,7 @@ Custom configuration for this application may be specified via an environment va
 - [Config Source Code](../pkg/service/model_config.go)
 - Full Configuration
   ```yaml
-  ACH Conductor:
+  ACHGateway:
 
     # Service configurations
     Servers:
@@ -35,7 +35,7 @@ Custom configuration for this application may be specified via an environment va
       DatabaseName: "identity"
 
       # MySql configuration
-      MySQL:  
+      MySQL:
         Address: tcp(mysqlidentity:3306)
         User: identity
         Password: identity
@@ -43,23 +43,6 @@ Custom configuration for this application may be specified via an environment va
       # OR uses the sqllite db
       SQLLite:
         Path: ":memory:"
-
-    # Gateway configuration to look up public keys to verify JWT tokens.
-    Gateway:
-
-      # If neither http or file are specified, the service will generate random keys
-      Keys:
-
-        # Pulls Keys from endpoints
-        HTTP:
-        URLs:
-        - http://tumbler:8204/.well-known/jwks.json
-
-        # Pulls keys from the disk
-        File:
-          Paths: 
-          - ./configs/gateway-jwks-sig-pub.json
-
   ```
 
 ---

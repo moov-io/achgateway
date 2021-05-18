@@ -7,7 +7,7 @@ package output
 import (
 	"testing"
 
-	"github.com/moov-io/ach-conductor/internal/service"
+	"github.com/moov-io/achgateway/internal/service"
 )
 
 func TestFormatter(t *testing.T) {

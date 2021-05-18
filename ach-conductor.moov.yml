@@ -2,14 +2,14 @@ ProjectPath: "."
 
 Project:
   # Github project id
-  ProjectID: "ach-conductor"
+  ProjectID: "achgateway"
   # Github org
   OrgID: "moov-io"
   # Human descriptive name for the project
-  ProjectName: "ACH Conductor"
+  ProjectName: "ACH Gateway"
   Description: |
     An extensible, highly available, distributed, and fault tolerant ACH uploader and downloader.
-    ACH Conductor creates events for outside services and transforms files prior to upload to fit real-world
+    ACH Gateway creates events for outside services and transforms files prior to upload to fit real-world
     requirements of production systems.
   CodeOwners: "@adamdecaf @darwinz @alexjplant"
   OpenSource: true
@@ -24,4 +24,4 @@ Templates:
     ServicePort: 8484
     HealthPort: 9494
   GoGithubActionsPublic:
-    - Executable: ach-conductor
+    - Executable: achgateway

@@ -22,8 +22,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/moov-io/ach-conductor/internal/incoming/stream"
-	"github.com/moov-io/ach-conductor/internal/service"
+	"github.com/moov-io/achgateway/internal/incoming/stream"
+	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
 
 	"github.com/Shopify/sarama"

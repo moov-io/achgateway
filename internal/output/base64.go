@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"encoding/base64"
 
-	"github.com/moov-io/ach-conductor/internal/transform"
+	"github.com/moov-io/achgateway/internal/transform"
 )
 
 type Base64 struct{}

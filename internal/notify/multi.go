@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/moov-io/ach-conductor/internal/service"
+	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
 
 	"github.com/sethvargo/go-retry"

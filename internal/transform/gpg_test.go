@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"github.com/moov-io/ach"
-	"github.com/moov-io/ach-conductor/internal/gpgx"
-	"github.com/moov-io/ach-conductor/internal/service"
+	"github.com/moov-io/achgateway/internal/gpgx"
+	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
 	"github.com/stretchr/testify/require"
 )

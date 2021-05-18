@@ -1,6 +1,6 @@
 # generated-from:8e00a406fe64314786fe91ca66cb20ee864e4f95ce4ec9f6611623fae7ea6db3 DO NOT REMOVE, DO UPDATE
 
-ACH Conductor:
+ACHGateway:
   Servers:
     Public:
       Bind:
@@ -9,18 +9,8 @@ ACH Conductor:
       Bind:
         Address: ":9494"
   Database:
-    DatabaseName: "ach-conductor"
+    DatabaseName: "achgateway"
     MySQL:
       Address: "tcp(localhost:3306)"
-      User: "ach-conductor"
-      Password: "ach-conductor"
-  Gateway:
-    ServiceName: "ach-conductor"
-    # Examples of how to set up this config.
-    # keys:
-    #   http:
-    #    urls:
-    #    - http://tumbler:8204/.well-known/jwks.json
-    #   file:
-    #     paths: 
-    #     - ./configs/gateway-jwks-sig-pub.json
+      User: "achgateway"
+      Password: "achgateway"

@@ -27,7 +27,7 @@ import (
 	"github.com/moov-io/base/stime"
 	"github.com/stretchr/testify/require"
 
-	"github.com/moov-io/ach-conductor/internal/service"
+	"github.com/moov-io/achgateway/internal/service"
 )
 
 type TestEnvironment struct {

@@ -1,6 +1,6 @@
 // generated-from:c1a4dcfec7120c4cfcbd2105e88252e982a6c6260c96000456a19d3f3530c0c2 DO NOT REMOVE, DO UPDATE
 
-module github.com/moov-io/ach-conductor
+module github.com/moov-io/achgateway
 
 go 1.16
 

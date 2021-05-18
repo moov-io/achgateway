@@ -30,7 +30,7 @@ import (
 	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/log"
 
-	_ "github.com/moov-io/ach-conductor"
+	_ "github.com/moov-io/achgateway"
 )
 
 // RunServers - Boots up all the servers and awaits till they are stopped.

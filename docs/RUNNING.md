@@ -1,8 +1,8 @@
 <!-- generated-from:276563301e0ac3cc464835f2e4747fe3042483aa7e30931de7b7c5e5ed742c94 DO NOT REMOVE, DO UPDATE -->
-# ACH Conductor
+# ACH Gateway
 **[Purpose](README.md)** | **[Configuration](CONFIGURATION.md)** | **Running** | **[Client](../pkg/client/README.md)**
 
---- 
+---
 
 ## Running
 
@@ -17,7 +17,7 @@ No configuration is required to serve on `:8200` and metrics at `:8201/metrics` 
 
 ### Docker image
 
-You can download [our docker image `moov/ach-conductor`](https://hub.docker.com/r/moov/ach-conductor/) from Docker Hub or use this repository. 
+You can download [our docker image `moov/achgateway`](https://hub.docker.com/r/moov/achgateway/) from Docker Hub or use this repository.
 
 ### Local Development
 

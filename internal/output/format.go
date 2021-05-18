@@ -9,8 +9,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/moov-io/ach-conductor/internal/service"
-	"github.com/moov-io/ach-conductor/internal/transform"
+	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/internal/transform"
 )
 
 // Formatter is a structure for encoding an encrypted or plaintext ACH file.

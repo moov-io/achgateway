@@ -1,4 +1,4 @@
-# ach-conductor
+# achgateway
 
 ## Goals
 
@@ -18,7 +18,7 @@
 1. kafka consumption and
 1. consul leadership
 1. trivial file upload
-1. benchmark entire setup (3 conductors, 3 consul nodes)
+1. benchmark entire setup (3 gateways, 3 consul nodes)
 1. add ACH specifics for merge, upload, etc
 
 ## High Level Plan
@@ -73,7 +73,7 @@ checking for `count(up{instance="..."}) < 1` (or checking each instance's status
 
 #### ACH uploads as a service
 
-ach-conductor can be used with multiple ODFI's or a desire to separate ACH uploads. The shard key that is included
+achgateway can be used with multiple ODFI's or a desire to separate ACH uploads. The shard key that is included
 on every submitted file allows for both of these usecases. Shards are designed to be mixed and used across reused
 across multiple uploaders.
 

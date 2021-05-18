@@ -7,7 +7,7 @@ package audittrail
 import (
 	"testing"
 
-	"github.com/moov-io/ach-conductor/internal/service"
+	"github.com/moov-io/achgateway/internal/service"
 )
 
 func TestStorageErr(t *testing.T) {

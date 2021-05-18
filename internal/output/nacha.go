@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/moov-io/ach"
-	"github.com/moov-io/ach-conductor/internal/transform"
+	"github.com/moov-io/achgateway/internal/transform"
 )
 
 type NACHA struct{}

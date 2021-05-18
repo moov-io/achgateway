@@ -27,7 +27,7 @@ import (
 )
 
 type GlobalConfig struct {
-	ACHConductor Config
+	ACHGateway Config
 }
 
 type Config struct {

@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/moov-io/ach"
-	"github.com/moov-io/ach-conductor/internal/gpgx"
-	"github.com/moov-io/ach-conductor/internal/output"
-	"github.com/moov-io/ach-conductor/internal/service"
-	"github.com/moov-io/ach-conductor/internal/transform"
+	"github.com/moov-io/achgateway/internal/gpgx"
+	"github.com/moov-io/achgateway/internal/output"
+	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/internal/transform"
 	"golang.org/x/crypto/openpgp"
 
 	"gocloud.dev/blob"

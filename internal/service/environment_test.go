@@ -22,8 +22,8 @@ package service_test
 import (
 	"testing"
 
-	"github.com/moov-io/ach-conductor/internal/service"
-	"github.com/moov-io/ach-conductor/internal/test"
+	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/internal/test"
 	"github.com/moov-io/base/log"
 
 	"github.com/stretchr/testify/assert"

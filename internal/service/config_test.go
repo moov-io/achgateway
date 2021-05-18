@@ -26,7 +26,7 @@ import (
 	"github.com/moov-io/base/log"
 	"github.com/stretchr/testify/require"
 
-	"github.com/moov-io/ach-conductor/internal/service"
+	"github.com/moov-io/achgateway/internal/service"
 )
 
 func Test_ConfigLoading(t *testing.T) {
