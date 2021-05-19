@@ -1,6 +1,6 @@
 # generated-from:1d9b3d94f4b0f679e8204c4f14fd573e2c00d860e17d10925ff98c096101bc5e DO NOT REMOVE, DO UPDATE
 
-version: '3'
+version: '3.7'
 
 services:
   mysql:
@@ -18,5 +18,31 @@ services:
     tmpfs: # Run this mysql in memory as its used for testing
       - /var/lib/mysql
 
+  consul-server:
+    image: hashicorp/consul:1.9.3
+    container_name: consul-server
+    restart: always
+    volumes:
+     - ./dev/consul/server.json:/consul/config/server.json:ro
+    networks:
+      - consul
+    ports:
+      - "8500:8500"
+      - "8600:8600/tcp"
+      - "8600:8600/udp"
+    command: "agent"
+
+  consul-client:
+    image: hashicorp/consul:1.9.3
+    container_name: consul-client
+    restart: always
+    volumes:
+     - ./dev/consul/client.json:/consul/config/client.json:ro
+    networks:
+      - consul
+    command: "agent"
+
 networks:
-    intranet:
+  intranet: {}
+  consul:
+    driver: bridge
