@@ -32,6 +32,7 @@ import (
 	"github.com/moov-io/base/stime"
 
 	_ "github.com/moov-io/achgateway"
+	"github.com/moov-io/achgateway/internal/consul"
 )
 
 // Environment - Contains everything thats been instantiated for this service.
@@ -41,6 +42,7 @@ type Environment struct {
 	TimeService    stime.TimeService
 	DB             *sql.DB
 	InternalClient *http.Client
+	ConsulClient  *consul.Client
 
 	PublicRouter *mux.Router
 	Shutdown     func()
@@ -97,6 +99,20 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		env.PublicRouter = mux.NewRouter()
 
 		// @TODO add controller connections here
+	}
+
+	if env.ConsulClient == nil {
+		consulClient, err := consul.NewConsulClient(env.Logger, &consul.Config{
+			Address: env.Config.Consul.Address,
+			Scheme:  "http",
+			Name: "achgateway-01",
+			Tags: []string{"test", "test"},
+		})
+
+		if err != nil {
+			return nil, err
+		}
+		env.ConsulClient = consulClient
 	}
 
 	return env, nil

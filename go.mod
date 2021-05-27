@@ -19,6 +19,7 @@ require (
 	github.com/google/wire v0.5.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/mux v1.8.0
+	github.com/hashicorp/consul/api v1.3.0
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/jlaffaye/ftp v0.0.0-20210307004419-5d4190119067
