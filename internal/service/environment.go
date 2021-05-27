@@ -104,9 +104,11 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	if env.ConsulClient == nil {
 		consulClient, err := consul.NewConsulClient(env.Logger, &consul.Config{
 			Address: env.Config.Consul.Address,
-			Scheme:  "http",
-			Name: "achgateway-01",
-			Tags: []string{"test", "test"},
+			Scheme:  env.Config.Consul.Scheme,
+			Name: env.Config.Consul.Name,
+			SessionName: env.Config.Consul.SessionName,
+			Tags: []string{env.Config.Consul.Name},
+			HealthCheckIntervalSeconds: env.Config.Consul.HealthCheckIntervalSeconds,
 		})
 
 		if err != nil {

@@ -16,6 +16,7 @@ require (
 	github.com/gobuffalo/here v0.6.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/google/uuid v1.2.0
 	github.com/google/wire v0.5.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/mux v1.8.0

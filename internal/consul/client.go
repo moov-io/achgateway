@@ -20,20 +20,29 @@
 package consul
 
 import (
+	"fmt"
+	"os"
+
+	"github.com/google/uuid"
 	consul "github.com/hashicorp/consul/api"
+
 	"github.com/moov-io/base/log"
 )
 
 type Config struct {
-	Address             string
-	Scheme        		string
-	Name				string
-	Tags				[]string
+	Address             		string
+	Scheme        				string
+	Name						string
+	SessionName					string
+	Tags						[]string
+	HealthCheckIntervalSeconds 	int
 }
 
 type Client struct {
-	cfg *Config
-	client *consul.Client
+	Cfg 				*Config
+	ConsulClient 		*consul.Client
+	NodeId				string
+	SessionId 			string
 }
 
 func NewConsulClient(logger log.Logger, config *Config) (*Client, error) {
@@ -44,11 +53,44 @@ func NewConsulClient(logger log.Logger, config *Config) (*Client, error) {
 	})
 
 	if err != nil {
-		return nil, logger.Fatal().LogErrorf("Error connecting to Consul (%s): %v", config.Name, err).Err()
+		return nil, logger.Fatal().LogErrorf("Error connecting to Consul (config: %v): %v", config, err).Err()
+	}
+
+	var hostName string
+	if hostName, err = os.Hostname(); err != nil {
+		hostName = uuid.New().String()
+	}
+	nodeId := config.Name + "-" + hostName
+
+	err = consulClient.Agent().ServiceRegister(&consul.AgentServiceRegistration{
+		Address: config.Address,
+		ID:      nodeId,
+		Name:    config.Name,
+		Tags:    config.Tags,
+		Check: &consul.AgentServiceCheck{
+			HTTP:     fmt.Sprintf("%s/_health", config.Address),
+			Interval: fmt.Sprintf("%ds", config.HealthCheckIntervalSeconds),
+		},
+	})
+
+	if err != nil {
+		return nil, logger.Fatal().LogErrorf("Error registering Node (%s) as a service on Consul: %v", nodeId, err).Err()
+	}
+
+	sessionID, _, err := consulClient.Session().Create(&consul.SessionEntry{
+		Name: config.SessionName,
+		Behavior: "delete",
+		TTL: fmt.Sprintf("%ds", config.HealthCheckIntervalSeconds),
+	}, nil)
+
+	if err != nil {
+		return nil, logger.Fatal().LogErrorf("Error creating Consul Session for %s: %v", nodeId, err).Err()
 	}
 
 	return &Client{
-		cfg: config,
-		client: consulClient,
+		Cfg: 			config,
+		ConsulClient: 	consulClient,
+		NodeId: 		nodeId,
+		SessionId: 		sessionID,
 	}, nil
 }

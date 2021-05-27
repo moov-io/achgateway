@@ -18,5 +18,8 @@ ACHGateway:
     Address: "127.0.0.1:8500"
     Scheme: "http"
     Name: "achgateway"
-    Tags: "ach"
-
+    Tags:
+      - "ach"
+      - "achgateway"
+    SessionName: "service/achgateway/leader"
+    HealthCheckIntervalSeconds: 10
