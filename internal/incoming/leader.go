@@ -7,7 +7,7 @@ import (
 	"github.com/moov-io/base/log"
 )
 
-func AcquireLock(logger log.Logger, client *consul.Client) error  {
+func AcquireLock(logger log.Logger, client *consul.Client) error {
 	isLeader, _, err := client.ConsulClient.KV().Acquire(&api.KVPair{
 		Key:     client.Cfg.SessionName,
 		Value:   []byte(client.SessionId),

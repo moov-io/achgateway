@@ -42,7 +42,7 @@ type Environment struct {
 	TimeService    stime.TimeService
 	DB             *sql.DB
 	InternalClient *http.Client
-	ConsulClient  *consul.Client
+	ConsulClient   *consul.Client
 
 	PublicRouter *mux.Router
 	Shutdown     func()
@@ -103,11 +103,11 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 
 	if env.ConsulClient == nil {
 		consulClient, err := consul.NewConsulClient(env.Logger, &consul.Config{
-			Address: env.Config.Consul.Address,
-			Scheme:  env.Config.Consul.Scheme,
-			Name: env.Config.Consul.Name,
-			SessionName: env.Config.Consul.SessionName,
-			Tags: []string{env.Config.Consul.Name},
+			Address:                    env.Config.Consul.Address,
+			Scheme:                     env.Config.Consul.Scheme,
+			Name:                       env.Config.Consul.Name,
+			SessionName:                env.Config.Consul.SessionName,
+			Tags:                       []string{env.Config.Consul.Name},
 			HealthCheckIntervalSeconds: env.Config.Consul.HealthCheckIntervalSeconds,
 		})
 

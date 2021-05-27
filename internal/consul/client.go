@@ -30,26 +30,26 @@ import (
 )
 
 type Config struct {
-	Address             		string
-	Scheme        				string
-	Name						string
-	SessionName					string
-	Tags						[]string
-	HealthCheckIntervalSeconds 	int
+	Address                    string
+	Scheme                     string
+	Name                       string
+	SessionName                string
+	Tags                       []string
+	HealthCheckIntervalSeconds int
 }
 
 type Client struct {
-	Cfg 				*Config
-	ConsulClient 		*consul.Client
-	NodeId				string
-	SessionId 			string
+	Cfg          *Config
+	ConsulClient *consul.Client
+	NodeId       string
+	SessionId    string
 }
 
 func NewConsulClient(logger log.Logger, config *Config) (*Client, error) {
 	// Default settings we approve of
 	consulClient, err := consul.NewClient(&consul.Config{
 		Address: config.Address,
-		Scheme: config.Scheme,
+		Scheme:  config.Scheme,
 	})
 
 	if err != nil {
@@ -78,9 +78,9 @@ func NewConsulClient(logger log.Logger, config *Config) (*Client, error) {
 	}
 
 	sessionID, _, err := consulClient.Session().Create(&consul.SessionEntry{
-		Name: config.SessionName,
+		Name:     config.SessionName,
 		Behavior: "delete",
-		TTL: fmt.Sprintf("%ds", config.HealthCheckIntervalSeconds),
+		TTL:      fmt.Sprintf("%ds", config.HealthCheckIntervalSeconds),
 	}, nil)
 
 	if err != nil {
@@ -88,9 +88,9 @@ func NewConsulClient(logger log.Logger, config *Config) (*Client, error) {
 	}
 
 	return &Client{
-		Cfg: 			config,
-		ConsulClient: 	consulClient,
-		NodeId: 		nodeId,
-		SessionId: 		sessionID,
+		Cfg:          config,
+		ConsulClient: consulClient,
+		NodeId:       nodeId,
+		SessionId:    sessionID,
 	}, nil
 }

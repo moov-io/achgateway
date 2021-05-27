@@ -35,7 +35,7 @@ type Config struct {
 	Logger        log.Logger `json:"-"`
 	Clients       *ClientConfig
 	Database      database.DatabaseConfig
-	Consul		  *consul.Config
+	Consul        *consul.Config
 	Admin         Admin
 	Inbound       Inbound
 	Shards        Shards
