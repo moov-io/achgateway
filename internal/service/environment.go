@@ -25,14 +25,15 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gorilla/mux"
+	_ "github.com/moov-io/achgateway"
+	"github.com/moov-io/achgateway/internal/consul"
+	"github.com/moov-io/achgateway/internal/incoming/web"
 	"github.com/moov-io/base/config"
 	"github.com/moov-io/base/database"
 	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/stime"
 
-	_ "github.com/moov-io/achgateway"
-	"github.com/moov-io/achgateway/internal/consul"
+	"github.com/gorilla/mux"
 )
 
 // Environment - Contains everything thats been instantiated for this service.
@@ -99,7 +100,8 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	if env.PublicRouter == nil {
 		env.PublicRouter = mux.NewRouter()
 
-		// @TODO add controller connections here
+		// append HTTP routes
+		web.NewFilesController(env.Config.Logger).AppendRoutes(env.PublicRouter)
 	}
 
 	if env.ConsulClient == nil {

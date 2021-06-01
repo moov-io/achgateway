@@ -1,13 +1,11 @@
 # generated-from:8e00a406fe64314786fe91ca66cb20ee864e4f95ce4ec9f6611623fae7ea6db3 DO NOT REMOVE, DO UPDATE
 
 ACHGateway:
-  Servers:
-    Public:
-      Bind:
-        Address: ":8484"
-    Admin:
-      Bind:
-        Address: ":9494"
+  Admin:
+    BindAddress: ":9494"
+  Inbound:
+    HTTP:
+      BindAddress: ":8484"
   Database:
     DatabaseName: "achgateway"
     MySQL:
