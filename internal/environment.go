@@ -17,29 +17,34 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package service
+package internal
 
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"net/http"
 	"time"
 
 	_ "github.com/moov-io/achgateway"
 	"github.com/moov-io/achgateway/internal/consul"
+	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/incoming/web"
+	"github.com/moov-io/achgateway/internal/pipeline"
+	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/config"
 	"github.com/moov-io/base/database"
 	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/stime"
 
 	"github.com/gorilla/mux"
+	"gocloud.dev/pubsub"
 )
 
 // Environment - Contains everything thats been instantiated for this service.
 type Environment struct {
 	Logger         log.Logger
-	Config         *Config
+	Config         *service.Config
 	TimeService    stime.TimeService
 	DB             *sql.DB
 	InternalClient *http.Client
@@ -48,6 +53,9 @@ type Environment struct {
 
 	PublicRouter *mux.Router
 	Shutdown     func()
+
+	HTTPFiles   *pubsub.Topic
+	StreamFiles *pubsub.Topic
 }
 
 // NewEnvironment - Generates a new default environment. Overrides can be specified via configs.
@@ -55,6 +63,9 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	if env == nil {
 		env = &Environment{}
 	}
+
+	var err error
+	ctx, cancelFunc := context.WithCancel(context.Background())
 
 	env.Shutdown = func() {}
 
@@ -85,15 +96,29 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		env.Shutdown = func() {
 			prev()
 			close()
+			cancelFunc()
 		}
 	}
 
 	if env.InternalClient == nil {
-		env.InternalClient = NewInternalClient(env.Logger, env.Config.Clients, "internal-client")
+		env.InternalClient = service.NewInternalClient(env.Logger, env.Config.Clients, "internal-client")
 	}
 
 	if env.TimeService == nil {
 		env.TimeService = stime.NewSystemTimeService()
+	}
+
+	// File publishers
+	inmemConfig := &service.Config{
+		Inbound: service.Inbound{
+			InMem: &service.InMemory{
+				URL: "mem://achgateway",
+			},
+		},
+	}
+	httpFiles, err := stream.Topic(env.Logger, inmemConfig)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create http files: %v", err)
 	}
 
 	// router
@@ -101,7 +126,22 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		env.PublicRouter = mux.NewRouter()
 
 		// append HTTP routes
-		web.NewFilesController(env.Config.Logger).AppendRoutes(env.PublicRouter)
+		web.NewFilesController(env.Config.Logger, httpFiles).AppendRoutes(env.PublicRouter)
+	}
+
+	// file pipeline
+	httpSub, err := stream.Subscription(env.Logger, inmemConfig)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create http files subscription: %v", err)
+	}
+	streamSub, err := stream.Subscription(env.Logger, env.Config)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create stream files subscription: %v", err)
+	}
+
+	err = pipeline.Start(ctx, env.Logger, env.Config, httpSub, streamSub)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create file pipeline: %v", err)
 	}
 
 	if env.ConsulClient == nil {
@@ -129,10 +169,10 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	return env, nil
 }
 
-func LoadConfig(logger log.Logger) (*Config, error) {
+func LoadConfig(logger log.Logger) (*service.Config, error) {
 	configService := config.NewService(logger)
 
-	global := &GlobalConfig{}
+	global := &service.GlobalConfig{}
 	if err := configService.Load(global); err != nil {
 		return nil, err
 	}

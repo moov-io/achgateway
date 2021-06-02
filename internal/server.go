@@ -17,7 +17,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package service
+package internal
 
 import (
 	"context"
@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/log"
 
@@ -45,7 +46,7 @@ func (env *Environment) RunServers(terminationListener chan error) func() {
 	}
 }
 
-func bootHTTPServer(name string, routes *mux.Router, errs chan<- error, logger log.Logger, config HTTPConfig) (*http.Server, func()) {
+func bootHTTPServer(name string, routes *mux.Router, errs chan<- error, logger log.Logger, config service.HTTPConfig) (*http.Server, func()) {
 	// Create main HTTP server
 	serve := &http.Server{
 		Addr:    config.BindAddress,
@@ -77,7 +78,7 @@ func bootHTTPServer(name string, routes *mux.Router, errs chan<- error, logger l
 	return serve, shutdownServer
 }
 
-func bootAdminServer(errs chan<- error, logger log.Logger, config Admin) *admin.Server {
+func bootAdminServer(errs chan<- error, logger log.Logger, config service.Admin) *admin.Server {
 	adminServer := admin.NewServer(config.BindAddress)
 
 	go func() {

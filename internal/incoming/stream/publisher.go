@@ -28,7 +28,10 @@ func Topic(logger log.Logger, cfg *service.Config) (*pubsub.Topic, error) {
 	if cfg.Inbound.Kafka != nil {
 		return createKafkaTopic(logger, cfg.Inbound.Kafka)
 	}
-	return pubsub.OpenTopic(context.Background(), cfg.Inbound.InMem.URL)
+	if cfg.Inbound.InMem != nil {
+		return pubsub.OpenTopic(context.Background(), cfg.Inbound.InMem.URL)
+	}
+	return nil, nil
 }
 
 func createKafkaTopic(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Topic, error) {

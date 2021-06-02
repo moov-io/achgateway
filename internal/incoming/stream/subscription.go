@@ -19,7 +19,6 @@ package stream
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/moov-io/achgateway/internal/service"
@@ -47,7 +46,7 @@ func Subscription(logger log.Logger, cfg *service.Config) (*pubsub.Subscription,
 		logger.Info().Logf("setup %T kafka subscription", sub)
 		return sub, nil
 	}
-	return nil, fmt.Errorf("unknown %#v", cfg)
+	return nil, nil
 }
 
 func createKafkaSubscription(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Subscription, error) {

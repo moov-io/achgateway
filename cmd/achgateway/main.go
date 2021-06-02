@@ -20,22 +20,24 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
-	"github.com/moov-io/base/log"
-
 	"github.com/moov-io/achgateway"
+	"github.com/moov-io/achgateway/internal"
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/base/log"
 )
 
 func main() {
-	env := &service.Environment{
+	env := &internal.Environment{
 		Logger: log.NewDefaultLogger().Set("app", log.String("achgateway")).Set("version", log.String(achgateway.Version)),
 	}
 
-	env, err := service.NewEnvironment(env)
+	env, err := internal.NewEnvironment(env)
 	if err != nil {
-		env.Logger.Fatal().LogErrorf("Error loading up environment: %v", err)
+		panic(fmt.Sprintf("ERROR: %v", err))
+		// env.Logger.Fatal().LogErrorf("Error loading up environment: %v", err)
 		os.Exit(1)
 	}
 	defer env.Shutdown()
