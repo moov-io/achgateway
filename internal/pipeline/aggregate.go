@@ -109,8 +109,7 @@ func (xfagg *aggregator) Start(ctx context.Context) {
 				}
 			}
 
-		// case waiter := <-xfagg.cutoffs.C: // TODO(adam): manual cutoff trigger
-		// 	fmt.Printf("waiter=%#v\n", waiter)
+		// case waiter := <-xfagg.cutoffs.C:
 
 		case <-ctx.Done():
 			xfagg.cutoffs.Stop()
@@ -123,13 +122,12 @@ func (xfagg *aggregator) Start(ctx context.Context) {
 func (xfagg *aggregator) Shutdown() {
 	xfagg.logger.Log("shutting down xfer aggregation")
 
-	// if xfagg.auditStorage != nil {
-	// 	xfagg.auditStorage.Close()
-	// }
+	if xfagg.auditStorage != nil {
+		xfagg.auditStorage.Close()
+	}
 }
 
 func (xfagg *aggregator) acceptFile(msg incoming.ACHFile) error {
-	// TODO(adam): log?
 	return xfagg.merger.HandleXfer(msg)
 }
 
@@ -145,9 +143,8 @@ func (xfagg *aggregator) withEachFile(when time.Time) error {
 		return fmt.Errorf("merging ACH files: %v", err)
 	}
 
-	fmt.Printf("PROCESSED\n   %#v\n", processed)
-
-	// TODO(adam):
+	// TODO(adam): emit event
+	fmt.Printf("PROCESSED\n  %#v\n", processed)
 	// err = xfagg.service.MarkTransfersAsProcessed(processed.transferIDs)
 	// if err != nil {
 	// 	xfagg.logger.LogErrorf("ERROR marking %d transfers as processed: %v", len(processed.transferIDs), err)

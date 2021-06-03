@@ -61,9 +61,9 @@ func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Reque
 	vars := mux.Vars(r)
 	shardKey, fileID := vars["shardKey"], vars["fileID"]
 	if shardKey == "" || fileID == "" {
-		// TODO(adam): error
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
-	fmt.Printf("shardKey=%s  fileID=%s\n", shardKey, fileID)
 
 	var buf bytes.Buffer // secondary reader for json decode, if needed
 	reader := io.TeeReader(r.Body, &buf)
@@ -73,16 +73,14 @@ func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Reque
 		// attempt JSON decode
 		f, err := ach.FileFromJSON(buf.Bytes())
 		if err != nil {
-			fmt.Printf("error=%v\n", err)
+			w.WriteHeader(http.StatusBadRequest)
 		}
 		file = *f
 	}
 
-	fmt.Printf("file=%#v\n", file)
-	fmt.Printf("file.Validate()=%v\n", file.Validate())
-
 	if err := publishFile(c.publisher, shardKey, fileID, &file); err != nil {
-		// TODO(adam): error
+		c.logger.LogErrorf("error publishing fileID=%s: %v", fileID, err)
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 

@@ -20,7 +20,6 @@ package pipeline
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/shards"
@@ -60,11 +59,11 @@ func newFileReceiver(
 func (fr *fileReceiver) Start(ctx context.Context) {
 	for {
 		select {
-		case err := <-fr.handleMessage(ctx, fr.httpFiles): // TODO
-			fmt.Printf("http err=%#v\n", err)
+		case err := <-fr.handleMessage(ctx, fr.httpFiles):
+			fr.logger.LogErrorf("error handling http file: %v", err)
 
-		case err := <-fr.handleMessage(ctx, fr.streamFiles): // TODO
-			fmt.Printf("stream err=%#v\n", err)
+		case err := <-fr.handleMessage(ctx, fr.streamFiles):
+			fr.logger.LogErrorf("error handling stream file: %v", err)
 
 		case <-ctx.Done():
 			fr.Shutdown()
@@ -84,11 +83,9 @@ func (fr *fileReceiver) Shutdown() {
 	}
 }
 
+// handleMessage will listen for an incoming.ACHFile to pass off to an aggregator for the shard
+// responsible. It does so with a database lookup and the fixed set of Shards from the file config.
 func (fr *fileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscription) chan error {
-	// 1. shardRepository.Lookup(shardKey string) (shardName, error)
-	// 2. lookup fr.shardAggregators[shardName]
-	// 3. call aggregator.acceptFile(*incoming.ACHFile)
-
 	out := make(chan error, 1)
 	if sub == nil {
 		return out
@@ -104,6 +101,7 @@ func (fr *fileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 				fr.logger.Error().LogErrorf("unable to parse incoming.ACHFile: %v", err)
 				return
 			}
+			fr.logger.Logf("begin handle received ACHFile=%s of %d bytes", file.FileID, len(msg.Body))
 
 			shardName, err := fr.shardRepository.Lookup(file.ShardKey)
 			if err != nil {
@@ -117,17 +115,13 @@ func (fr *fileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 				return
 			}
 
-			// fr.logger.Logf("begin handle received message of %d bytes", len(msg.Body))
 			msg.Ack()
 
 			if err := agg.acceptFile(file); err != nil {
 				fr.logger.Error().LogErrorf("problem accepting file under shardName=%s", shardName)
-
-				// TODO(adam): PD alert, notify people
-
 				out <- err
 			} else {
-				// log about successful message handling
+				fr.logger.Logf("finished handling ACHFile=%s", file.FileID)
 				out <- nil
 			}
 		} else {
