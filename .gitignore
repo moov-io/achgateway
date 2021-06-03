@@ -22,3 +22,6 @@ coverage.txt
 
 pkged.go
 /vendor/
+
+/storage/
+/testdata/ftp-server/outbound/*.ach

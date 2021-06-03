@@ -27,7 +27,8 @@ import (
 )
 
 type UploadAgents struct {
-	Agents         []UploadAgent
+	Agents         []UploadAgent // TODO(adam): should this be a single instance?
+	Merging        Merging
 	Retry          *UploadRetry
 	DefaultAgentID string
 }
@@ -166,6 +167,13 @@ type UploadNotifiers struct {
 	PagerDuty []string
 	Slack     []string
 }
+
+type Merging struct {
+	Directory      string
+	FlattenBatches *FlattenBatches
+}
+
+type FlattenBatches struct{}
 
 type UploadRetry struct {
 	Interval   time.Duration

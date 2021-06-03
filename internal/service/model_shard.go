@@ -48,12 +48,12 @@ func (cfg Shards) Validate() error {
 type Shard struct {
 	Name                     string
 	Cutoffs                  Cutoffs
-	PreUpload                PreUpload
-	Upload                   UploadAgents
+	PreUpload                *PreUpload
+	UploadAgent              string
 	OutboundFilenameTemplate string
-	Output                   Output
-	Notifications            Notifications
-	Audit                    AuditTrail
+	Output                   *Output
+	Notifications            *Notifications
+	Audit                    *AuditTrail
 }
 
 func (cfg Shard) Validate() error {

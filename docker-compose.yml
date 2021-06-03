@@ -42,6 +42,20 @@ services:
       - consul
     command: "agent"
 
+  ftp:
+    image: moov/fsftp:v0.2.0
+    ports:
+      - "2121:2121"
+      - "30000-30009:30000-30009"
+    volumes:
+      - "./testdata/ftp-server:/data"
+    command:
+      - "-host=0.0.0.0"
+      - "-root=/data"
+      - "-user=admin"
+      - "-pass=123456"
+      - "-passive-ports=30000-30009"
+
 networks:
   intranet: {}
   consul:

@@ -15,19 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package incoming
+package pipeline
 
 import (
-	"github.com/moov-io/ach"
+	"github.com/go-kit/kit/metrics/prometheus"
+	stdprometheus "github.com/prometheus/client_golang/prometheus"
 )
 
-type ACHFile struct {
-	FileID   string    `json:"id"`
-	ShardKey string    `json:"shardKey"`
-	File     *ach.File `json:"file"`
-}
+var (
+	uploadedFilesCounter = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Name: "ach_uploaded_files",
+		Help: "Counter of ACH files uploaded through the pipeline to the ODFI",
+	}, nil)
+	uploadFilesErrors = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Name: "ach_upload_errors",
+		Help: "Counter of errors encountered when attempting ACH files upload",
+	}, nil)
+)
 
-type CancelACHFile struct {
-	FileID   string `json:"id"`
-	ShardKey string `json:"shardKey"`
+func init() {
+	uploadedFilesCounter.With().Add(0)
+	uploadFilesErrors.With().Add(0)
 }

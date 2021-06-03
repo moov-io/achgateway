@@ -38,10 +38,12 @@ func Start(
 	// register each shard's aggregator
 	shardAggregators := make(map[string]*aggregator)
 	for i := range cfg.Shards {
-		xfagg, err := newAggregator(logger, cfg.Shards[i])
+		xfagg, err := newAggregator(logger, cfg.Shards[i], cfg.Upload)
 		if err != nil {
 			return fmt.Errorf("problem starting shard=%s: %v", cfg.Shards[i].Name, err)
 		}
+
+		go xfagg.Start(ctx)
 
 		shardAggregators[cfg.Shards[i].Name] = xfagg
 	}
