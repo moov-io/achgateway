@@ -89,7 +89,7 @@ func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Reque
 func publishFile(pub *pubsub.Topic, shardKey, fileID string, file *ach.File) error {
 	var body bytes.Buffer
 	err := json.NewEncoder(&body).Encode(incoming.ACHFile{
-		ID:       fileID,
+		FileID:   fileID,
 		ShardKey: shardKey,
 		File:     file,
 	})

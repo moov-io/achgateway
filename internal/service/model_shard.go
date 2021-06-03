@@ -46,7 +46,7 @@ func (cfg Shards) Validate() error {
 }
 
 type Shard struct {
-	ID                       string
+	Name                     string
 	Cutoffs                  Cutoffs
 	PreUpload                PreUpload
 	Upload                   UploadAgents

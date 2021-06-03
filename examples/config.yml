@@ -1,0 +1,18 @@
+ACHGateway:
+  Admin:
+    BindAddress: ":9494"
+  Inbound:
+    HTTP:
+      BindAddress: ":8484"
+  Shards:
+    - name: "testing"
+      cutoffs:
+        timezone: "America/New_York"
+        windows:
+          - "14:20"
+  Database:
+    DatabaseName: "achgateway"
+    MySQL:
+      Address: "tcp(localhost:3306)"
+      User: "achgateway"
+      Password: "achgateway"

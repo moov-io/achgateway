@@ -15,19 +15,41 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package incoming
+package shards
 
 import (
-	"github.com/moov-io/ach"
+	"database/sql"
+	"fmt"
 )
 
-type ACHFile struct {
-	FileID   string    `json:"id"`
-	ShardKey string    `json:"shardKey"`
-	File     *ach.File `json:"file"`
+type Repository interface {
+	Lookup(shardKey string) (string, error)
 }
 
-type CancelACHFile struct {
-	ID       string `json:"id"`
-	ShardKey string `json:"shardKey"`
+func NewRepository(db *sql.DB) Repository {
+	return &sqlRepository{db: db}
+}
+
+type sqlRepository struct {
+	db *sql.DB
+}
+
+func (r *sqlRepository) Lookup(shardKey string) (string, error) {
+	fmt.Printf("repo.shardKey=%s\n", shardKey)
+
+	query := `SELECT shard_name FROM shard_mappings
+WHERE shard_key = ?
+LIMIT 1;`
+	stmt, err := r.db.Prepare(query)
+	if err != nil {
+		return "", err
+	}
+	var shardName string
+	if err := stmt.QueryRow(shardKey).Scan(&shardName); err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return "", err
+	}
+	return shardName, nil
 }
