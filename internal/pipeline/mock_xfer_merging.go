@@ -24,7 +24,7 @@ import (
 )
 
 type MockXferMerging struct {
-	LatestXfer   *incoming.ACHFile
+	LatestFile   *incoming.ACHFile
 	LatestCancel *incoming.CancelACHFile
 	processed    *processedTransfers
 
@@ -32,7 +32,7 @@ type MockXferMerging struct {
 }
 
 func (merge *MockXferMerging) HandleXfer(xfer incoming.ACHFile) error {
-	merge.LatestXfer = &xfer
+	merge.LatestFile = &xfer
 	return merge.Err
 }
 
