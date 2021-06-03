@@ -27,7 +27,7 @@ import (
 )
 
 type UploadAgents struct {
-	Agents         []UploadAgent // TODO(adam): should this be a single instance?
+	Agents         []UploadAgent
 	Merging        Merging
 	Retry          *UploadRetry
 	DefaultAgentID string
