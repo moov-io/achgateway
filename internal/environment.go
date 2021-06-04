@@ -153,7 +153,7 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	}
 	env.FileReceiver = fileReceiver
 
-	if env.ConsulClient == nil {
+	if env.ConsulClient == nil && env.Config.Consul != nil {
 		consulClient, err := consul.NewConsulClient(env.Logger, &consul.Config{
 			Address:                    env.Config.Consul.Address,
 			Scheme:                     env.Config.Consul.Scheme,
