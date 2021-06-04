@@ -37,15 +37,16 @@ import (
 
 // Environment - Contains everything thats been instantiated for this service.
 type Environment struct {
-	Logger         log.Logger
-	Config         *Config
-	TimeService    stime.TimeService
-	DB             *sql.DB
-	InternalClient *http.Client
-	ConsulClient   *consul.Client
+	Logger         	log.Logger
+	Config         	*Config
+	TimeService    	stime.TimeService
+	DB             	*sql.DB
+	InternalClient 	*http.Client
+	ConsulClient  	*consul.Client
+	ConsulSessions  map[string]*consul.Session
 
-	PublicRouter *mux.Router
-	Shutdown     func()
+	PublicRouter 	*mux.Router
+	Shutdown     	func()
 }
 
 // NewEnvironment - Generates a new default environment. Overrides can be specified via configs.
@@ -105,16 +106,16 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		consulClient, err := consul.NewConsulClient(env.Logger, &consul.Config{
 			Address:                    env.Config.Consul.Address,
 			Scheme:                     env.Config.Consul.Scheme,
-			Name:                       env.Config.Consul.Name,
-			SessionName:                env.Config.Consul.SessionName,
-			Tags:                       []string{env.Config.Consul.Name},
+			Tags:                       env.Config.Consul.Tags,
 			HealthCheckIntervalSeconds: env.Config.Consul.HealthCheckIntervalSeconds,
 		})
-
 		if err != nil {
 			return nil, err
 		}
+
+		consulSession, err := consul.NewSession(env.Logger, *consulClient, consulClient.NodeId)
 		env.ConsulClient = consulClient
+		env.ConsulSessions[consulClient.NodeId] = consulSession
 	}
 
 	return env, nil
