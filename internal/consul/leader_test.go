@@ -11,10 +11,10 @@ func TestAcquireLock(t *testing.T) {
 	logger := log.NewDefaultLogger()
 
 	consulClient, err := NewConsulClient(logger, &Config{
-		Address: "127.0.0.1:8500",
-		Scheme: "http",
-		SessionPath: "achgateway/test/",
-		Tags: []string{"test1"},
+		Address:                    "127.0.0.1:8500",
+		Scheme:                     "http",
+		SessionPath:                "achgateway/test/",
+		Tags:                       []string{"test1"},
 		HealthCheckIntervalSeconds: 10,
 	})
 	a.Nil(err)
@@ -37,10 +37,10 @@ func TestAcquireLockSessionExists(t *testing.T) {
 	logger := log.NewDefaultLogger()
 
 	consulClient, err := NewConsulClient(logger, &Config{
-		Address: "127.0.0.1:8500",
-		Scheme: "http",
-		SessionPath: "achgateway/test/",
-		Tags: []string{"test1"},
+		Address:                    "127.0.0.1:8500",
+		Scheme:                     "http",
+		SessionPath:                "achgateway/test/",
+		Tags:                       []string{"test1"},
 		HealthCheckIntervalSeconds: 10,
 	})
 	a.Nil(err)

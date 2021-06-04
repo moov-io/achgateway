@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/google/uuid"
 	consul "github.com/hashicorp/consul/api"
 
 	"github.com/moov-io/base/log"
@@ -56,7 +55,7 @@ func NewConsulClient(logger log.Logger, config *Config) (*Client, error) {
 
 	var hostName string
 	if hostName, err = os.Hostname(); err != nil {
-		hostName = uuid.New().String()
+		return nil, logger.Fatal().LogErrorf("host name could not be determined").Err()
 	}
 
 	err = consulClient.Agent().ServiceRegister(&consul.AgentServiceRegistration{

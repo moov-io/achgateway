@@ -37,16 +37,16 @@ import (
 
 // Environment - Contains everything thats been instantiated for this service.
 type Environment struct {
-	Logger         	log.Logger
-	Config         	*Config
-	TimeService    	stime.TimeService
-	DB             	*sql.DB
-	InternalClient 	*http.Client
-	ConsulClient  	*consul.Client
-	ConsulSessions  map[string]*consul.Session
+	Logger         log.Logger
+	Config         *Config
+	TimeService    stime.TimeService
+	DB             *sql.DB
+	InternalClient *http.Client
+	ConsulClient   *consul.Client
+	ConsulSessions map[string]*consul.Session
 
-	PublicRouter 	*mux.Router
-	Shutdown     	func()
+	PublicRouter *mux.Router
+	Shutdown     func()
 }
 
 // NewEnvironment - Generates a new default environment. Overrides can be specified via configs.

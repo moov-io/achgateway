@@ -27,8 +27,8 @@ import (
 )
 
 type Session struct {
-	ID					string
-	Name				string
+	ID   string
+	Name string
 }
 
 func NewSession(logger log.Logger, consulClient Client, shardName string) (*Session, error) {
@@ -44,7 +44,7 @@ func NewSession(logger log.Logger, consulClient Client, shardName string) (*Sess
 	}
 
 	return &Session{
-		ID:       	sessionID,
-		Name:    	sessionName,
+		ID:   sessionID,
+		Name: sessionName,
 	}, nil
 }
