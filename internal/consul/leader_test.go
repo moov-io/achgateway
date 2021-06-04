@@ -20,8 +20,7 @@ func TestAcquireLock(t *testing.T) {
 	a.Nil(err)
 
 	testShard := "test"
-	var consulSessions map[string]*Session
-	consulSessions = map[string]*Session{}
+	consulSessions := map[string]*Session{}
 
 	newSession, err := NewSession(logger, *consulClient, testShard)
 	a.Nil(err)
@@ -46,8 +45,7 @@ func TestAcquireLockSessionExists(t *testing.T) {
 	a.Nil(err)
 
 	testShard := "test2"
-	var consulSessions map[string]*Session
-	consulSessions = map[string]*Session{}
+	consulSessions := map[string]*Session{}
 
 	newSession, err := NewSession(logger, *consulClient, testShard)
 	a.Nil(err)

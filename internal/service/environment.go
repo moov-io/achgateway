@@ -114,7 +114,13 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		}
 
 		consulSession, err := consul.NewSession(env.Logger, *consulClient, consulClient.NodeId)
+		if err != nil {
+			return nil, err
+		}
 		env.ConsulClient = consulClient
+		if env.ConsulSessions == nil {
+			env.ConsulSessions = map[string]*consul.Session{}
+		}
 		env.ConsulSessions[consulClient.NodeId] = consulSession
 	}
 
