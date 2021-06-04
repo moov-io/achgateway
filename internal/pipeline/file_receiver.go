@@ -28,9 +28,9 @@ import (
 	"gocloud.dev/pubsub"
 )
 
-// fileReceiver accepts an ACH file from a number of pubsub Subscriptions and
+// FileReceiver accepts an ACH file from a number of pubsub Subscriptions and
 // finds the appropiate aggregator for the shardKey.
-type fileReceiver struct {
+type FileReceiver struct {
 	logger log.Logger
 
 	shardRepository  shards.Repository
@@ -46,8 +46,8 @@ func newFileReceiver(
 	shardAggregators map[string]*aggregator,
 	httpFiles *pubsub.Subscription,
 	streamFiles *pubsub.Subscription,
-) *fileReceiver {
-	return &fileReceiver{
+) *FileReceiver {
+	return &FileReceiver{
 		logger:           logger,
 		shardRepository:  shardRepository,
 		shardAggregators: shardAggregators,
@@ -56,7 +56,7 @@ func newFileReceiver(
 	}
 }
 
-func (fr *fileReceiver) Start(ctx context.Context) {
+func (fr *FileReceiver) Start(ctx context.Context) {
 	for {
 		select {
 		case err := <-fr.handleMessage(ctx, fr.httpFiles):
@@ -72,7 +72,7 @@ func (fr *fileReceiver) Start(ctx context.Context) {
 	}
 }
 
-func (fr *fileReceiver) Shutdown() {
+func (fr *FileReceiver) Shutdown() {
 	fr.logger.Log("shutting down xfer aggregation")
 
 	if err := fr.httpFiles.Shutdown(context.Background()); err != nil {
@@ -85,7 +85,7 @@ func (fr *fileReceiver) Shutdown() {
 
 // handleMessage will listen for an incoming.ACHFile to pass off to an aggregator for the shard
 // responsible. It does so with a database lookup and the fixed set of Shards from the file config.
-func (fr *fileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscription) chan error {
+func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscription) chan error {
 	out := make(chan error, 1)
 	if sub == nil {
 		return out

@@ -33,6 +33,7 @@ import (
 	"github.com/moov-io/achgateway/internal/pipeline"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/shards"
+	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/config"
 	"github.com/moov-io/base/database"
 	"github.com/moov-io/base/log"
@@ -53,10 +54,13 @@ type Environment struct {
 	ConsulSessions map[string]*consul.Session
 
 	PublicRouter *mux.Router
+	AdminServer  *admin.Server
 	Shutdown     func()
 
 	HTTPFiles   *pubsub.Topic
 	StreamFiles *pubsub.Topic
+
+	FileReceiver *pipeline.FileReceiver
 }
 
 // NewEnvironment - Generates a new default environment. Overrides can be specified via configs.
@@ -141,10 +145,11 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	}
 
 	shardRepository := shards.NewRepository(env.DB)
-	err = pipeline.Start(ctx, env.Logger, env.Config, shardRepository, httpSub, streamSub)
+	fileReceiver, err := pipeline.Start(ctx, env.Logger, env.Config, env.AdminServer, shardRepository, httpSub, streamSub)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create file pipeline: %v", err)
 	}
+	env.FileReceiver = fileReceiver
 
 	if env.ConsulClient == nil {
 		consulClient, err := consul.NewConsulClient(env.Logger, &consul.Config{

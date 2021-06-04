@@ -43,8 +43,9 @@ type aggregator struct {
 	shard        service.Shard
 	uploadAgents service.UploadAgents
 
-	cutoffs *schedule.CutoffTimes
-	merger  XferMerging
+	cutoffs       *schedule.CutoffTimes
+	cutoffTrigger chan manuallyTriggeredCutoff
+	merger        XferMerging
 
 	auditStorage          audittrail.Storage
 	preuploadTransformers []transform.PreUpload
@@ -80,13 +81,13 @@ func newAggregator(logger log.Logger, shard service.Shard, uploadAgents service.
 	if err != nil {
 		return nil, fmt.Errorf("error creating cutoffs: %v", err)
 	}
-	fmt.Printf("cutoffs=%#v\n", cutoffs)
 
 	return &aggregator{
 		logger:                logger,
 		shard:                 shard,
 		uploadAgents:          uploadAgents,
 		cutoffs:               cutoffs,
+		cutoffTrigger:         make(chan manuallyTriggeredCutoff, 1),
 		merger:                merger,
 		auditStorage:          auditStorage,
 		preuploadTransformers: preuploadTransformers,
@@ -97,8 +98,8 @@ func newAggregator(logger log.Logger, shard service.Shard, uploadAgents service.
 func (xfagg *aggregator) Start(ctx context.Context) {
 	for {
 		select {
+		// process automated cutoff time triggering
 		case tt := <-xfagg.cutoffs.C:
-			// process automated cutoff time triggering
 			if err := xfagg.withEachFile(tt); err != nil {
 				err = xfagg.logger.LogErrorf("merging files: %v", err).Err()
 
@@ -109,7 +110,9 @@ func (xfagg *aggregator) Start(ctx context.Context) {
 				}
 			}
 
-		// case waiter := <-xfagg.cutoffs.C:
+		// manually trigger cutoffs
+		case waiter := <-xfagg.cutoffTrigger:
+			xfagg.manualCutoff(waiter)
 
 		case <-ctx.Done():
 			xfagg.cutoffs.Stop()
@@ -152,6 +155,26 @@ func (xfagg *aggregator) withEachFile(when time.Time) error {
 	// }
 
 	return nil
+}
+
+func (xfagg *aggregator) manualCutoff(waiter manuallyTriggeredCutoff) {
+	xfagg.logger.Log("starting manual cutoff window processing")
+
+	if processed, err := xfagg.merger.WithEachMerged(xfagg.runTransformers); err != nil {
+		xfagg.logger.LogErrorf("ERROR inside manual WithEachMerged: %v", err)
+		waiter.C <- err
+	} else {
+		// if err := xfagg.service.MarkTransfersAsProcessed(processed.transferIDs); err != nil {
+		// 	xfagg.logger.LogErrorf("ERROR marking %d transfers as processed: %v", len(processed.transferIDs), err)
+		// 	waiter.C <- err
+		// } else {
+		fmt.Printf("MANUAL PROCESSED\n  %#v\n", processed)
+
+		waiter.C <- nil
+		// }
+	}
+
+	xfagg.logger.Log("ended manual cutoff window processing")
 }
 
 func (xfagg *aggregator) runTransformers(agent upload.Agent, outgoing *ach.File) error {

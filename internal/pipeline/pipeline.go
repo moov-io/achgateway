@@ -23,6 +23,7 @@ import (
 
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/shards"
+	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/log"
 
 	"gocloud.dev/pubsub"
@@ -32,15 +33,16 @@ func Start(
 	ctx context.Context,
 	logger log.Logger,
 	cfg *service.Config,
+	adminServer *admin.Server,
 	shardRepository shards.Repository,
-	httpFiles, streamFiles *pubsub.Subscription) error {
+	httpFiles, streamFiles *pubsub.Subscription) (*FileReceiver, error) {
 
 	// register each shard's aggregator
 	shardAggregators := make(map[string]*aggregator)
 	for i := range cfg.Shards {
 		xfagg, err := newAggregator(logger, cfg.Shards[i], cfg.Upload)
 		if err != nil {
-			return fmt.Errorf("problem starting shard=%s: %v", cfg.Shards[i].Name, err)
+			return nil, fmt.Errorf("problem starting shard=%s: %v", cfg.Shards[i].Name, err)
 		}
 
 		go xfagg.Start(ctx)
@@ -52,5 +54,5 @@ func Start(
 	receiver := newFileReceiver(logger, shardRepository, shardAggregators, httpFiles, streamFiles)
 	go receiver.Start(ctx)
 
-	return nil
+	return receiver, nil
 }

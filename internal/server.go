@@ -36,12 +36,15 @@ import (
 
 // RunServers - Boots up all the servers and awaits till they are stopped.
 func (env *Environment) RunServers(terminationListener chan error) func() {
-	adminServer := bootAdminServer(terminationListener, env.Logger, env.Config.Admin)
+	env.AdminServer = bootAdminServer(terminationListener, env.Logger, env.Config.Admin)
+
+	// register an admin route
+	env.FileReceiver.RegisterAdminRoutes(env.AdminServer)
 
 	_, shutdownPublicServer := bootHTTPServer("public", env.PublicRouter, terminationListener, env.Logger, env.Config.Inbound.HTTP)
 
 	return func() {
-		adminServer.Shutdown()
+		env.AdminServer.Shutdown()
 		shutdownPublicServer()
 	}
 }
