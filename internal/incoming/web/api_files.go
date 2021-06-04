@@ -55,8 +55,6 @@ func (c *FilesController) AppendRoutes(router *mux.Router) *mux.Router {
 	return router
 }
 
-// Publish to a pubsub.Subscription (inmem)
-
 func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	shardKey, fileID := vars["shardKey"], vars["fileID"]
@@ -72,8 +70,9 @@ func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		// attempt JSON decode
 		f, err := ach.FileFromJSON(buf.Bytes())
-		if err != nil {
+		if f == nil || err != nil {
 			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 		file = *f
 	}
