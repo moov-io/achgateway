@@ -22,6 +22,7 @@ package service_test
 import (
 	"testing"
 
+	"github.com/moov-io/achgateway/internal/consul"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/test"
 	"github.com/moov-io/base/log"
@@ -36,6 +37,13 @@ func Test_Environment_Startup(t *testing.T) {
 		Logger: log.NewDefaultLogger(),
 		Config: &service.Config{
 			Database: test.TestDatabaseConfig(),
+			Consul: &consul.Config{
+				Address:                    "127.0.0.1:8500",
+				Scheme:                     "http",
+				SessionPath:                "achgateway/test/",
+				Tags:                       []string{"test1"},
+				HealthCheckIntervalSeconds: 10,
+			},
 		},
 	}
 

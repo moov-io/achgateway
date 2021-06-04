@@ -28,7 +28,7 @@ is the shard key associated to every file.
 achgateway can operate multiple input vectors which are merged into a singular Queue. This allows
 an HTTP endpoint, kafka consumer, and other inputs.
 
-The following messages are produced out of the Queue.
+The following messages are produced out to the Queue.
 
 ```go
 type ACHFile struct {
@@ -72,7 +72,7 @@ achgateway is a distributed system that coordinates with other instances of itse
 As a design choice we make a few claims about each instance of achgateway:
 
 1. Each instance will consume ALL files encountered
-   - In the future we can have them consume a fraction of shard keys (or specific values) to shed load
+   - In the future we can have them consume a fraction of shard keys (or specific values) to distribute load
 1. Instances will attempt self-election for each shard key they encounter
    - Included heartbeats to refresh and maintain leadership
 1. At cutoff times each leader will attempt uploads for its shard
