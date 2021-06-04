@@ -4,6 +4,13 @@ ACHGateway:
   Inbound:
     HTTP:
       BindAddress: ":8484"
+  Consul:
+    Address: "127.0.0.1:8500"
+    Scheme: "http"
+    SessionPath: "achgateway/test/"
+    Tags:
+      - test1
+    HealthCheckInterval: "10s"
   Shards:
     - name: "testing"
       cutoffs:

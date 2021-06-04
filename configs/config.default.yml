@@ -19,4 +19,4 @@ ACHGateway:
       - "ach"
       - "achgateway"
     SessionPath: "achgateway/shards/"
-    HealthCheckIntervalSeconds: 10
+    HealthCheckInterval: "10s"

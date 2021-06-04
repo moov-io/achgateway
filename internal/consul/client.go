@@ -22,6 +22,7 @@ package consul
 import (
 	"fmt"
 	"os"
+	"time"
 
 	consul "github.com/hashicorp/consul/api"
 
@@ -29,11 +30,11 @@ import (
 )
 
 type Config struct {
-	Address                    	string
-	Scheme                     	string
-	SessionPath			string
-	Tags                       	[]string
-	HealthCheckIntervalSeconds 	int
+	Address             string
+	Scheme              string
+	SessionPath         string
+	Tags                []string
+	HealthCheckInterval time.Duration
 }
 
 type Client struct {
@@ -65,7 +66,7 @@ func NewConsulClient(logger log.Logger, config *Config) (*Client, error) {
 		Tags:    config.Tags,
 		Check: &consul.AgentServiceCheck{
 			HTTP:     fmt.Sprintf("%s/_health", config.Address),
-			Interval: fmt.Sprintf("%ds", config.HealthCheckIntervalSeconds),
+			Interval: fmt.Sprintf("%.0fs", config.HealthCheckInterval.Seconds()),
 		},
 	})
 

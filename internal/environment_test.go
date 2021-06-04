@@ -25,7 +25,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"github.com/moov-io/achgateway/internal/consul"
 	"github.com/moov-io/achgateway/internal/dbtest"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
@@ -51,6 +53,13 @@ func TestEnvironment_Startup(t *testing.T) {
 				InMem: &service.InMemory{
 					URL: "mem://achgateway",
 				},
+			},
+			Consul: &consul.Config{
+				Address:             "127.0.0.1:8500",
+				Scheme:              "http",
+				SessionPath:         "achgateway/test/",
+				Tags:                []string{"test1"},
+				HealthCheckInterval: 10 * time.Second,
 			},
 		},
 	}

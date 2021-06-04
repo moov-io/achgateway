@@ -21,6 +21,7 @@ package consul
 
 import (
 	"fmt"
+
 	consul "github.com/hashicorp/consul/api"
 
 	"github.com/moov-io/base/log"
@@ -36,7 +37,7 @@ func NewSession(logger log.Logger, consulClient Client, shardName string) (*Sess
 	sessionID, _, err := consulClient.ConsulClient.Session().Create(&consul.SessionEntry{
 		Name:     sessionName,
 		Behavior: "delete",
-		TTL:      fmt.Sprintf("%ds", consulClient.Cfg.HealthCheckIntervalSeconds),
+		TTL:      fmt.Sprintf("%.2fs", consulClient.Cfg.HealthCheckInterval.Seconds()),
 	}, nil)
 
 	if err != nil {

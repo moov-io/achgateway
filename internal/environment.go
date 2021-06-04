@@ -159,10 +159,10 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 
 	if env.ConsulClient == nil && env.Config.Consul != nil {
 		consulClient, err := consul.NewConsulClient(env.Logger, &consul.Config{
-			Address:                    env.Config.Consul.Address,
-			Scheme:                     env.Config.Consul.Scheme,
-			Tags:                       env.Config.Consul.Tags,
-			HealthCheckIntervalSeconds: env.Config.Consul.HealthCheckIntervalSeconds,
+			Address:             env.Config.Consul.Address,
+			Scheme:              env.Config.Consul.Scheme,
+			Tags:                env.Config.Consul.Tags,
+			HealthCheckInterval: env.Config.Consul.HealthCheckInterval,
 		})
 		if err != nil {
 			return nil, err
