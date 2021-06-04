@@ -72,9 +72,13 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	env.Shutdown = func() {}
 
 	var err error
-
-	//nolint:lostcancel
-	ctx, cancelFunc := context.WithCancel(context.Background())
+	ctx, cancelFunc := context.WithCancel(context.Background()) //nolint:lostcancel
+	defer func() {
+		if err := recover(); err != nil {
+			cancelFunc()
+			panic(err)
+		}
+	}()
 
 	if env.Logger == nil {
 		env.Logger = log.NewDefaultLogger()

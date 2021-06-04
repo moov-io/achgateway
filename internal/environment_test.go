@@ -26,6 +26,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/moov-io/achgateway/internal/dbtest"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/stime"
@@ -38,10 +39,14 @@ import (
 func TestEnvironment_Startup(t *testing.T) {
 	a := assert.New(t)
 
+	conf := dbtest.CreateTestDatabase(t, dbtest.LocalDatabaseConfig())
+	db := dbtest.LoadDatabase(t, conf)
+	require.NoError(t, db.Ping())
+
 	env := &Environment{
 		Logger: log.NewDefaultLogger(),
 		Config: &service.Config{
-			Database: LocalDatabaseConfig(),
+			Database: conf,
 			Inbound: service.Inbound{
 				InMem: &service.InMemory{
 					URL: "mem://achgateway",
@@ -80,7 +85,7 @@ func NewTestEnvironment(t *testing.T, router *mux.Router) *TestEnvironment {
 	}
 	testEnv.Config = cfg
 
-	cfg.Database = CreateTestDatabase(t, LocalDatabaseConfig())
+	cfg.Database = dbtest.CreateTestDatabase(t, dbtest.LocalDatabaseConfig())
 
 	_, err = NewEnvironment(&testEnv.Environment)
 	if err != nil {
