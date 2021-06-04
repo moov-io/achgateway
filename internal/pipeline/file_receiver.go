@@ -60,10 +60,14 @@ func (fr *FileReceiver) Start(ctx context.Context) {
 	for {
 		select {
 		case err := <-fr.handleMessage(ctx, fr.httpFiles):
-			fr.logger.LogErrorf("error handling http file: %v", err)
+			if err != nil {
+				fr.logger.LogErrorf("error handling http file: %v", err)
+			}
 
 		case err := <-fr.handleMessage(ctx, fr.streamFiles):
-			fr.logger.LogErrorf("error handling stream file: %v", err)
+			if err != nil {
+				fr.logger.LogErrorf("error handling stream file: %v", err)
+			}
 
 		case <-ctx.Done():
 			fr.Shutdown()
