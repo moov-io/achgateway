@@ -1,5 +1,3 @@
-// generated-from:9d2e1a7aff438bb75e877b034d21b525c8c10efee44288edf6ce935500a9fe76 DO NOT REMOVE, DO UPDATE
-
 // Licensed to The Moov Authors under one or more contributor
 // license agreements. See the NOTICE file distributed with
 // this work for additional information regarding copyright
@@ -17,33 +15,33 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package main
+package shards
 
 import (
-	"os"
+	"testing"
 
-	"github.com/moov-io/achgateway"
-	"github.com/moov-io/achgateway/internal"
-	"github.com/moov-io/achgateway/internal/service"
-	"github.com/moov-io/base/log"
+	"github.com/moov-io/achgateway/internal/dbtest"
+	"github.com/moov-io/base"
+
+	"github.com/stretchr/testify/require"
 )
 
-func main() {
-	env := &internal.Environment{
-		Logger: log.NewDefaultLogger().Set("app", log.String("achgateway")).Set("version", log.String(achgateway.Version)),
-	}
+func TestRepository(t *testing.T) {
+	conf := dbtest.CreateTestDatabase(t, dbtest.LocalDatabaseConfig())
+	db := dbtest.LoadDatabase(t, conf)
+	require.NoError(t, db.Ping())
 
-	env, err := internal.NewEnvironment(env)
-	if err != nil {
-		env.Logger.Fatal().LogErrorf("Error loading up environment: %v", err)
-		os.Exit(1)
-	}
-	defer env.Shutdown()
+	shardKey := base.ID()
+	shardName := "ftp-live"
 
-	termListener := service.NewTerminationListener()
+	repo := NewRepository(db)
+	rr, ok := repo.(*sqlRepository)
+	require.True(t, ok)
 
-	stopServers := env.RunServers(termListener)
-	defer stopServers()
+	err := rr.write(shardKey, shardName)
+	require.NoError(t, err)
 
-	service.AwaitTermination(env.Logger, termListener)
+	found, err := repo.Lookup(shardKey)
+	require.NoError(t, err)
+	require.Equal(t, shardName, found)
 }

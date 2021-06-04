@@ -29,7 +29,7 @@ import (
 )
 
 // FileReceiver accepts an ACH file from a number of pubsub Subscriptions and
-// finds the appropiate aggregator for the shardKey.
+// finds the appropriate aggregator for the shardKey.
 type FileReceiver struct {
 	logger log.Logger
 
@@ -75,11 +75,15 @@ func (fr *FileReceiver) Start(ctx context.Context) {
 func (fr *FileReceiver) Shutdown() {
 	fr.logger.Log("shutting down xfer aggregation")
 
-	if err := fr.httpFiles.Shutdown(context.Background()); err != nil {
-		fr.logger.LogErrorf("problem shutting down http file subscription: %v", err)
+	if fr.httpFiles != nil {
+		if err := fr.httpFiles.Shutdown(context.Background()); err != nil {
+			fr.logger.LogErrorf("problem shutting down http file subscription: %v", err)
+		}
 	}
-	if err := fr.streamFiles.Shutdown(context.Background()); err != nil {
-		fr.logger.LogErrorf("problem shutting down stream file subscription: %v", err)
+	if fr.streamFiles != nil {
+		if err := fr.streamFiles.Shutdown(context.Background()); err != nil {
+			fr.logger.LogErrorf("problem shutting down stream file subscription: %v", err)
+		}
 	}
 }
 

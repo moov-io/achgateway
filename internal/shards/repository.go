@@ -19,7 +19,6 @@ package shards
 
 import (
 	"database/sql"
-	"fmt"
 )
 
 type Repository interface {
@@ -35,8 +34,6 @@ type sqlRepository struct {
 }
 
 func (r *sqlRepository) Lookup(shardKey string) (string, error) {
-	fmt.Printf("repo.shardKey=%s\n", shardKey)
-
 	query := `SELECT shard_name FROM shard_mappings
 WHERE shard_key = ?
 LIMIT 1;`
@@ -52,4 +49,14 @@ LIMIT 1;`
 		return "", err
 	}
 	return shardName, nil
+}
+
+func (r *sqlRepository) write(shardKey, shardName string) error {
+	query := `INSERT INTO shard_mappings (shard_key, shard_name) VALUES (?, ?);`
+	stmt, err := r.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(shardKey, shardName)
+	return err
 }

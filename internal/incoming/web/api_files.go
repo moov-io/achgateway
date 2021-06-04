@@ -95,7 +95,7 @@ func publishFile(pub *pubsub.Topic, shardKey, fileID string, file *ach.File) err
 		return fmt.Errorf("fileID=%s unable to encode ACH file: %v", fileID, err)
 	}
 
-	meta := make(map[string]string, 0)
+	meta := make(map[string]string)
 	meta["fileID"] = fileID
 	meta["shardKey"] = shardKey
 

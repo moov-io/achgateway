@@ -35,7 +35,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_Environment_Startup(t *testing.T) {
+func TestEnvironment_Startup(t *testing.T) {
 	a := assert.New(t)
 
 	env := &Environment{
@@ -90,6 +90,12 @@ func NewTestEnvironment(t *testing.T, router *mux.Router) *TestEnvironment {
 	t.Cleanup(testEnv.Shutdown)
 
 	return testEnv
+}
+
+func TestEnvironmentTesting(t *testing.T) {
+	r := mux.NewRouter()
+	env := NewTestEnvironment(t, r)
+	t.Cleanup(env.Shutdown)
 }
 
 func (s TestEnvironment) MakeRequest(method string, target string, body interface{}) *http.Request {
