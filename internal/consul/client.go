@@ -38,7 +38,7 @@ type Config struct {
 }
 
 type Client struct {
-	Cfg          *Config
+	cfg          *Config
 	ConsulClient *consul.Client
 	NodeId       string
 }
@@ -75,7 +75,7 @@ func NewConsulClient(logger log.Logger, config *Config) (*Client, error) {
 	}
 
 	return &Client{
-		Cfg:          config,
+		cfg:          config,
 		ConsulClient: consulClient,
 		NodeId:       hostName,
 	}, nil

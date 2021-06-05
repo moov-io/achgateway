@@ -8,8 +8,7 @@ ACHGateway:
     Address: "127.0.0.1:8500"
     Scheme: "http"
     SessionPath: "achgateway/test/"
-    Tags:
-      - test1
+    Tags: []
     HealthCheckInterval: "10s"
   Shards:
     - name: "testing"
@@ -33,6 +32,8 @@ ACHGateway:
           outbound: "/outbound/"
           reconciliation: "/reconciliation/"
           return: "/returned/"
+    merging:
+      directory: "storage-1"
   Database:
     DatabaseName: "achgateway"
     MySQL:

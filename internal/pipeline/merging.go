@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/moov-io/ach"
+	"github.com/moov-io/achgateway/internal/consul"
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/upload"
@@ -51,7 +52,7 @@ type XferMerging interface {
 	WithEachMerged(f func(upload.Agent, *ach.File) error) (*processedTransfers, error)
 }
 
-func NewMerging(logger log.Logger, shard service.Shard, cfg service.UploadAgents) (XferMerging, error) {
+func NewMerging(logger log.Logger, consul *consul.Wrapper, shard service.Shard, cfg service.UploadAgents) (XferMerging, error) {
 	dir := filepath.Join("storage", "mergable") // default directory
 	if cfg.Merging.Directory != "" {
 		dir = filepath.Join(cfg.Merging.Directory, "mergable")
@@ -66,6 +67,7 @@ func NewMerging(logger log.Logger, shard service.Shard, cfg service.UploadAgents
 		logger:  logger,
 		cfg:     cfg,
 		shard:   shard,
+		consul:  consul,
 	}, nil
 }
 
@@ -74,6 +76,7 @@ type filesystemMerging struct {
 	baseDir string
 	cfg     service.UploadAgents
 	shard   service.Shard
+	consul  *consul.Wrapper
 }
 
 func (m *filesystemMerging) HandleXfer(xfer incoming.ACHFile) error {
@@ -198,7 +201,7 @@ func (m *filesystemMerging) WithEachMerged(f func(upload.Agent, *ach.File) error
 			logger.Logf("found %T agent", agent)
 
 			// Hand off the directory to be merged and uploaded
-			proc, err := m.withEachOrganizationDirectory(filepath.Join(dir, dirs[i].Name()), agent, f)
+			proc, err := m.withEachOrganizationDirectory(filepath.Join(dir, dirs[i].Name()), shardKey, agent, f)
 			if err != nil {
 				return processed, fmt.Errorf("each tenant (%s): %v", filepath.Base(dirs[i].Name()), err)
 			}
@@ -213,7 +216,7 @@ func (m *filesystemMerging) WithEachMerged(f func(upload.Agent, *ach.File) error
 
 }
 
-func (m *filesystemMerging) withEachOrganizationDirectory(dir string, agent upload.Agent, f func(upload.Agent, *ach.File) error) (*processedTransfers, error) {
+func (m *filesystemMerging) withEachOrganizationDirectory(dir string, shardKey string, agent upload.Agent, f func(upload.Agent, *ach.File) error) (*processedTransfers, error) {
 	path := filepath.Join(dir, "*.ach")
 	matches, err := getNonCanceledMatches(path)
 	if err != nil {
@@ -273,11 +276,15 @@ func (m *filesystemMerging) withEachOrganizationDirectory(dir string, agent uplo
 		if err := saveMergedFile(dir, files[i]); err != nil {
 			el.Add(fmt.Errorf("problem writing merged file: %v", err))
 		}
-		// Perform the file upload
-		if err := f(agent, files[i]); err != nil {
-			el.Add(fmt.Errorf("problem from callback: %v", err))
+		// Perform the file upload if we are the shard leader
+		if isLeader, err := m.consul.Acquire(shardKey); isLeader && err == nil {
+			if err := f(agent, files[i]); err != nil {
+				el.Add(fmt.Errorf("problem from callback: %v", err))
+			} else {
+				successfulRemoteWrites++
+			}
 		} else {
-			successfulRemoteWrites++
+			logger.Logf("skipping file upload for shardKey=%s", shardKey)
 		}
 	}
 

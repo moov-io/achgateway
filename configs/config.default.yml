@@ -15,8 +15,6 @@ ACHGateway:
   Consul:
     Address: "127.0.0.1:8500"
     Scheme: "http"
-    Tags:
-      - "ach"
-      - "achgateway"
+    Tags: []
     SessionPath: "achgateway/shards/"
     HealthCheckInterval: "10s"

@@ -50,8 +50,7 @@ type Environment struct {
 	TimeService    stime.TimeService
 	DB             *sql.DB
 	InternalClient *http.Client
-	ConsulClient   *consul.Client
-	ConsulSessions map[string]*consul.Session
+	Consul         *consul.Wrapper
 
 	PublicRouter *mux.Router
 	AdminServer  *admin.Server
@@ -140,6 +139,22 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		web.NewFilesController(env.Config.Logger, httpFiles).AppendRoutes(env.PublicRouter)
 	}
 
+	// Setup our Consul client (if configured)
+	if env.Consul == nil && env.Config.Consul != nil {
+		consulClient, err := consul.NewConsulClient(env.Logger, env.Config.Consul)
+		if err != nil {
+			return nil, err
+		}
+		env.Consul = consul.NewWrapper(env.Logger, consulClient)
+		env.Logger.Info().Logf("created consul client for %s", env.Config.Consul.Address)
+
+		prev := env.Shutdown
+		env.Shutdown = func() {
+			prev()
+			env.Consul.Shutdown()
+		}
+	}
+
 	// file pipeline
 	httpSub, err := stream.Subscription(env.Logger, inmemConfig)
 	if err != nil {
@@ -151,33 +166,11 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	}
 
 	shardRepository := shards.NewRepository(env.DB)
-	fileReceiver, err := pipeline.Start(ctx, env.Logger, env.Config, env.AdminServer, shardRepository, httpSub, streamSub)
+	fileReceiver, err := pipeline.Start(ctx, env.Logger, env.Config, env.AdminServer, env.Consul, shardRepository, httpSub, streamSub)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create file pipeline: %v", err)
 	}
 	env.FileReceiver = fileReceiver
-
-	if env.ConsulClient == nil && env.Config.Consul != nil {
-		consulClient, err := consul.NewConsulClient(env.Logger, &consul.Config{
-			Address:             env.Config.Consul.Address,
-			Scheme:              env.Config.Consul.Scheme,
-			Tags:                env.Config.Consul.Tags,
-			HealthCheckInterval: env.Config.Consul.HealthCheckInterval,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		consulSession, err := consul.NewSession(env.Logger, *consulClient, consulClient.NodeId)
-		if err != nil {
-			return nil, err
-		}
-		env.ConsulClient = consulClient
-		if env.ConsulSessions == nil {
-			env.ConsulSessions = map[string]*consul.Session{}
-		}
-		env.ConsulSessions[consulClient.NodeId] = consulSession
-	}
 
 	return env, nil
 }

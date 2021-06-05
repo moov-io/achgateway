@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/moov-io/achgateway/internal/consul"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/shards"
 	"github.com/moov-io/base/admin"
@@ -34,13 +35,14 @@ func Start(
 	logger log.Logger,
 	cfg *service.Config,
 	adminServer *admin.Server,
+	consul *consul.Wrapper,
 	shardRepository shards.Repository,
 	httpFiles, streamFiles *pubsub.Subscription) (*FileReceiver, error) {
 
 	// register each shard's aggregator
 	shardAggregators := make(map[string]*aggregator)
 	for i := range cfg.Shards {
-		xfagg, err := newAggregator(logger, cfg.Shards[i], cfg.Upload)
+		xfagg, err := newAggregator(logger, consul, cfg.Shards[i], cfg.Upload)
 		if err != nil {
 			return nil, fmt.Errorf("problem starting shard=%s: %v", cfg.Shards[i].Name, err)
 		}
