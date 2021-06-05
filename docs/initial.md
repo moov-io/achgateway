@@ -46,7 +46,7 @@ could accept other input forms (HTTP POST, other messages, etc).
 
 ```go
 type ACHFile struct {
-    ID       string
+    FileID   string
     ShardKey string
     File     *ach.File
 }
@@ -54,7 +54,7 @@ type ACHFile struct {
 
 ```go
 type CancelACHFile struct {
-    ID       string
+    FileID   string
     ShardKey string
 }
 ```
@@ -98,7 +98,7 @@ inbound:
     group: <string>
 
 shards:
-  - id: "production"
+  - name: "production"
     upload:
       agent: "sftp:prod"
     cutoffs:
@@ -117,7 +117,7 @@ shards:
     auditTrail:
       id: "audit:prod"
 
-  - id: "testing"
+  - name: "testing"
     upload:
       agent: "ftp:test"
     cutoffs:
@@ -130,7 +130,7 @@ shards:
     auditTrail:
       id: "audit:test"
 
-  - id: "micro-deposits"
+  - name: "micro-deposits"
     upload:
       agent: "sftp:prod"
     cutoffs:

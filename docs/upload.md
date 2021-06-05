@@ -32,7 +32,7 @@ The following messages are produced out to the Queue.
 
 ```go
 type ACHFile struct {
-	ID       string    `json:"id"`
+	FileID   string    `json:"fileID"`
 	ShardKey string    `json:"shardKey"`
 	File     *ach.File `json:"file"`
 }
@@ -40,7 +40,7 @@ type ACHFile struct {
 
 ```go
 type CancelACHFile struct {
-	ID       string `json:"id"`
+	FileID   string `json:"id"`
 	ShardKey string `json:"shardKey"`
 }
 ```

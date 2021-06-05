@@ -1,5 +1,3 @@
-// generated-from:0fb19a540a93e15a07bd0e3f1f053a620dc7d42baeef277f131e9c64d13d13d7 DO NOT REMOVE, DO UPDATE
-
 // Licensed to The Moov Authors under one or more contributor
 // license agreements. See the NOTICE file distributed with
 // this work for additional information regarding copyright
@@ -17,33 +15,33 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package test
+package shards
 
 import (
-	"bytes"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
+	"testing"
+
+	"github.com/moov-io/achgateway/internal/dbtest"
+	"github.com/moov-io/base"
+
+	"github.com/stretchr/testify/require"
 )
 
-func (s TestEnvironment) MakeRequest(method string, target string, body interface{}) *http.Request {
-	jsonBody := bytes.Buffer{}
-	if body != nil {
-		json.NewEncoder(&jsonBody).Encode(body)
-	}
+func TestRepository(t *testing.T) {
+	conf := dbtest.CreateTestDatabase(t, dbtest.LocalDatabaseConfig())
+	db := dbtest.LoadDatabase(t, conf)
+	require.NoError(t, db.Ping())
 
-	return httptest.NewRequest(method, target, &jsonBody)
-}
+	shardKey := base.ID()
+	shardName := "ftp-live"
 
-func (s TestEnvironment) MakeCall(req *http.Request, body interface{}) *http.Response {
-	rec := httptest.NewRecorder()
-	s.PublicRouter.ServeHTTP(rec, req)
-	res := rec.Result()
-	defer res.Body.Close()
+	repo := NewRepository(db)
+	rr, ok := repo.(*sqlRepository)
+	require.True(t, ok)
 
-	if body != nil {
-		json.NewDecoder(res.Body).Decode(&body)
-	}
+	err := rr.write(shardKey, shardName)
+	require.NoError(t, err)
 
-	return res
+	found, err := repo.Lookup(shardKey)
+	require.NoError(t, err)
+	require.Equal(t, shardName, found)
 }

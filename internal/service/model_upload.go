@@ -28,6 +28,7 @@ import (
 
 type UploadAgents struct {
 	Agents         []UploadAgent
+	Merging        Merging
 	Retry          *UploadRetry
 	DefaultAgentID string
 }
@@ -166,6 +167,13 @@ type UploadNotifiers struct {
 	PagerDuty []string
 	Slack     []string
 }
+
+type Merging struct {
+	Directory      string
+	FlattenBatches *FlattenBatches
+}
+
+type FlattenBatches struct{}
 
 type UploadRetry struct {
 	Interval   time.Duration

@@ -24,7 +24,7 @@ type Inbound struct {
 }
 
 func (cfg Inbound) Validate() error {
-	return nil // TODO(adam):
+	return nil
 }
 
 type HTTPConfig struct {

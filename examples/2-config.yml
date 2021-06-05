@@ -1,0 +1,42 @@
+ACHGateway:
+  Admin:
+    BindAddress: ":9999"
+  Inbound:
+    HTTP:
+      BindAddress: ":8888"
+  Consul:
+    Address: "127.0.0.1:8500"
+    Scheme: "http"
+    SessionPath: "achgateway/test/"
+    Tags: []
+    HealthCheckInterval: "10s"
+  Shards:
+    - name: "testing"
+      cutoffs:
+        timezone: "America/Los_Angeles"
+        windows:
+          - "10:30"
+          - "14:00"
+      uploadAgent: "local-ftp"
+      output:
+        format: "nacha"
+  Upload:
+    agents:
+      - id: "local-ftp"
+        ftp:
+          hostname: "127.0.1:2121"
+          username: "admin"
+          password: "123456"
+        paths:
+          inbound: "/returned/"
+          outbound: "/outbound/"
+          reconciliation: "/reconciliation/"
+          return: "/returned/"
+    merging:
+      directory: "storage-2"
+  Database:
+    DatabaseName: "achgateway"
+    MySQL:
+      Address: "tcp(localhost:3306)"
+      User: "achgateway"
+      Password: "achgateway"

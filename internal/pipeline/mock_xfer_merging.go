@@ -15,19 +15,35 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package incoming
+package pipeline
 
 import (
 	"github.com/moov-io/ach"
+	"github.com/moov-io/achgateway/internal/incoming"
+	"github.com/moov-io/achgateway/internal/upload"
 )
 
-type ACHFile struct {
-	FileID   string    `json:"id"`
-	ShardKey string    `json:"shardKey"`
-	File     *ach.File `json:"file"`
+type MockXferMerging struct {
+	LatestFile   *incoming.ACHFile
+	LatestCancel *incoming.CancelACHFile
+	processed    *processedTransfers
+
+	Err error
 }
 
-type CancelACHFile struct {
-	FileID   string `json:"id"`
-	ShardKey string `json:"shardKey"`
+func (merge *MockXferMerging) HandleXfer(xfer incoming.ACHFile) error {
+	merge.LatestFile = &xfer
+	return merge.Err
+}
+
+func (merge *MockXferMerging) HandleCancel(cancel incoming.CancelACHFile) error {
+	merge.LatestCancel = &cancel
+	return merge.Err
+}
+
+func (merge *MockXferMerging) WithEachMerged(f func(upload.Agent, *ach.File) error) (*processedTransfers, error) {
+	if merge.Err != nil {
+		return nil, merge.Err
+	}
+	return merge.processed, nil
 }

@@ -8,19 +8,28 @@ import (
 	"context"
 	"testing"
 
+	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/base/log"
+
 	"github.com/stretchr/testify/require"
 	"gocloud.dev/pubsub"
 )
 
 func TestStream(t *testing.T) {
-	topicURL := "mem://moov"
 	ctx := context.Background()
+	cfg := &service.Config{
+		Inbound: service.Inbound{
+			InMem: &service.InMemory{
+				URL: "mem://moov",
+			},
+		},
+	}
 
-	topic, err := Topic(ctx, topicURL)
+	topic, err := Topic(log.NewNopLogger(), cfg)
 	require.NoError(t, err)
 	defer topic.Shutdown(ctx)
 
-	sub, err := Subscription(ctx, topicURL)
+	sub, err := Subscription(log.NewNopLogger(), cfg)
 	require.NoError(t, err)
 	defer sub.Shutdown(ctx)
 

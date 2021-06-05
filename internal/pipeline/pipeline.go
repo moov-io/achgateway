@@ -1,5 +1,3 @@
-// generated-from:f3f35f4002746aa851a730b299373b812f8173fc53182b8fb17f63e8fd427fdd DO NOT REMOVE, DO UPDATE
-
 // Licensed to The Moov Authors under one or more contributor
 // license agreements. See the NOTICE file distributed with
 // this work for additional information regarding copyright
@@ -17,38 +15,46 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package service_test
+package pipeline
 
 import (
-	"testing"
+	"context"
+	"fmt"
 
 	"github.com/moov-io/achgateway/internal/consul"
 	"github.com/moov-io/achgateway/internal/service"
-	"github.com/moov-io/achgateway/internal/test"
+	"github.com/moov-io/achgateway/internal/shards"
+	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/log"
 
-	"github.com/stretchr/testify/assert"
+	"gocloud.dev/pubsub"
 )
 
-func Test_Environment_Startup(t *testing.T) {
-	a := assert.New(t)
+func Start(
+	ctx context.Context,
+	logger log.Logger,
+	cfg *service.Config,
+	adminServer *admin.Server,
+	consul *consul.Wrapper,
+	shardRepository shards.Repository,
+	httpFiles, streamFiles *pubsub.Subscription) (*FileReceiver, error) {
 
-	env := &service.Environment{
-		Logger: log.NewDefaultLogger(),
-		Config: &service.Config{
-			Database: test.TestDatabaseConfig(),
-			Consul: &consul.Config{
-				Address:                    "127.0.0.1:8500",
-				Scheme:                     "http",
-				SessionPath:                "achgateway/test/",
-				Tags:                       []string{"test1"},
-				HealthCheckIntervalSeconds: 10,
-			},
-		},
+	// register each shard's aggregator
+	shardAggregators := make(map[string]*aggregator)
+	for i := range cfg.Shards {
+		xfagg, err := newAggregator(logger, consul, cfg.Shards[i], cfg.Upload)
+		if err != nil {
+			return nil, fmt.Errorf("problem starting shard=%s: %v", cfg.Shards[i].Name, err)
+		}
+
+		go xfagg.Start(ctx)
+
+		shardAggregators[cfg.Shards[i].Name] = xfagg
 	}
 
-	env, err := service.NewEnvironment(env)
-	a.Nil(err)
+	// register our fileReceiver and start it
+	receiver := newFileReceiver(logger, shardRepository, shardAggregators, httpFiles, streamFiles)
+	go receiver.Start(ctx)
 
-	t.Cleanup(env.Shutdown)
+	return receiver, nil
 }

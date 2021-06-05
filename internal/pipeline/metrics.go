@@ -15,9 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package incoming
+package pipeline
 
-// POST /shards/:key/files/:fileID
-// Body: Nacha format, Our JSON format
+import (
+	"github.com/go-kit/kit/metrics/prometheus"
+	stdprometheus "github.com/prometheus/client_golang/prometheus"
+)
 
-// Publish to a pubsub.Subscription (inmem)
+var (
+	uploadedFilesCounter = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Name: "ach_uploaded_files",
+		Help: "Counter of ACH files uploaded through the pipeline to the ODFI",
+	}, nil)
+	uploadFilesErrors = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Name: "ach_upload_errors",
+		Help: "Counter of errors encountered when attempting ACH files upload",
+	}, nil)
+)
+
+func init() {
+	uploadedFilesCounter.With().Add(0)
+	uploadFilesErrors.With().Add(0)
+}

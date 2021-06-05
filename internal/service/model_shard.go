@@ -46,18 +46,39 @@ func (cfg Shards) Validate() error {
 }
 
 type Shard struct {
-	ID                       string
+	Name                     string
 	Cutoffs                  Cutoffs
-	PreUpload                PreUpload
-	Upload                   UploadAgents
+	PreUpload                *PreUpload
+	UploadAgent              string
 	OutboundFilenameTemplate string
-	Output                   Output
-	Notifications            Notifications
-	Audit                    AuditTrail
+	Output                   *Output
+	Notifications            *Notifications
+	Audit                    *AuditTrail
 }
 
 func (cfg Shard) Validate() error {
-	return nil // TODO(adam):
+	if cfg.Name == "" {
+		return errors.New("missing name")
+	}
+	if err := cfg.Cutoffs.Validate(); err != nil {
+		return fmt.Errorf("cutoffs: %v", err)
+	}
+	if err := cfg.PreUpload.Validate(); err != nil {
+		return fmt.Errorf("preupload: %v", err)
+	}
+	if cfg.UploadAgent == "" {
+		return errors.New("missing upload agent")
+	}
+	if err := cfg.Output.Validate(); err != nil {
+		return fmt.Errorf("output: %v", err)
+	}
+	if err := cfg.Notifications.Validate(); err != nil {
+		return fmt.Errorf("notifications: %v", err)
+	}
+	if err := cfg.Audit.Validate(); err != nil {
+		return fmt.Errorf("audit: %v", err)
+	}
+	return nil
 }
 
 type Cutoffs struct {
@@ -78,7 +99,7 @@ func (cfg Cutoffs) Validate() error {
 		return fmt.Errorf("unknown Timezone=%q", cfg.Timezone)
 	}
 	if len(cfg.Windows) == 0 {
-		return errors.New("no cutoff windows")
+		return errors.New("no windows")
 	}
 	return nil
 }

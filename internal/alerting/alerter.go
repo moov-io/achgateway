@@ -44,7 +44,7 @@ func NewPagerDutyAlerter(cfg *service.PagerDutyAlerting) (*PagerDuty, error) {
 }
 
 func (pd *PagerDuty) AlertError(e error) error {
-	details := map[string]string{}
+	details := make(map[string]string)
 
 	hostName, err := os.Hostname()
 	if err != nil {

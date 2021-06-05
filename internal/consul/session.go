@@ -21,6 +21,7 @@ package consul
 
 import (
 	"fmt"
+
 	consul "github.com/hashicorp/consul/api"
 
 	"github.com/moov-io/base/log"
@@ -31,17 +32,25 @@ type Session struct {
 	Name string
 }
 
-func NewSession(logger log.Logger, consulClient Client, shardName string) (*Session, error) {
-	sessionName := consulClient.Cfg.SessionPath + shardName
+func NewSession(logger log.Logger, consulClient *Client, shardName string) (*Session, error) {
+	ttl := fmt.Sprintf("%.2fs", consulClient.cfg.HealthCheckInterval.Seconds())
+
+	sessionName := consulClient.cfg.SessionPath + shardName
 	sessionID, _, err := consulClient.ConsulClient.Session().Create(&consul.SessionEntry{
 		Name:     sessionName,
 		Behavior: "delete",
-		TTL:      fmt.Sprintf("%ds", consulClient.Cfg.HealthCheckIntervalSeconds),
+		TTL:      ttl,
 	}, nil)
 
 	if err != nil {
 		return nil, logger.Fatal().LogErrorf("Error creating Consul Session for %s: %v", sessionName, err).Err()
 	}
+
+	// make sure we renew the session
+	go func() {
+		doneChan := make(chan struct{})
+		consulClient.ConsulClient.Session().RenewPeriodic(ttl, sessionID, nil, doneChan)
+	}()
 
 	return &Session{
 		ID:   sessionID,

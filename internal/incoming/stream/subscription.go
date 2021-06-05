@@ -15,14 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package incoming
+package stream
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
 
@@ -31,32 +29,24 @@ import (
 	"gocloud.dev/pubsub/kafkapubsub"
 )
 
-func NewSubscription(cfg *service.Config) (*pubsub.Subscription, error) {
-	return createStreamSubscription(cfg.Logger, cfg.Inbound)
-}
-
-func createStreamSubscription(logger log.Logger, cfg service.Inbound) (*pubsub.Subscription, error) {
-	if cfg.InMem != nil {
-		sub, err := createInmemSubscription(cfg.InMem.URL)
+func Subscription(logger log.Logger, cfg *service.Config) (*pubsub.Subscription, error) {
+	if cfg.Inbound.InMem != nil {
+		sub, err := pubsub.OpenSubscription(context.Background(), cfg.Inbound.InMem.URL)
 		if err != nil {
 			return nil, err
 		}
 		logger.Info().Logf("setup %T inmem subscription", sub)
 		return sub, nil
 	}
-	if cfg.Kafka != nil {
-		sub, err := createKafkaSubscription(logger, cfg.Kafka)
+	if cfg.Inbound.Kafka != nil {
+		sub, err := createKafkaSubscription(logger, cfg.Inbound.Kafka)
 		if err != nil {
 			return nil, err
 		}
 		logger.Info().Logf("setup %T kafka subscription", sub)
 		return sub, nil
 	}
-	return nil, fmt.Errorf("unknown %#v", cfg)
-}
-
-func createInmemSubscription(url string) (*pubsub.Subscription, error) {
-	return stream.Subscription(context.TODO(), url)
+	return nil, nil
 }
 
 func createKafkaSubscription(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Subscription, error) {
@@ -85,7 +75,7 @@ func createKafkaSubscription(logger log.Logger, cfg *service.KafkaConfig) (*pubs
 		Set("topic", log.String(cfg.Topic)).
 		Log("setting up kafka subscription")
 
-	return stream.KafkaSubscription(cfg.Brokers, config, cfg.Group, []string{cfg.Topic}, &kafkapubsub.SubscriptionOptions{
+	return kafkapubsub.OpenSubscription(cfg.Brokers, config, cfg.Group, []string{cfg.Topic}, &kafkapubsub.SubscriptionOptions{
 		WaitForJoin: 10 * time.Second,
 	})
 }

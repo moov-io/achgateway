@@ -17,7 +17,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package test
+package dbtest
 
 import (
 	"context"
@@ -31,7 +31,7 @@ import (
 	"github.com/moov-io/base/log"
 )
 
-func TestDatabaseConfig() database.DatabaseConfig {
+func LocalDatabaseConfig() database.DatabaseConfig {
 	return database.DatabaseConfig{
 		DatabaseName: "achgateway",
 		MySQL: &database.MySQLConfig{

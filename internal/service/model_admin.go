@@ -22,5 +22,5 @@ type Admin struct {
 }
 
 func (cfg Admin) Validate() error {
-	return nil // TODO(adam):
+	return nil
 }
