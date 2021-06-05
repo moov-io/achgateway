@@ -51,6 +51,7 @@ teardown:
 
 docker: update
 	docker build --pull --build-arg VERSION=${VERSION} -t moov/achgateway:${VERSION} -f Dockerfile .
+	docker tag moov/achgateway:${VERSION} moov/achgateway:latest
 
 docker-push:
 	docker push moov/achgateway:${VERSION}
