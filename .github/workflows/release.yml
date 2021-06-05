@@ -103,8 +103,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-        asset_path: ./bin/ach-conductor-linux-amd64
-        asset_name: ach-conductor-linux-amd64
+        asset_path: ./bin/achgateway-linux-amd64
+        asset_name: achgateway-linux-amd64
         asset_content_type: application/octet-stream
 
     - name: Upload macOS Binary
@@ -114,8 +114,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-        asset_path: ./bin/ach-conductor-darwin-amd64
-        asset_name: ach-conductor-darwin-amd64
+        asset_path: ./bin/achgateway-darwin-amd64
+        asset_name: achgateway-darwin-amd64
         asset_content_type: application/octet-stream
 
     - name: Upload Windows Binary
@@ -125,8 +125,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-        asset_path: ./bin/ach-conductor.exe
-        asset_name: ach-conductor.exe
+        asset_path: ./bin/achgateway.exe
+        asset_name: achgateway.exe
         asset_content_type: application/octet-stream
 
   docker:
