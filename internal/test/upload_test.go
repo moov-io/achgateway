@@ -31,6 +31,7 @@ import (
 	"strconv"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gorilla/mux"
 	"github.com/moov-io/ach"
@@ -44,7 +45,6 @@ import (
 	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/database"
 	"github.com/moov-io/base/log"
-	"github.com/moov-io/paygate/pkg/achx"
 	"github.com/stretchr/testify/require"
 	"gocloud.dev/pubsub"
 )
@@ -199,6 +199,14 @@ func randomACHFile(t *testing.T) *ach.File {
 	return randomTraceNumbers(t, file)
 }
 
+func traceNumber(routingNumber string) string {
+	v := fmt.Sprintf("%s%d", routingNumber, rand.Int63n(1e15))
+	if utf8.RuneCountInString(v) > 15 {
+		return v[:15]
+	}
+	return v
+}
+
 func randomTraceNumbers(t *testing.T, file *ach.File) *ach.File {
 	for i := range file.Batches {
 		b, err := ach.NewBatch(file.Batches[i].GetHeader())
@@ -207,7 +215,7 @@ func randomTraceNumbers(t *testing.T, file *ach.File) *ach.File {
 		entries := file.Batches[i].GetEntries()
 		for i := range entries {
 			if i == 0 {
-				entries[i].TraceNumber = achx.TraceNumber(entries[i].TraceNumber[:8])
+				entries[i].TraceNumber = traceNumber(entries[i].TraceNumber[:8])
 				b.AddEntry(entries[i])
 			} else {
 				n, _ := strconv.Atoi(entries[0].TraceNumber)
