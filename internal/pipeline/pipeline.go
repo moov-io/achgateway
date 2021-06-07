@@ -24,7 +24,6 @@ import (
 	"github.com/moov-io/achgateway/internal/consul"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/shards"
-	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/log"
 
 	"gocloud.dev/pubsub"
@@ -34,7 +33,6 @@ func Start(
 	ctx context.Context,
 	logger log.Logger,
 	cfg *service.Config,
-	adminServer *admin.Server,
 	consul *consul.Wrapper,
 	shardRepository shards.Repository,
 	httpFiles, streamFiles *pubsub.Subscription) (*FileReceiver, error) {

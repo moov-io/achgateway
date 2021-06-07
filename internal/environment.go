@@ -166,7 +166,7 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	}
 
 	shardRepository := shards.NewRepository(env.DB)
-	fileReceiver, err := pipeline.Start(ctx, env.Logger, env.Config, env.AdminServer, env.Consul, shardRepository, httpSub, streamSub)
+	fileReceiver, err := pipeline.Start(ctx, env.Logger, env.Config, env.Consul, shardRepository, httpSub, streamSub)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create file pipeline: %v", err)
 	}
