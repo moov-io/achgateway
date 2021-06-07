@@ -26,3 +26,4 @@ pkged.go
 /storage/
 /storage-*/
 /testdata/ftp-server/outbound/*.ach
+/internal/test/storage/

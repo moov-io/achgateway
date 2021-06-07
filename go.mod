@@ -28,8 +28,8 @@ require (
 	github.com/markbates/pkger v0.17.1
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
-	github.com/moov-io/ach v1.8.1
-	github.com/moov-io/base v0.18.3
+	github.com/moov-io/ach v1.9.1
+	github.com/moov-io/base v0.19.0
 	github.com/opencontainers/runc v1.0.0-rc93 // indirect
 	github.com/ory/dockertest/v3 v3.6.5
 	github.com/ory/mail/v3 v3.0.0
