@@ -60,12 +60,16 @@ func (fr *FileReceiver) Start(ctx context.Context) {
 	for {
 		select {
 		case err := <-fr.handleMessage(ctx, fr.httpFiles):
+			incomingHTTPFiles.With().Add(1)
 			if err != nil {
+				httpFileProcessingErrors.With().Add(1)
 				fr.logger.LogErrorf("error handling http file: %v", err)
 			}
 
 		case err := <-fr.handleMessage(ctx, fr.streamFiles):
+			incomingStreamFiles.With().Add(1)
 			if err != nil {
+				streamFileProcessingErrors.With().Add(1)
 				fr.logger.LogErrorf("error handling stream file: %v", err)
 			}
 
@@ -119,6 +123,7 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 
 			agg, exists := fr.shardAggregators[shardName]
 			if !exists {
+				filesMissingShardAggregators.With().Add(1)
 				fr.logger.Error().LogErrorf("missing shardAggregator for shardKey=%s shardName=%s", file.ShardKey, shardName)
 				return
 			}

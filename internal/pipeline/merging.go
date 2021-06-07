@@ -213,7 +213,6 @@ func (m *filesystemMerging) WithEachMerged(f func(upload.Agent, *ach.File) error
 		}
 	}
 	return processed, nil
-
 }
 
 func (m *filesystemMerging) withEachOrganizationDirectory(dir string, shardKey string, agent upload.Agent, f func(upload.Agent, *ach.File) error) (*processedTransfers, error) {
