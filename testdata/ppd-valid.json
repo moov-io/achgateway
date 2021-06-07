@@ -37,6 +37,20 @@
                     "addendaRecordIndicator": 0,
                     "traceNumber": "121042880000001",
                     "category": "Forward"
+                },
+                {
+                    "id": "fileId",
+                    "transactionCode": 27,
+                    "RDFIIdentification": "12104288",
+                    "checkDigit": "2",
+                    "DFIAccountNumber": "17124411",
+                    "amount": 100000,
+                    "identificationNumber": "#83738AB#",
+                    "individualName": "My ODFI",
+                    "discretionaryData": "  ",
+                    "addendaRecordIndicator": 0,
+                    "traceNumber": "121042880000002",
+                    "category": "Forward"
                 }
             ]
         }
