@@ -31,7 +31,7 @@ var (
 	// Examples:
 	//  - 20191010-0830-987654320.ach
 	//  - 20191010-0830-987654320.ach.gpg (GPG encrypted)
-	DefaultFilenameTemplate = `{{ date "20060102" }}-{{ date "1504" }}-{{ .RoutingNumber }}.ach{{ if .GPG }}.gpg{{ end }}`
+	DefaultFilenameTemplate = `{{ date "20060102" }}-{{ date "150405.00000" }}-{{ .RoutingNumber }}.ach{{ if .GPG }}.gpg{{ end }}`
 )
 
 type Shards []Shard
