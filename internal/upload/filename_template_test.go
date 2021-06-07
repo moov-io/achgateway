@@ -40,7 +40,7 @@ func TestFilenameTemplate(t *testing.T) {
 
 	now := time.Now()
 	yymmdd := now.Format("20060102")
-	hhmm := now.Format("1504")
+	hhmm := now.Format("150405")
 	expected := fmt.Sprintf("%s-%s-987654320.ach.gpg", yymmdd, hhmm)
 	if filename != expected {
 		t.Errorf("filename=%s", filename)

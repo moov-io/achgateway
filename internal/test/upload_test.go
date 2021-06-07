@@ -75,7 +75,8 @@ var (
 					Timezone: "America/Los_Angeles",
 					Windows:  []string{"12:03"},
 				},
-				UploadAgent: "ftp-test",
+				OutboundFilenameTemplate: `{{ date "20060102" }}-{{ date "150405.00000" }}-{{ .RoutingNumber }}.ach`,
+				UploadAgent:              "ftp-test",
 			},
 		},
 		Upload: service.UploadAgents{
