@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/moov-io/ach"
+	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/upload"
@@ -53,7 +54,7 @@ func TestAggregateACHFile(t *testing.T) {
 		},
 		DefaultAgentID: "ftp-live",
 	}
-	xfagg, err := newAggregator(log.NewNopLogger(), nil, shard, uploadAgents)
+	xfagg, err := newAggregator(log.NewNopLogger(), nil, &events.MockEmitter{}, shard, uploadAgents)
 	require.NoError(t, err)
 
 	merge := &MockXferMerging{}
@@ -100,7 +101,7 @@ func TestAggregate_notifyAfterUpload(t *testing.T) {
 		DefaultAgentID: "mock-agent",
 	}
 
-	xfagg, err := newAggregator(log.NewNopLogger(), nil, shard, uploadAgents)
+	xfagg, err := newAggregator(log.NewNopLogger(), nil, &events.MockEmitter{}, shard, uploadAgents)
 	require.NoError(t, err)
 
 	require.NotPanics(t, func() {
@@ -133,7 +134,7 @@ func TestAggregate_notifyAfterUploadErr(t *testing.T) {
 		DefaultAgentID: "mock-agent",
 	}
 
-	xfagg, err := newAggregator(log.NewNopLogger(), nil, shard, uploadAgents)
+	xfagg, err := newAggregator(log.NewNopLogger(), nil, &events.MockEmitter{}, shard, uploadAgents)
 	require.NoError(t, err)
 
 	require.NotPanics(t, func() {

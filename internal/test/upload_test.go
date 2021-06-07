@@ -106,6 +106,10 @@ func init() {
 }
 
 func TestUploads(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test via -short")
+	}
+
 	ctx := context.Background()
 	logger := log.NewDefaultLogger()
 

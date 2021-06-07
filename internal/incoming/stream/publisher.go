@@ -16,9 +16,10 @@ package stream
 import (
 	"context"
 
-	"github.com/Shopify/sarama"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
+
+	"github.com/Shopify/sarama"
 	"gocloud.dev/pubsub"
 	"gocloud.dev/pubsub/kafkapubsub"
 	_ "gocloud.dev/pubsub/mempubsub"

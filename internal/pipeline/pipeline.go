@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"github.com/moov-io/achgateway/internal/consul"
+	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/shards"
 	"github.com/moov-io/base/log"
@@ -37,10 +38,15 @@ func Start(
 	shardRepository shards.Repository,
 	httpFiles, streamFiles *pubsub.Subscription) (*FileReceiver, error) {
 
+	eventEmitter, err := events.NewEmitter(logger, cfg.Events)
+	if err != nil {
+		return nil, fmt.Errorf("pipeline: error creating event emitter: %v", err)
+	}
+
 	// register each shard's aggregator
 	shardAggregators := make(map[string]*aggregator)
 	for i := range cfg.Shards {
-		xfagg, err := newAggregator(logger, consul, cfg.Shards[i], cfg.Upload)
+		xfagg, err := newAggregator(logger, consul, eventEmitter, cfg.Shards[i], cfg.Upload)
 		if err != nil {
 			return nil, fmt.Errorf("problem starting shard=%s: %v", cfg.Shards[i].Name, err)
 		}

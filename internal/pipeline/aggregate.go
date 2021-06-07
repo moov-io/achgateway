@@ -29,6 +29,7 @@ import (
 	"github.com/moov-io/achgateway/internal/alerting"
 	"github.com/moov-io/achgateway/internal/audittrail"
 	"github.com/moov-io/achgateway/internal/consul"
+	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/notify"
 	"github.com/moov-io/achgateway/internal/output"
@@ -41,6 +42,7 @@ import (
 
 type aggregator struct {
 	logger       log.Logger
+	eventEmitter events.Emitter
 	shard        service.Shard
 	uploadAgents service.UploadAgents
 
@@ -54,7 +56,13 @@ type aggregator struct {
 	alerter               alerting.Alerter
 }
 
-func newAggregator(logger log.Logger, consul *consul.Wrapper, shard service.Shard, uploadAgents service.UploadAgents) (*aggregator, error) {
+func newAggregator(
+	logger log.Logger,
+	consul *consul.Wrapper,
+	eventEmitter events.Emitter,
+	shard service.Shard,
+	uploadAgents service.UploadAgents,
+) (*aggregator, error) {
 	merger, err := NewMerging(logger, consul, shard, uploadAgents)
 	if err != nil {
 		return nil, fmt.Errorf("error creating xfer merger: %v", err)
@@ -85,6 +93,7 @@ func newAggregator(logger log.Logger, consul *consul.Wrapper, shard service.Shar
 
 	return &aggregator{
 		logger:                logger,
+		eventEmitter:          eventEmitter,
 		shard:                 shard,
 		uploadAgents:          uploadAgents,
 		cutoffs:               cutoffs,
@@ -147,13 +156,9 @@ func (xfagg *aggregator) withEachFile(when time.Time) error {
 		return fmt.Errorf("merging ACH files: %v", err)
 	}
 
-	// TODO(adam): emit event
-	fmt.Printf("PROCESSED\n  %#v\n", processed)
-	// err = xfagg.service.MarkTransfersAsProcessed(processed.transferIDs)
-	// if err != nil {
-	// 	xfagg.logger.LogErrorf("ERROR marking %d transfers as processed: %v", len(processed.transferIDs), err)
-	// 	return fmt.Errorf("marking transfers as processed: %v", err)
-	// }
+	if err := xfagg.eventEmitter.FilesUploaded(processed.shardKey, processed.fileIDs); err != nil {
+		xfagg.logger.LogErrorf("ERROR sending files uploaded event: %v", err)
+	}
 
 	return nil
 }
@@ -165,14 +170,11 @@ func (xfagg *aggregator) manualCutoff(waiter manuallyTriggeredCutoff) {
 		xfagg.logger.LogErrorf("ERROR inside manual WithEachMerged: %v", err)
 		waiter.C <- err
 	} else {
-		// if err := xfagg.service.MarkTransfersAsProcessed(processed.transferIDs); err != nil {
-		// 	xfagg.logger.LogErrorf("ERROR marking %d transfers as processed: %v", len(processed.transferIDs), err)
-		// 	waiter.C <- err
-		// } else {
-		fmt.Printf("MANUAL PROCESSED\n  %#v\n", processed)
-
-		waiter.C <- nil
-		// }
+		// Publish event of File uploads
+		if err := xfagg.eventEmitter.FilesUploaded(processed.shardKey, processed.fileIDs); err != nil {
+			xfagg.logger.LogErrorf("ERROR sending files uploaded event: %v", err)
+		}
+		waiter.C <- err
 	}
 
 	xfagg.logger.Log("ended manual cutoff window processing")
