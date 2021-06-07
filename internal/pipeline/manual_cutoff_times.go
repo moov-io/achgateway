@@ -59,7 +59,9 @@ func (fr *FileReceiver) triggerManualCutoff() http.HandlerFunc {
 				continue
 			}
 			if err := <-waiter.C; err != nil {
-				xfagg.alerter.AlertError(err)
+				if xfagg.alerter != nil {
+					xfagg.alerter.AlertError(err)
+				}
 				errs.Errors = append(errs.Errors, err.Error())
 			}
 		}
