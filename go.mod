@@ -22,6 +22,7 @@ require (
 	github.com/hashicorp/consul/api v1.3.0
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/hashicorp/go-retryablehttp v0.7.0 // indirect
 	github.com/jlaffaye/ftp v0.0.0-20210307004419-5d4190119067
 	github.com/klauspost/compress v1.12.2 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect

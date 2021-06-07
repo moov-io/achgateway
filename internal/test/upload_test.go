@@ -33,7 +33,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/gorilla/mux"
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/consul"
 	"github.com/moov-io/achgateway/internal/incoming/stream"
@@ -45,6 +44,8 @@ import (
 	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/database"
 	"github.com/moov-io/base/log"
+
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 	"gocloud.dev/pubsub"
 )
