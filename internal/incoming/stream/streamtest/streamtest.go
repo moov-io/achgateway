@@ -15,35 +15,37 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package pipeline
+package streamtest
 
 import (
-	"github.com/moov-io/ach"
-	"github.com/moov-io/achgateway/internal/incoming"
-	"github.com/moov-io/achgateway/internal/upload"
+	"context"
+	"fmt"
+	"testing"
+
+	"github.com/moov-io/achgateway/internal/incoming/stream"
+	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/base/log"
+
+	"github.com/stretchr/testify/require"
+	"gocloud.dev/pubsub"
 )
 
-type MockXferMerging struct {
-	LatestFile   *incoming.ACHFile
-	LatestCancel *incoming.CancelACHFile
-	processed    *processedFiles
+func InmemStream(t *testing.T) (*pubsub.Topic, *pubsub.Subscription) {
+	t.Helper()
 
-	Err error
-}
-
-func (merge *MockXferMerging) HandleXfer(xfer incoming.ACHFile) error {
-	merge.LatestFile = &xfer
-	return merge.Err
-}
-
-func (merge *MockXferMerging) HandleCancel(cancel incoming.CancelACHFile) error {
-	merge.LatestCancel = &cancel
-	return merge.Err
-}
-
-func (merge *MockXferMerging) WithEachMerged(f func(upload.Agent, *ach.File) error) (*processedFiles, error) {
-	if merge.Err != nil {
-		return nil, merge.Err
+	conf := &service.Config{
+		Inbound: service.Inbound{
+			InMem: &service.InMemory{
+				URL: fmt.Sprintf("mem://achgateway-%s", t.Name()),
+			},
+		},
 	}
-	return merge.processed, nil
+	topic, err := stream.Topic(log.NewNopLogger(), conf)
+	require.NoError(t, err)
+
+	sub, err := stream.Subscription(log.NewNopLogger(), conf)
+	require.NoError(t, err)
+	t.Cleanup(func() { sub.Shutdown(context.Background()) })
+
+	return topic, sub
 }

@@ -15,35 +15,33 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package pipeline
+package events
 
 import (
-	"github.com/moov-io/ach"
-	"github.com/moov-io/achgateway/internal/incoming"
-	"github.com/moov-io/achgateway/internal/upload"
+	"context"
+	"encoding/json"
+	"testing"
+
+	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
+	"github.com/moov-io/base"
+	"github.com/stretchr/testify/require"
 )
 
-type MockXferMerging struct {
-	LatestFile   *incoming.ACHFile
-	LatestCancel *incoming.CancelACHFile
-	processed    *processedFiles
+func TestStreamService(t *testing.T) {
+	pub, sub := streamtest.InmemStream(t)
+	svc := &streamService{topic: pub}
 
-	Err error
-}
+	shardKey := base.ID()
+	fileIDs := []string{base.ID()}
+	err := svc.FilesUploaded(shardKey, fileIDs)
+	require.NoError(t, err)
 
-func (merge *MockXferMerging) HandleXfer(xfer incoming.ACHFile) error {
-	merge.LatestFile = &xfer
-	return merge.Err
-}
+	msg, err := sub.Receive(context.Background())
+	require.NoError(t, err)
 
-func (merge *MockXferMerging) HandleCancel(cancel incoming.CancelACHFile) error {
-	merge.LatestCancel = &cancel
-	return merge.Err
-}
+	var body FileUploaded
+	require.NoError(t, json.Unmarshal(msg.Body, &body))
 
-func (merge *MockXferMerging) WithEachMerged(f func(upload.Agent, *ach.File) error) (*processedFiles, error) {
-	if merge.Err != nil {
-		return nil, merge.Err
-	}
-	return merge.processed, nil
+	require.Equal(t, shardKey, body.ShardKey)
+	require.Equal(t, fileIDs[0], body.FileID)
 }

@@ -49,7 +49,7 @@ type XferMerging interface {
 	HandleXfer(xfer incoming.ACHFile) error
 	HandleCancel(cancel incoming.CancelACHFile) error
 
-	WithEachMerged(f func(upload.Agent, *ach.File) error) (*processedTransfers, error)
+	WithEachMerged(f func(upload.Agent, *ach.File) error) (*processedFiles, error)
 }
 
 func NewMerging(logger log.Logger, consul *consul.Wrapper, shard service.Shard, cfg service.UploadAgents) (XferMerging, error) {
@@ -156,24 +156,24 @@ func getNonCanceledMatches(path string) ([]string, error) {
 	return out, nil
 }
 
-type processedTransfers struct {
-	transferIDs []string
+type processedFiles struct {
+	shardKey string
+	fileIDs  []string
 }
 
-func newProcessedTransfers(matches []string) *processedTransfers {
-	processed := &processedTransfers{}
+func newProcessedFiles(shardKey string, matches []string) *processedFiles {
+	processed := &processedFiles{shardKey: shardKey}
 
 	for i := range matches {
-		// each match follows $path/$transferID.ach so we can split that
-		// and grab the transferID
-		transferID := strings.TrimSuffix(filepath.Base(matches[i]), ".ach")
-		processed.transferIDs = append(processed.transferIDs, transferID)
+		// each match follows $path/$fileID.ach
+		fileID := strings.TrimSuffix(filepath.Base(matches[i]), ".ach")
+		processed.fileIDs = append(processed.fileIDs, fileID)
 	}
 
 	return processed
 }
 
-func (m *filesystemMerging) WithEachMerged(f func(upload.Agent, *ach.File) error) (*processedTransfers, error) {
+func (m *filesystemMerging) WithEachMerged(f func(upload.Agent, *ach.File) error) (*processedFiles, error) {
 	// move the current directory so it's isolated and easier to debug later on
 	dir, err := m.isolateMergableDir()
 	if err != nil {
@@ -186,7 +186,7 @@ func (m *filesystemMerging) WithEachMerged(f func(upload.Agent, *ach.File) error
 	}
 
 	// Process each Organization directory
-	processed := &processedTransfers{}
+	processed := &processedFiles{}
 	for i := range dirs {
 		if dirs[i].IsDir() {
 			shardKey := filepath.Base(dirs[i].Name())
@@ -206,8 +206,8 @@ func (m *filesystemMerging) WithEachMerged(f func(upload.Agent, *ach.File) error
 				return processed, fmt.Errorf("each tenant (%s): %v", filepath.Base(dirs[i].Name()), err)
 			}
 
-			logger.Logf("processed %d transfers: %#v", len(proc.transferIDs), proc.transferIDs)
-			processed.transferIDs = append(processed.transferIDs, proc.transferIDs...)
+			logger.Logf("processed %d files: %#v", len(proc.fileIDs), proc.fileIDs)
+			processed.fileIDs = append(processed.fileIDs, proc.fileIDs...)
 		} else {
 			m.logger.Logf("unexpected file info: %v", dirs[i].Name())
 		}
@@ -215,7 +215,7 @@ func (m *filesystemMerging) WithEachMerged(f func(upload.Agent, *ach.File) error
 	return processed, nil
 }
 
-func (m *filesystemMerging) withEachOrganizationDirectory(dir string, shardKey string, agent upload.Agent, f func(upload.Agent, *ach.File) error) (*processedTransfers, error) {
+func (m *filesystemMerging) withEachOrganizationDirectory(dir string, shardKey string, agent upload.Agent, f func(upload.Agent, *ach.File) error) (*processedFiles, error) {
 	path := filepath.Join(dir, "*.ach")
 	matches, err := getNonCanceledMatches(path)
 	if err != nil {
@@ -246,7 +246,7 @@ func (m *filesystemMerging) withEachOrganizationDirectory(dir string, shardKey s
 	}
 
 	if len(matches) > 0 {
-		logger.Logf("merged %d transfers into %d files", len(matches), len(files))
+		logger.Logf("merged %d files into %d files", len(matches), len(files))
 	}
 
 	// Remove the directory if there are no files, otherwise setup an inner dir for the uploaded file.
@@ -293,7 +293,7 @@ func (m *filesystemMerging) withEachOrganizationDirectory(dir string, shardKey s
 		return nil, el
 	}
 
-	return newProcessedTransfers(matches), nil
+	return newProcessedFiles(shardKey, matches), nil
 }
 
 func saveMergedFile(dir string, file *ach.File) error {

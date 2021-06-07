@@ -15,35 +15,34 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package pipeline
+package events
 
 import (
-	"github.com/moov-io/ach"
-	"github.com/moov-io/achgateway/internal/incoming"
-	"github.com/moov-io/achgateway/internal/upload"
+	"errors"
+
+	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/base/log"
 )
 
-type MockXferMerging struct {
-	LatestFile   *incoming.ACHFile
-	LatestCancel *incoming.CancelACHFile
-	processed    *processedFiles
-
-	Err error
+type Emitter interface {
+	FilesUploaded(shardKey string, fileIDs []string) error
 }
 
-func (merge *MockXferMerging) HandleXfer(xfer incoming.ACHFile) error {
-	merge.LatestFile = &xfer
-	return merge.Err
-}
-
-func (merge *MockXferMerging) HandleCancel(cancel incoming.CancelACHFile) error {
-	merge.LatestCancel = &cancel
-	return merge.Err
-}
-
-func (merge *MockXferMerging) WithEachMerged(f func(upload.Agent, *ach.File) error) (*processedFiles, error) {
-	if merge.Err != nil {
-		return nil, merge.Err
+func NewEmitter(logger log.Logger, cfg *service.EventsConfig) (Emitter, error) {
+	if cfg == nil {
+		return &MockEmitter{}, nil
 	}
-	return merge.processed, nil
+	if cfg.Stream != nil {
+		return newStreamService(logger, cfg.Stream)
+	}
+	if cfg.Webhook != nil {
+		return newWebhookService(logger, cfg.Webhook)
+	}
+	return nil, errors.New("unknown events config")
+}
+
+type MockEmitter struct{}
+
+func (*MockEmitter) FilesUploaded(shardKey string, fileIDs []string) error {
+	return nil
 }

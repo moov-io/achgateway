@@ -38,6 +38,7 @@ type Config struct {
 	Consul        *consul.Config
 	Admin         Admin
 	Inbound       Inbound
+	Events        *EventsConfig
 	Shards        Shards
 	Upload        UploadAgents
 	Notifications Notifications

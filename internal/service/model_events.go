@@ -15,35 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package pipeline
+package service
 
-import (
-	"github.com/moov-io/ach"
-	"github.com/moov-io/achgateway/internal/incoming"
-	"github.com/moov-io/achgateway/internal/upload"
-)
-
-type MockXferMerging struct {
-	LatestFile   *incoming.ACHFile
-	LatestCancel *incoming.CancelACHFile
-	processed    *processedFiles
-
-	Err error
+type EventsConfig struct {
+	Stream  *KafkaConfig
+	Webhook *WebhookConfig
 }
 
-func (merge *MockXferMerging) HandleXfer(xfer incoming.ACHFile) error {
-	merge.LatestFile = &xfer
-	return merge.Err
-}
-
-func (merge *MockXferMerging) HandleCancel(cancel incoming.CancelACHFile) error {
-	merge.LatestCancel = &cancel
-	return merge.Err
-}
-
-func (merge *MockXferMerging) WithEachMerged(f func(upload.Agent, *ach.File) error) (*processedFiles, error) {
-	if merge.Err != nil {
-		return nil, merge.Err
-	}
-	return merge.processed, nil
+type WebhookConfig struct {
+	Endpoint string
 }

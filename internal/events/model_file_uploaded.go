@@ -15,35 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package pipeline
+package events
 
 import (
-	"github.com/moov-io/ach"
-	"github.com/moov-io/achgateway/internal/incoming"
-	"github.com/moov-io/achgateway/internal/upload"
+	"bytes"
+	"encoding/json"
+	"time"
 )
 
-type MockXferMerging struct {
-	LatestFile   *incoming.ACHFile
-	LatestCancel *incoming.CancelACHFile
-	processed    *processedFiles
-
-	Err error
+type FileUploaded struct {
+	FileID     string    `json:"fileID"`
+	ShardKey   string    `json:"shardKey"`
+	UploadedAt time.Time `json:"uploadedAt"`
 }
 
-func (merge *MockXferMerging) HandleXfer(xfer incoming.ACHFile) error {
-	merge.LatestFile = &xfer
-	return merge.Err
-}
-
-func (merge *MockXferMerging) HandleCancel(cancel incoming.CancelACHFile) error {
-	merge.LatestCancel = &cancel
-	return merge.Err
-}
-
-func (merge *MockXferMerging) WithEachMerged(f func(upload.Agent, *ach.File) error) (*processedFiles, error) {
-	if merge.Err != nil {
-		return nil, merge.Err
-	}
-	return merge.processed, nil
+func (f FileUploaded) Bytes() []byte {
+	var buf bytes.Buffer
+	json.NewEncoder(&buf).Encode(f)
+	return buf.Bytes()
 }
