@@ -35,7 +35,7 @@ import (
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/consul"
-	"github.com/moov-io/achgateway/internal/incoming/stream"
+	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
 	"github.com/moov-io/achgateway/internal/incoming/web"
 	"github.com/moov-io/achgateway/internal/pipeline"
 	"github.com/moov-io/achgateway/internal/service"
@@ -47,7 +47,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
-	"gocloud.dev/pubsub"
 )
 
 var (
@@ -121,8 +120,8 @@ func TestUploads(t *testing.T) {
 	shardRepo := shards.NewMockRepository()
 	shardKeys := setupShards(t, shardRepo)
 
-	httpPub, httpSub := setupInmemStream(t)
-	_, streamSub := setupInmemStream(t)
+	httpPub, httpSub := streamtest.InmemStream(t)
+	_, streamSub := streamtest.InmemStream(t)
 
 	fileController := web.NewFilesController(logger, httpPub)
 	r := mux.NewRouter()
@@ -259,24 +258,4 @@ func submitFile(t *testing.T, r *mux.Router, shardKey, fileID string, file *ach.
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 	return w
-}
-
-func setupInmemStream(t *testing.T) (*pubsub.Topic, *pubsub.Subscription) {
-	t.Helper()
-
-	conf := &service.Config{
-		Inbound: service.Inbound{
-			InMem: &service.InMemory{
-				URL: fmt.Sprintf("mem://achgateway-%s", t.Name()),
-			},
-		},
-	}
-	topic, err := stream.Topic(log.NewNopLogger(), conf)
-	require.NoError(t, err)
-
-	sub, err := stream.Subscription(log.NewNopLogger(), conf)
-	require.NoError(t, err)
-	t.Cleanup(func() { sub.Shutdown(context.Background()) })
-
-	return topic, sub
 }

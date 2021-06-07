@@ -28,18 +28,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gorilla/mux"
 	"github.com/moov-io/achgateway/internal/incoming"
-	"github.com/moov-io/achgateway/internal/incoming/stream"
-	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
 	"github.com/moov-io/base/log"
 
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
-	"gocloud.dev/pubsub"
 )
 
 func TestCreateFileHandler(t *testing.T) {
-	topic, sub := setupInmemStream(t)
+	topic, sub := streamtest.InmemStream(t)
 
 	controller := NewFilesController(log.NewNopLogger(), topic)
 	r := mux.NewRouter()
@@ -67,7 +65,7 @@ func TestCreateFileHandler(t *testing.T) {
 }
 
 func TestCreateFileHandlerErr(t *testing.T) {
-	topic, _ := setupInmemStream(t)
+	topic, _ := streamtest.InmemStream(t)
 
 	controller := NewFilesController(log.NewNopLogger(), topic)
 	r := mux.NewRouter()
@@ -80,24 +78,4 @@ func TestCreateFileHandlerErr(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	require.Equal(t, http.StatusBadRequest, w.Code)
-}
-
-func setupInmemStream(t *testing.T) (*pubsub.Topic, *pubsub.Subscription) {
-	t.Helper()
-
-	conf := &service.Config{
-		Inbound: service.Inbound{
-			InMem: &service.InMemory{
-				URL: "mem://achgateway",
-			},
-		},
-	}
-	topic, err := stream.Topic(log.NewNopLogger(), conf)
-	require.NoError(t, err)
-
-	sub, err := stream.Subscription(log.NewNopLogger(), conf)
-	require.NoError(t, err)
-	t.Cleanup(func() { sub.Shutdown(context.Background()) })
-
-	return topic, sub
 }
