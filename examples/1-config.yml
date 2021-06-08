@@ -20,6 +20,9 @@ ACHGateway:
       uploadAgent: "local-ftp"
       output:
         format: "nacha"
+  # ShardMappings:
+  #   # Example static mapping if we didn't have the database defined.
+  #   "foo": "testing"
   Upload:
     agents:
       - id: "local-ftp"

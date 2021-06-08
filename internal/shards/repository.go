@@ -25,7 +25,10 @@ type Repository interface {
 	Lookup(shardKey string) (string, error)
 }
 
-func NewRepository(db *sql.DB) Repository {
+func NewRepository(db *sql.DB, static map[string]string) Repository {
+	if db == nil {
+		return &MockRepository{Shards: static}
+	}
 	return &sqlRepository{db: db}
 }
 

@@ -93,7 +93,7 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	env.Config.Logger = env.Logger
 
 	// db setup
-	if env.DB == nil {
+	if env.DB == nil && env.Config.Database.MySQL != nil {
 		db, close, err := initializeDatabase(env.Logger, env.Config.Database)
 		if err != nil {
 			close()
@@ -165,7 +165,7 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		return nil, fmt.Errorf("unable to create stream files subscription: %v", err)
 	}
 
-	shardRepository := shards.NewRepository(env.DB)
+	shardRepository := shards.NewRepository(env.DB, env.Config.ShardMappings)
 	fileReceiver, err := pipeline.Start(ctx, env.Logger, env.Config, env.Consul, shardRepository, httpSub, streamSub)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create file pipeline: %v", err)

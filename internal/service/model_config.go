@@ -40,6 +40,7 @@ type Config struct {
 	Inbound       Inbound
 	Events        *EventsConfig
 	Shards        Shards
+	ShardMappings map[string]string
 	Upload        UploadAgents
 	Notifications Notifications
 	AuditTrail    AuditTrails
