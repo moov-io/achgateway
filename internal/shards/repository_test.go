@@ -34,7 +34,7 @@ func TestRepository(t *testing.T) {
 	shardKey := base.ID()
 	shardName := "ftp-live"
 
-	repo := NewRepository(db)
+	repo := NewRepository(db, nil)
 	rr, ok := repo.(*sqlRepository)
 	require.True(t, ok)
 
