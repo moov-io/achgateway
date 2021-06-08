@@ -38,7 +38,8 @@ import (
 func (env *Environment) RunServers(terminationListener chan error) func() {
 	env.AdminServer = bootAdminServer(terminationListener, env.Logger, env.Config.Admin)
 
-	// register an admin route
+	// register the admin routes
+	env.registerConfigRoute()
 	env.FileReceiver.RegisterAdminRoutes(env.AdminServer)
 
 	_, shutdownPublicServer := bootHTTPServer("public", env.PublicRouter, terminationListener, env.Logger, env.Config.Inbound.HTTP)
