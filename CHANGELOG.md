@@ -1,3 +1,9 @@
+## v0.2.1 (Released 2021-06-09)
+
+BUILD
+
+- Remove default MySQL and Consul configurations
+
 ## v0.2.0 (Released 2021-06-08)
 
 ADDITIONS
