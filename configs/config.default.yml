@@ -6,15 +6,15 @@ ACHGateway:
   Inbound:
     HTTP:
       BindAddress: ":8484"
-  Database:
-    DatabaseName: "achgateway"
-    MySQL:
-      Address: "tcp(localhost:3306)"
-      User: "achgateway"
-      Password: "achgateway"
-  Consul:
-    Address: "127.0.0.1:8500"
-    Scheme: "http"
-    Tags: []
-    SessionPath: "achgateway/shards/"
-    HealthCheckInterval: "10s"
+  # Database:
+  #   DatabaseName: "achgateway"
+  #   MySQL:
+  #     Address: "tcp(localhost:3306)"
+  #     User: "achgateway"
+  #     Password: "achgateway"
+  # Consul:
+  #   Address: "127.0.0.1:8500"
+  #   Scheme: "http"
+  #   Tags: []
+  #   SessionPath: "achgateway/shards/"
+  #   HealthCheckInterval: "10s"
