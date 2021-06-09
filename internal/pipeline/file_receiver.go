@@ -108,6 +108,8 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 			fr.logger.LogErrorf("ERROR receiving message: %v", err)
 		}
 		if msg != nil {
+			msg.Ack()
+
 			var file incoming.ACHFile
 			if err := json.Unmarshal(msg.Body, &file); err != nil {
 				fr.logger.Error().LogErrorf("unable to parse incoming.ACHFile: %v", err)
@@ -127,8 +129,6 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 				fr.logger.Error().LogErrorf("missing shardAggregator for shardKey=%s shardName=%s", file.ShardKey, shardName)
 				return
 			}
-
-			msg.Ack()
 
 			if err := agg.acceptFile(file); err != nil {
 				fr.logger.Error().LogErrorf("problem accepting file under shardName=%s", shardName)
