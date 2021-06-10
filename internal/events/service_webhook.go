@@ -29,14 +29,14 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 )
 
-type webService struct {
+type webhookService struct {
 	cfg      service.WebhookConfig
 	client   *retryablehttp.Client
 	endpoint *url.URL
 	logger   log.Logger
 }
 
-func newWebhookService(logger log.Logger, cfg *service.WebhookConfig) (*webService, error) {
+func newWebhookService(logger log.Logger, cfg *service.WebhookConfig) (*webhookService, error) {
 	if cfg == nil || cfg.Endpoint == "" {
 		return nil, nil
 	}
@@ -44,7 +44,7 @@ func newWebhookService(logger log.Logger, cfg *service.WebhookConfig) (*webServi
 	if err != nil {
 		return nil, fmt.Errorf("webhook: %v", err)
 	}
-	return &webService{
+	return &webhookService{
 		cfg:      *cfg,
 		client:   retryablehttp.NewClient(),
 		endpoint: u,
@@ -52,7 +52,7 @@ func newWebhookService(logger log.Logger, cfg *service.WebhookConfig) (*webServi
 	}, nil
 }
 
-func (w *webService) FilesUploaded(shardKey string, fileIDs []string) error {
+func (w *webhookService) FilesUploaded(shardKey string, fileIDs []string) error {
 	for i := range fileIDs {
 		msg := FileUploaded{
 			FileID:     fileIDs[i],

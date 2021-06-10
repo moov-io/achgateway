@@ -18,19 +18,44 @@
 package events
 
 import (
-	"bytes"
 	"encoding/json"
+	"testing"
 	"time"
+
+	"github.com/moov-io/ach"
+	"github.com/moov-io/base"
+
+	"github.com/stretchr/testify/require"
 )
 
-type FileUploaded struct {
-	FileID     string    `json:"fileID"`
-	ShardKey   string    `json:"shardKey"`
-	UploadedAt time.Time `json:"uploadedAt"`
-}
+func TestEvent(t *testing.T) {
+	check := func(t *testing.T, inner interface{}, matchers ...string) {
+		t.Helper()
+		evt := Event{
+			Event: inner,
+		}
+		bs, err := json.Marshal(evt)
+		require.NoError(t, err)
+		for i := range matchers {
+			require.Contains(t, string(bs), matchers[i])
+		}
+	}
+	// Verfiy every event type
+	check(t, CorrectionFile{
+		File: ach.NewFile(),
+	}, `"type":"CorrectionFile"`)
 
-func (f FileUploaded) Bytes() []byte {
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(f)
-	return buf.Bytes()
+	check(t, IncomingFile{
+		File: ach.NewFile(),
+	}, `"type":"IncomingFile"`)
+
+	check(t, ReturnFile{
+		File: ach.NewFile(),
+	}, `"type":"ReturnFile"`)
+
+	check(t, FileUploaded{
+		FileID:     base.ID(),
+		ShardKey:   base.ID(),
+		UploadedAt: time.Now(),
+	}, `"type":"FileUploaded"`)
 }
