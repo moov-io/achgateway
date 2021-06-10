@@ -69,6 +69,12 @@ type IncomingFile struct {
 	File     *ach.File `json:"file"`
 }
 
+type PrenoteFile struct {
+	Filename string    `json:"filename"`
+	File     *ach.File `json:"file"`
+	Batches  []Batch   `json:"batches"`
+}
+
 type ReturnFile struct {
 	Filename string    `json:"filename"`
 	File     *ach.File `json:"file"`
