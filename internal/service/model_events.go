@@ -17,11 +17,52 @@
 
 package service
 
+import (
+	"errors"
+)
+
 type EventsConfig struct {
-	Stream  *KafkaConfig
+	Stream  *EventsStream
 	Webhook *WebhookConfig
+}
+
+func (cfg *EventsConfig) Validate() error {
+	if cfg == nil {
+		return nil
+	}
+	if err := cfg.Stream.Validate(); err != nil {
+		return err
+	}
+	if err := cfg.Webhook.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+type EventsStream struct {
+	Kafka *KafkaConfig
+}
+
+func (cfg *EventsStream) Validate() error {
+	if cfg == nil {
+		return nil
+	}
+	if err := cfg.Kafka.Validate(); err != nil {
+		return err
+	}
+	return nil
 }
 
 type WebhookConfig struct {
 	Endpoint string
+}
+
+func (cfg *WebhookConfig) Validate() error {
+	if cfg == nil {
+		return nil
+	}
+	if cfg.Endpoint == "" {
+		return errors.New("missing endpoint")
+	}
+	return nil
 }

@@ -21,7 +21,6 @@ import (
 	"bytes"
 	"fmt"
 	"net/url"
-	"time"
 
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
@@ -52,24 +51,17 @@ func newWebhookService(logger log.Logger, cfg *service.WebhookConfig) (*webhookS
 	}, nil
 }
 
-func (w *webhookService) FilesUploaded(shardKey string, fileIDs []string) error {
-	for i := range fileIDs {
-		msg := FileUploaded{
-			FileID:     fileIDs[i],
-			ShardKey:   shardKey,
-			UploadedAt: time.Now(),
-		}
-		req, err := retryablehttp.NewRequest("POST", w.endpoint.String(), bytes.NewReader(msg.Bytes()))
-		if err != nil {
-			return fmt.Errorf("error preparing request: %v", err)
-		}
-		resp, err := w.client.Do(req)
-		if err != nil {
-			w.logger.Info().Logf("problem sending fileID=%s webhook: %v", fileIDs[i], err)
-		}
-		if resp.Body != nil {
-			resp.Body.Close()
-		}
+func (w *webhookService) Send(evt Event) error {
+	req, err := retryablehttp.NewRequest("POST", w.endpoint.String(), bytes.NewReader(evt.Bytes()))
+	if err != nil {
+		return fmt.Errorf("error preparing request: %v", err)
+	}
+	resp, err := w.client.Do(req)
+	if err != nil {
+		w.logger.Info().Logf("problem sending event: %v", err)
+	}
+	if resp != nil && resp.Body != nil {
+		resp.Body.Close()
 	}
 	return nil
 }

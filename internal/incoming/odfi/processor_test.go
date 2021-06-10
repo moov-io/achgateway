@@ -15,43 +15,26 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package events
+package odfi
 
 import (
-	"context"
-	"fmt"
-
-	"github.com/moov-io/achgateway/internal/incoming/stream"
-	"github.com/moov-io/achgateway/internal/service"
-	"github.com/moov-io/base/log"
-
-	"gocloud.dev/pubsub"
+	"io/ioutil"
+	"path/filepath"
+	"testing"
 )
 
-type streamService struct {
-	topic *pubsub.Topic
-}
-
-func newStreamService(logger log.Logger, cfg *service.KafkaConfig) (*streamService, error) {
-	topic, err := stream.Topic(logger, &service.Config{
-		Inbound: service.Inbound{
-			Kafka: cfg,
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("events stream: %v", err)
+func TestProcessor__process(t *testing.T) {
+	dir := t.TempDir()
+	if err := ioutil.WriteFile(filepath.Join(dir, "invalid.ach"), []byte("invalid-ach-file"), 0644); err != nil {
+		t.Fatal(err)
 	}
-	return &streamService{
-		topic: topic,
-	}, nil
-}
 
-func (ss *streamService) Send(evt Event) error {
-	err := ss.topic.Send(context.Background(), &pubsub.Message{
-		Body: evt.Bytes(),
-	})
-	if err != nil {
-		return fmt.Errorf("error emitting %s: %v", evt.Type, err)
+	processors := SetupProcessors(&MockProcessor{})
+
+	// By reading a file without ACH FileHeaders we still want to try and process
+	// Batches inside of it if any are found, so reading this kind of file shouldn't
+	// return an error from reading the file.
+	if err := process(dir, processors); err != nil {
+		t.Error(err)
 	}
-	return nil
 }

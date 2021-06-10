@@ -15,37 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package events
+package odfi
 
-import (
-	"context"
-	"testing"
-
-	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
-	"github.com/moov-io/base"
-	"github.com/stretchr/testify/require"
-)
-
-func TestStreamService(t *testing.T) {
-	pub, sub := streamtest.InmemStream(t)
-	svc := &streamService{topic: pub}
-
-	shardKey, fileID := base.ID(), base.ID()
-	err := svc.Send(Event{
-		Event: FileUploaded{
-			FileID:   fileID,
-			ShardKey: shardKey,
-		},
-	})
-	require.NoError(t, err)
-
-	msg, err := sub.Receive(context.Background())
-	require.NoError(t, err)
-	msg.Ack()
-
-	var body FileUploaded
-	require.NoError(t, ReadEvent(msg.Body, &body))
-
-	require.Equal(t, shardKey, body.ShardKey)
-	require.Equal(t, fileID, body.FileID)
-}
+// TODO(adam):

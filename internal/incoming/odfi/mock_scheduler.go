@@ -15,43 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package events
+package odfi
 
 import (
-	"context"
-	"fmt"
-
-	"github.com/moov-io/achgateway/internal/incoming/stream"
-	"github.com/moov-io/achgateway/internal/service"
-	"github.com/moov-io/base/log"
-
-	"gocloud.dev/pubsub"
+	"github.com/moov-io/base/admin"
 )
 
-type streamService struct {
-	topic *pubsub.Topic
+type MockScheduler struct {
+	Err error
 }
 
-func newStreamService(logger log.Logger, cfg *service.KafkaConfig) (*streamService, error) {
-	topic, err := stream.Topic(logger, &service.Config{
-		Inbound: service.Inbound{
-			Kafka: cfg,
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("events stream: %v", err)
-	}
-	return &streamService{
-		topic: topic,
-	}, nil
+func (s *MockScheduler) Start() error {
+	return s.Err
 }
 
-func (ss *streamService) Send(evt Event) error {
-	err := ss.topic.Send(context.Background(), &pubsub.Message{
-		Body: evt.Bytes(),
-	})
-	if err != nil {
-		return fmt.Errorf("error emitting %s: %v", evt.Type, err)
-	}
-	return nil
-}
+func (*MockScheduler) Shutdown() {}
+
+func (*MockScheduler) RegisterRoutes(_ *admin.Server) {}

@@ -4,6 +4,24 @@ ACHGateway:
   Inbound:
     HTTP:
       BindAddress: ":8484"
+    ODFI:
+      Publishing:
+        Kafka:
+          brokers:
+            - kafka1:9092
+          key: admin
+          secret: secret
+          tls: false
+          topic: "ach.odfi-files"
+      Interval: "1m"
+      ShardNames:
+        - "testing"
+      Storage:
+        Directory: "./storage-1/"
+        CleanupLocalDirectory: true
+  Events:
+    Webhook:
+      Endpoint: "http://localhost:9999"
   Consul:
     Address: "127.0.0.1:8500"
     Scheme: "http"
@@ -36,7 +54,7 @@ ACHGateway:
           reconciliation: "/reconciliation/"
           return: "/returned/"
     merging:
-      directory: "storage-1"
+      directory: "./storage-1/"
   Database:
     DatabaseName: "achgateway"
     MySQL:

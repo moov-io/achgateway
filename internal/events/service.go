@@ -25,7 +25,7 @@ import (
 )
 
 type Emitter interface {
-	FilesUploaded(shardKey string, fileIDs []string) error
+	Send(evt Event) error
 }
 
 func NewEmitter(logger log.Logger, cfg *service.EventsConfig) (Emitter, error) {
@@ -33,7 +33,9 @@ func NewEmitter(logger log.Logger, cfg *service.EventsConfig) (Emitter, error) {
 		return &MockEmitter{}, nil
 	}
 	if cfg.Stream != nil {
-		return newStreamService(logger, cfg.Stream)
+		if cfg.Stream.Kafka != nil {
+			return newStreamService(logger, cfg.Stream.Kafka)
+		}
 	}
 	if cfg.Webhook != nil {
 		return newWebhookService(logger, cfg.Webhook)
@@ -43,6 +45,6 @@ func NewEmitter(logger log.Logger, cfg *service.EventsConfig) (Emitter, error) {
 
 type MockEmitter struct{}
 
-func (*MockEmitter) FilesUploaded(shardKey string, fileIDs []string) error {
+func (*MockEmitter) Send(evt Event) error {
 	return nil
 }

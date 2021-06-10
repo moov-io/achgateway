@@ -31,6 +31,12 @@ type Event struct {
 	Type  string      `json:"type"`
 }
 
+func (evt Event) Bytes() []byte {
+	var buf bytes.Buffer
+	json.NewEncoder(&buf).Encode(evt)
+	return buf.Bytes()
+}
+
 func (evt Event) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		Event interface{} `json:"event"`
@@ -41,26 +47,37 @@ func (evt Event) MarshalJSON() ([]byte, error) {
 	})
 }
 
+func ReadEvent(data []byte, evt interface{}) error {
+	return json.Unmarshal(data, &Event{
+		Event: evt,
+	})
+}
+
+type Batch struct {
+	Header  *ach.BatchHeader   `json:"batchHeader"`
+	Entries []*ach.EntryDetail `json:"entryDetails"`
+}
+
 type CorrectionFile struct {
-	File *ach.File `json:"file"`
+	Filename    string    `json:"filename"`
+	File        *ach.File `json:"file"`
+	Corrections []Batch   `json:"corrections"`
 }
 
 type IncomingFile struct {
-	File *ach.File `json:"file"`
+	Filename string    `json:"filename"`
+	File     *ach.File `json:"file"`
 }
 
 type ReturnFile struct {
-	File *ach.File `json:"file"`
+	Filename string    `json:"filename"`
+	File     *ach.File `json:"file"`
+	Returns  []Batch   `json:"returns"`
 }
 
 type FileUploaded struct {
 	FileID     string    `json:"fileID"`
 	ShardKey   string    `json:"shardKey"`
+	Filename   string    `json:"filename"`
 	UploadedAt time.Time `json:"uploadedAt"`
-}
-
-func (f FileUploaded) Bytes() []byte {
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(f)
-	return buf.Bytes()
 }

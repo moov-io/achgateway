@@ -15,43 +15,41 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package events
+package odfi
 
 import (
-	"context"
-	"fmt"
+	"net/http"
 
-	"github.com/moov-io/achgateway/internal/incoming/stream"
-	"github.com/moov-io/achgateway/internal/service"
-	"github.com/moov-io/base/log"
-
-	"gocloud.dev/pubsub"
+	"github.com/moov-io/base/admin"
+	moovhttp "github.com/moov-io/base/http"
 )
 
-type streamService struct {
-	topic *pubsub.Topic
+func (s *PeriodicScheduler) RegisterRoutes(svc *admin.Server) {
+	svc.AddHandler("/trigger-inbound", s.triggerInboundProcessing())
 }
 
-func newStreamService(logger log.Logger, cfg *service.KafkaConfig) (*streamService, error) {
-	topic, err := stream.Topic(logger, &service.Config{
-		Inbound: service.Inbound{
-			Kafka: cfg,
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("events stream: %v", err)
-	}
-	return &streamService{
-		topic: topic,
-	}, nil
+type manuallyTriggeredInbound struct {
+	C chan error
 }
 
-func (ss *streamService) Send(evt Event) error {
-	err := ss.topic.Send(context.Background(), &pubsub.Message{
-		Body: evt.Bytes(),
-	})
-	if err != nil {
-		return fmt.Errorf("error emitting %s: %v", evt.Type, err)
+func (s *PeriodicScheduler) triggerInboundProcessing() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		// send off the manual request
+		waiter := manuallyTriggeredInbound{
+			C: make(chan error, 1),
+		}
+		s.inboundTrigger <- waiter
+
+		if err := <-waiter.C; err != nil {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			moovhttp.Problem(w, err)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
 	}
-	return nil
 }

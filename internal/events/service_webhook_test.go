@@ -18,7 +18,7 @@
 package events
 
 import (
-	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"testing"
 
@@ -37,8 +37,10 @@ func TestWebhookService(t *testing.T) {
 
 	var body *FileUploaded
 	admin.AddHandler("/hook", func(w http.ResponseWriter, r *http.Request) {
+		bs, _ := ioutil.ReadAll(r.Body)
+
 		var wrapper FileUploaded
-		if err := json.NewDecoder(r.Body).Decode(&wrapper); err != nil {
+		if err := ReadEvent(bs, &wrapper); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 		} else {
 			body = &wrapper
@@ -51,11 +53,15 @@ func TestWebhookService(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	shardKey := base.ID()
-	fileIDs := []string{base.ID()}
-	err = svc.FilesUploaded(shardKey, fileIDs)
+	shardKey, fileID := base.ID(), base.ID()
+	err = svc.Send(Event{
+		Event: FileUploaded{
+			FileID:   fileID,
+			ShardKey: shardKey,
+		},
+	})
 	require.NoError(t, err)
 
 	require.Equal(t, shardKey, body.ShardKey)
-	require.Equal(t, fileIDs[0], body.FileID)
+	require.Equal(t, fileID, body.FileID)
 }
