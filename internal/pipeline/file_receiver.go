@@ -31,7 +31,8 @@ import (
 // FileReceiver accepts an ACH file from a number of pubsub Subscriptions and
 // finds the appropriate aggregator for the shardKey.
 type FileReceiver struct {
-	logger log.Logger
+	logger           log.Logger
+	defaultShardName string
 
 	shardRepository  shards.Repository
 	shardAggregators map[string]*aggregator
@@ -42,6 +43,7 @@ type FileReceiver struct {
 
 func newFileReceiver(
 	logger log.Logger,
+	defaultShardName string,
 	shardRepository shards.Repository,
 	shardAggregators map[string]*aggregator,
 	httpFiles *pubsub.Subscription,
@@ -49,6 +51,7 @@ func newFileReceiver(
 ) *FileReceiver {
 	return &FileReceiver{
 		logger:           logger,
+		defaultShardName: defaultShardName,
 		shardRepository:  shardRepository,
 		shardAggregators: shardAggregators,
 		httpFiles:        httpFiles,
@@ -125,8 +128,15 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 
 			agg, exists := fr.shardAggregators[shardName]
 			if !exists {
-				filesMissingShardAggregators.With().Add(1)
-				fr.logger.Error().LogErrorf("missing shardAggregator for shardKey=%s shardName=%s", file.ShardKey, shardName)
+				agg, exists = fr.shardAggregators[fr.defaultShardName]
+				if !exists {
+					filesMissingShardAggregators.With().Add(1)
+					fr.logger.Error().LogErrorf("missing shardAggregator for shardKey=%s shardName=%s", file.ShardKey, shardName)
+					return
+				}
+			}
+			if agg == nil {
+				fr.logger.Error().LogErrorf("nil shardAggregator for shardKey=%s shardName=%s", file.ShardKey, shardName)
 				return
 			}
 

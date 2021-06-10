@@ -45,5 +45,9 @@ func main() {
 	stopServers := env.RunServers(termListener)
 	defer stopServers()
 
+	if env.AdminServer != nil && env.ODFIFiles != nil {
+		env.ODFIFiles.RegisterRoutes(env.AdminServer)
+	}
+
 	service.AwaitTermination(env.Logger, termListener)
 }

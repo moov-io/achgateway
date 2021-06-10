@@ -10,16 +10,18 @@ ACHGateway:
     SessionPath: "achgateway/test/"
     Tags: []
     HealthCheckInterval: "10s"
-  Shards:
-    - name: "testing"
-      cutoffs:
-        timezone: "America/Los_Angeles"
-        windows:
-          - "10:30"
-          - "14:00"
-      uploadAgent: "local-ftp"
-      output:
-        format: "nacha"
+  Sharding:
+    Shards:
+      - name: "testing"
+        cutoffs:
+          timezone: "America/Los_Angeles"
+          windows:
+            - "10:30"
+            - "14:00"
+        uploadAgent: "local-ftp"
+        output:
+          format: "nacha"
+    Default: "testing"
   Upload:
     agents:
       - id: "local-ftp"

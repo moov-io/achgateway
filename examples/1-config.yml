@@ -28,19 +28,21 @@ ACHGateway:
     SessionPath: "achgateway/test/"
     Tags: []
     HealthCheckInterval: "10s"
-  Shards:
-    - name: "testing"
-      cutoffs:
-        timezone: "America/Los_Angeles"
-        windows:
-          - "10:30"
-          - "14:00"
-      uploadAgent: "local-ftp"
-      output:
-        format: "nacha"
-  # ShardMappings:
-  #   # Example static mapping if we didn't have the database defined.
-  #   "foo": "testing"
+  Sharding:
+    Shards:
+      - name: "testing"
+        cutoffs:
+          timezone: "America/Los_Angeles"
+          windows:
+            - "10:30"
+            - "14:00"
+        uploadAgent: "local-ftp"
+        output:
+          format: "nacha"
+    Mappings:
+      # Example static mapping if we didn't have the database defined.
+      # "foo": "testing"
+    Default: "testing"
   Upload:
     agents:
       - id: "local-ftp"

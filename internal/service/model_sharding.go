@@ -20,6 +20,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -34,11 +35,24 @@ var (
 	DefaultFilenameTemplate = `{{ date "20060102" }}-{{ date "150405" }}-{{ .RoutingNumber }}.ach{{ if .GPG }}.gpg{{ end }}`
 )
 
-type Shards []Shard
+type Sharding struct {
+	Shards   []Shard
+	Mappings map[string]string
+	Default  string
+}
 
-func (cfg Shards) Validate() error {
-	for i := range cfg {
-		if err := cfg[i].Validate(); err != nil {
+func (cfg Sharding) Find(name string) *Shard {
+	for i := range cfg.Shards {
+		if strings.EqualFold(cfg.Shards[i].Name, name) {
+			return &cfg.Shards[i]
+		}
+	}
+	return nil
+}
+
+func (cfg Sharding) Validate() error {
+	for i := range cfg.Shards {
+		if err := cfg.Shards[i].Validate(); err != nil {
 			return fmt.Errorf("shard[%d]: %v", i, err)
 		}
 	}
