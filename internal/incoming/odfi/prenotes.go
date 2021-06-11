@@ -36,23 +36,23 @@ var (
 	}, []string{"origin", "destination", "transactionCode"})
 )
 
-type prenoteProcessor struct {
+type prenoteEmitter struct {
 	logger log.Logger
 	svc    events.Emitter
 }
 
-func PrenoteProcessor(logger log.Logger, svc events.Emitter) *prenoteProcessor {
-	return &prenoteProcessor{
+func PrenoteEmitter(logger log.Logger, svc events.Emitter) *prenoteEmitter {
+	return &prenoteEmitter{
 		logger: logger,
 		svc:    svc,
 	}
 }
 
-func (pc *prenoteProcessor) Type() string {
+func (pc *prenoteEmitter) Type() string {
 	return "prenote"
 }
 
-func (pc *prenoteProcessor) Handle(file File) error {
+func (pc *prenoteEmitter) Handle(file File) error {
 	var batches []events.Batch
 
 	for i := range file.ACHFile.Batches {
