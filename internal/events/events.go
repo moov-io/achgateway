@@ -75,6 +75,12 @@ type PrenoteFile struct {
 	Batches  []Batch   `json:"batches"`
 }
 
+type ReconciliationFile struct {
+	Filename        string    `json:"filename"`
+	File            *ach.File `json:"file"`
+	Reconciliations []Batch   `json:"returns"`
+}
+
 type ReturnFile struct {
 	Filename string    `json:"filename"`
 	File     *ach.File `json:"file"`

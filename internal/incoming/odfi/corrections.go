@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 
 	"github.com/moov-io/achgateway/internal/events"
+	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
 
 	"github.com/go-kit/kit/metrics/prometheus"
@@ -40,7 +41,10 @@ type correctionProcessor struct {
 	svc    events.Emitter
 }
 
-func CorrectionEmitter(logger log.Logger, svc events.Emitter) *correctionProcessor {
+func CorrectionEmitter(logger log.Logger, cfg service.ODFICorrections, svc events.Emitter) *correctionProcessor {
+	if !cfg.Enabled {
+		return nil
+	}
 	return &correctionProcessor{
 		logger: logger,
 		svc:    svc,

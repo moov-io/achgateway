@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 
 	"github.com/moov-io/achgateway/internal/events"
+	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
 
 	"github.com/go-kit/kit/metrics/prometheus"
@@ -40,7 +41,10 @@ type returnEmitter struct {
 	svc    events.Emitter
 }
 
-func ReturnEmitter(logger log.Logger, svc events.Emitter) *returnEmitter {
+func ReturnEmitter(logger log.Logger, cfg service.ODFIReturns, svc events.Emitter) *returnEmitter {
+	if !cfg.Enabled {
+		return nil
+	}
 	return &returnEmitter{
 		logger: logger,
 		svc:    svc,

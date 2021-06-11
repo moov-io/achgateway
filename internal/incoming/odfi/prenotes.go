@@ -23,6 +23,7 @@ import (
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/events"
+	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
 
 	"github.com/go-kit/kit/metrics/prometheus"
@@ -41,7 +42,10 @@ type prenoteEmitter struct {
 	svc    events.Emitter
 }
 
-func PrenoteEmitter(logger log.Logger, svc events.Emitter) *prenoteEmitter {
+func PrenoteEmitter(logger log.Logger, cfg service.ODFIPrenotes, svc events.Emitter) *prenoteEmitter {
+	if !cfg.Enabled {
+		return nil
+	}
 	return &prenoteEmitter{
 		logger: logger,
 		svc:    svc,

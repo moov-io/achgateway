@@ -86,6 +86,7 @@ func (cfg *KafkaConfig) Validate() error {
 }
 
 type ODFIFiles struct {
+	Processors ODFIProcessors
 	Publishing ODFIPublishing
 	Interval   time.Duration
 	ShardNames []string
@@ -95,6 +96,9 @@ type ODFIFiles struct {
 func (cfg *ODFIFiles) Validate() error {
 	if cfg == nil {
 		return nil
+	}
+	if err := cfg.Processors.Validate(); err != nil {
+		return fmt.Errorf("processors: %v", err)
 	}
 	if err := cfg.Publishing.Validate(); err != nil {
 		return fmt.Errorf("publishing: %v", err)
@@ -106,6 +110,34 @@ func (cfg *ODFIFiles) Validate() error {
 		return errors.New("missing shard names")
 	}
 	return nil
+}
+
+type ODFIProcessors struct {
+	Corrections    ODFICorrections
+	Reconciliation ODFIReconciliation
+	Prenotes       ODFIPrenotes
+	Returns        ODFIReturns
+}
+
+func (cfg ODFIProcessors) Validate() error {
+	return nil
+}
+
+type ODFICorrections struct {
+	Enabled bool
+}
+
+type ODFIReconciliation struct {
+	Enabled      bool
+	PatchMatcher string
+}
+
+type ODFIPrenotes struct {
+	Enabled bool
+}
+
+type ODFIReturns struct {
+	Enabled bool
 }
 
 type ODFIPublishing struct {
