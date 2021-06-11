@@ -23,6 +23,7 @@ import (
 
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
 
 	"github.com/go-kit/kit/metrics/prometheus"
@@ -60,7 +61,7 @@ func (pc *correctionProcessor) Handle(file File) error {
 		return nil
 	}
 
-	msg := events.CorrectionFile{
+	msg := models.CorrectionFile{
 		Filename: filepath.Base(file.Filepath),
 		File:     file.ACHFile,
 	}
@@ -72,7 +73,7 @@ func (pc *correctionProcessor) Handle(file File) error {
 
 	for i := range file.ACHFile.NotificationOfChange {
 		entries := file.ACHFile.NotificationOfChange[i].GetEntries()
-		msg.Corrections = append(msg.Corrections, events.Batch{
+		msg.Corrections = append(msg.Corrections, models.Batch{
 			Header:  file.ACHFile.NotificationOfChange[i].GetHeader(),
 			Entries: entries,
 		})
@@ -95,7 +96,7 @@ func (pc *correctionProcessor) Handle(file File) error {
 		}
 	}
 
-	pc.svc.Send(events.Event{Event: msg})
+	pc.svc.Send(models.Event{Event: msg})
 
 	return nil
 }

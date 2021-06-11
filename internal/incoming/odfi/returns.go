@@ -23,6 +23,7 @@ import (
 
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
 
 	"github.com/go-kit/kit/metrics/prometheus"
@@ -60,7 +61,7 @@ func (pc *returnEmitter) Handle(file File) error {
 		return nil
 	}
 
-	msg := events.ReturnFile{
+	msg := models.ReturnFile{
 		Filename: filepath.Base(file.Filepath),
 		File:     file.ACHFile,
 	}
@@ -72,7 +73,7 @@ func (pc *returnEmitter) Handle(file File) error {
 
 	for i := range file.ACHFile.ReturnEntries {
 		entries := file.ACHFile.ReturnEntries[i].GetEntries()
-		msg.Returns = append(msg.Returns, events.Batch{
+		msg.Returns = append(msg.Returns, models.Batch{
 			Header:  file.ACHFile.ReturnEntries[i].GetHeader(),
 			Entries: entries,
 		})
@@ -95,7 +96,7 @@ func (pc *returnEmitter) Handle(file File) error {
 		}
 	}
 
-	pc.svc.Send(events.Event{Event: msg})
+	pc.svc.Send(models.Event{Event: msg})
 
 	return nil
 }

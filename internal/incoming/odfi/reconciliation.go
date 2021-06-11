@@ -25,6 +25,7 @@ import (
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
 
 	"github.com/go-kit/kit/metrics/prometheus"
@@ -82,11 +83,11 @@ func (pc *creditReconciliation) Handle(file File) error {
 		"filepath": log.String(file.Filepath),
 	}).Log("odfi: processing reconciliation file")
 
-	var recons []events.Batch
+	var recons []models.Batch
 
 	// Attempt to match each Transfer
 	for i := range file.ACHFile.Batches {
-		batch := events.Batch{
+		batch := models.Batch{
 			Header: file.ACHFile.Batches[i].GetHeader(),
 		}
 		entries := file.ACHFile.Batches[i].GetEntries()
@@ -109,8 +110,8 @@ func (pc *creditReconciliation) Handle(file File) error {
 	}
 
 	if len(recons) > 0 {
-		pc.svc.Send(events.Event{
-			Event: events.ReconciliationFile{
+		pc.svc.Send(models.Event{
+			Event: models.ReconciliationFile{
 				Filename:        filepath.Base(file.Filepath),
 				File:            file.ACHFile,
 				Reconciliations: recons,

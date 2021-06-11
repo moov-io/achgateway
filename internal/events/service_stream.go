@@ -23,6 +23,7 @@ import (
 
 	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
 
 	"gocloud.dev/pubsub"
@@ -46,7 +47,7 @@ func newStreamService(logger log.Logger, cfg *service.KafkaConfig) (*streamServi
 	}, nil
 }
 
-func (ss *streamService) Send(evt Event) error {
+func (ss *streamService) Send(evt models.Event) error {
 	err := ss.topic.Send(context.Background(), &pubsub.Message{
 		Body: evt.Bytes(),
 	})

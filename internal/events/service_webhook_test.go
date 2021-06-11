@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/log"
@@ -35,12 +36,12 @@ func TestWebhookService(t *testing.T) {
 	go admin.Listen()
 	t.Cleanup(func() { admin.Shutdown() })
 
-	var body *FileUploaded
+	var body *models.FileUploaded
 	admin.AddHandler("/hook", func(w http.ResponseWriter, r *http.Request) {
 		bs, _ := ioutil.ReadAll(r.Body)
 
-		var wrapper FileUploaded
-		if err := ReadEvent(bs, &wrapper); err != nil {
+		var wrapper models.FileUploaded
+		if err := models.ReadEvent(bs, &wrapper); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 		} else {
 			body = &wrapper
@@ -54,8 +55,8 @@ func TestWebhookService(t *testing.T) {
 	require.NoError(t, err)
 
 	shardKey, fileID := base.ID(), base.ID()
-	err = svc.Send(Event{
-		Event: FileUploaded{
+	err = svc.Send(models.Event{
+		Event: models.FileUploaded{
 			FileID:   fileID,
 			ShardKey: shardKey,
 		},

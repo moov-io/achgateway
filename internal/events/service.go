@@ -21,11 +21,12 @@ import (
 	"errors"
 
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
 )
 
 type Emitter interface {
-	Send(evt Event) error
+	Send(evt models.Event) error
 }
 
 func NewEmitter(logger log.Logger, cfg *service.EventsConfig) (Emitter, error) {
@@ -45,6 +46,6 @@ func NewEmitter(logger log.Logger, cfg *service.EventsConfig) (Emitter, error) {
 
 type MockEmitter struct{}
 
-func (*MockEmitter) Send(evt Event) error {
+func (*MockEmitter) Send(evt models.Event) error {
 	return nil
 }

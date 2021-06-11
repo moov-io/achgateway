@@ -37,6 +37,7 @@ import (
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/transform"
 	"github.com/moov-io/achgateway/internal/upload"
+	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/log"
 )
@@ -184,8 +185,8 @@ func (xfagg *aggregator) manualCutoff(waiter manuallyTriggeredCutoff) {
 func (xfagg *aggregator) emitFilesUploaded(proc *processedFiles) error {
 	var el base.ErrorList
 	for i := range proc.fileIDs {
-		err := xfagg.eventEmitter.Send(events.Event{
-			Event: events.FileUploaded{
+		err := xfagg.eventEmitter.Send(models.Event{
+			Event: models.FileUploaded{
 				FileID:     proc.fileIDs[i],
 				ShardKey:   proc.shardKey,
 				UploadedAt: time.Now(),

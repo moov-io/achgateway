@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
+	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base"
 	"github.com/stretchr/testify/require"
 )
@@ -31,8 +32,8 @@ func TestStreamService(t *testing.T) {
 	svc := &streamService{topic: pub}
 
 	shardKey, fileID := base.ID(), base.ID()
-	err := svc.Send(Event{
-		Event: FileUploaded{
+	err := svc.Send(models.Event{
+		Event: models.FileUploaded{
 			FileID:   fileID,
 			ShardKey: shardKey,
 		},
@@ -43,8 +44,8 @@ func TestStreamService(t *testing.T) {
 	require.NoError(t, err)
 	msg.Ack()
 
-	var body FileUploaded
-	require.NoError(t, ReadEvent(msg.Body, &body))
+	var body models.FileUploaded
+	require.NoError(t, models.ReadEvent(msg.Body, &body))
 
 	require.Equal(t, shardKey, body.ShardKey)
 	require.Equal(t, fileID, body.FileID)

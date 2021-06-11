@@ -24,6 +24,7 @@ import (
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
 
 	"github.com/go-kit/kit/metrics/prometheus"
@@ -57,10 +58,10 @@ func (pc *prenoteEmitter) Type() string {
 }
 
 func (pc *prenoteEmitter) Handle(file File) error {
-	var batches []events.Batch
+	var batches []models.Batch
 
 	for i := range file.ACHFile.Batches {
-		batch := events.Batch{
+		batch := models.Batch{
 			Header: file.ACHFile.Batches[i].GetHeader(),
 		}
 		entries := file.ACHFile.Batches[i].GetEntries()
@@ -85,8 +86,8 @@ func (pc *prenoteEmitter) Handle(file File) error {
 	}
 
 	if len(batches) > 0 {
-		pc.svc.Send(events.Event{
-			Event: events.PrenoteFile{
+		pc.svc.Send(models.Event{
+			Event: models.PrenoteFile{
 				Filename: filepath.Base(file.Filepath),
 				File:     file.ACHFile,
 				Batches:  batches,

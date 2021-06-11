@@ -23,6 +23,7 @@ import (
 	"net/url"
 
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
 
 	"github.com/hashicorp/go-retryablehttp"
@@ -51,7 +52,7 @@ func newWebhookService(logger log.Logger, cfg *service.WebhookConfig) (*webhookS
 	}, nil
 }
 
-func (w *webhookService) Send(evt Event) error {
+func (w *webhookService) Send(evt models.Event) error {
 	req, err := retryablehttp.NewRequest("POST", w.endpoint.String(), bytes.NewReader(evt.Bytes()))
 	if err != nil {
 		return fmt.Errorf("error preparing request: %v", err)
