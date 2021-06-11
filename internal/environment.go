@@ -187,10 +187,12 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 
 	// Start our ODFI PeriodicScheduler
 	if env.ODFIFiles == nil && env.Config.Inbound.ODFI != nil {
+		cfg := env.Config.Inbound.ODFI
 		processors := odfi.SetupProcessors(
-			odfi.CorrectionEmitter(env.Logger, env.Events),
-			odfi.PrenoteEmitter(env.Logger, env.Events),
-			odfi.ReturnEmitter(env.Logger, env.Events),
+			odfi.CorrectionEmitter(env.Logger, cfg.Processors.Corrections, env.Events),
+			odfi.PrenoteEmitter(env.Logger, cfg.Processors.Prenotes, env.Events),
+			odfi.CreditReconciliationEmitter(env.Logger, cfg.Processors.Reconciliation, env.Events),
+			odfi.ReturnEmitter(env.Logger, cfg.Processors.Returns, env.Events),
 		)
 		odfiFiles, err := odfi.NewPeriodicScheduler(env.Logger, env.Config, processors)
 		if err != nil {

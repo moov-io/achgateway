@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"reflect"
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/base"
@@ -51,7 +52,14 @@ type FileProcessor interface {
 type Processors []FileProcessor
 
 func SetupProcessors(pcs ...FileProcessor) Processors {
-	return Processors(pcs)
+	var out Processors
+	for i := range pcs {
+		v := reflect.ValueOf(pcs[i])
+		if !v.IsNil() {
+			out = append(out, pcs[i])
+		}
+	}
+	return out
 }
 
 func (pcs Processors) HandleAll(file File) error {
