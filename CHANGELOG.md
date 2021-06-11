@@ -1,3 +1,9 @@
+## v0.2.2 (Released 2021-06-09)
+
+BUG FIXES
+
+- configs: disable mysql and consul by default
+
 ## v0.2.1 (Released 2021-06-09)
 
 BUILD
