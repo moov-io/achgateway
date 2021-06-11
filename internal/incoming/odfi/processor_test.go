@@ -15,36 +15,26 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package events
+package odfi
 
 import (
-	"errors"
-
-	"github.com/moov-io/achgateway/internal/service"
-	"github.com/moov-io/base/log"
+	"io/ioutil"
+	"path/filepath"
+	"testing"
 )
 
-type Emitter interface {
-	Send(evt Event) error
-}
-
-func NewEmitter(logger log.Logger, cfg *service.EventsConfig) (Emitter, error) {
-	if cfg == nil {
-		return &MockEmitter{}, nil
+func TestProcessor__process(t *testing.T) {
+	dir := t.TempDir()
+	if err := ioutil.WriteFile(filepath.Join(dir, "invalid.ach"), []byte("invalid-ach-file"), 0644); err != nil {
+		t.Fatal(err)
 	}
-	if cfg.Stream != nil {
-		if cfg.Stream.Kafka != nil {
-			return newStreamService(logger, cfg.Stream.Kafka)
-		}
-	}
-	if cfg.Webhook != nil {
-		return newWebhookService(logger, cfg.Webhook)
-	}
-	return nil, errors.New("unknown events config")
-}
 
-type MockEmitter struct{}
+	processors := SetupProcessors(&MockProcessor{})
 
-func (*MockEmitter) Send(evt Event) error {
-	return nil
+	// By reading a file without ACH FileHeaders we still want to try and process
+	// Batches inside of it if any are found, so reading this kind of file shouldn't
+	// return an error from reading the file.
+	if err := process(dir, processors); err != nil {
+		t.Error(err)
+	}
 }

@@ -28,6 +28,8 @@ import (
 
 	_ "github.com/moov-io/achgateway"
 	"github.com/moov-io/achgateway/internal/consul"
+	"github.com/moov-io/achgateway/internal/events"
+	"github.com/moov-io/achgateway/internal/incoming/odfi"
 	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/incoming/web"
 	"github.com/moov-io/achgateway/internal/pipeline"
@@ -51,6 +53,7 @@ type Environment struct {
 	DB             *sql.DB
 	InternalClient *http.Client
 	Consul         *consul.Wrapper
+	Events         events.Emitter
 
 	PublicRouter *mux.Router
 	AdminServer  *admin.Server
@@ -58,6 +61,7 @@ type Environment struct {
 
 	HTTPFiles   *pubsub.Topic
 	StreamFiles *pubsub.Topic
+	ODFIFiles   odfi.Scheduler
 
 	FileReceiver *pipeline.FileReceiver
 }
@@ -155,6 +159,15 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		}
 	}
 
+	// Setup our Events emitter
+	if env.Events == nil && env.Config.Events != nil {
+		emitter, err := events.NewEmitter(env.Logger, env.Config.Events)
+		if err != nil {
+			return nil, err
+		}
+		env.Events = emitter
+	}
+
 	// file pipeline
 	httpSub, err := stream.Subscription(env.Logger, inmemConfig)
 	if err != nil {
@@ -165,12 +178,39 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		return nil, fmt.Errorf("unable to create stream files subscription: %v", err)
 	}
 
-	shardRepository := shards.NewRepository(env.DB, env.Config.ShardMappings)
+	shardRepository := shards.NewRepository(env.DB, env.Config.Sharding.Mappings)
 	fileReceiver, err := pipeline.Start(ctx, env.Logger, env.Config, env.Consul, shardRepository, httpSub, streamSub)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create file pipeline: %v", err)
 	}
 	env.FileReceiver = fileReceiver
+
+	// Start our ODFI PeriodicScheduler
+	if env.ODFIFiles == nil && env.Config.Inbound.ODFI != nil {
+		processors := odfi.SetupProcessors(
+			odfi.CorrectionEmitter(env.Logger, env.Events),
+			odfi.ReturnEmitter(env.Logger, env.Events),
+		)
+		odfiFiles, err := odfi.NewPeriodicScheduler(env.Logger, env.Config, processors)
+		if err != nil {
+			return nil, fmt.Errorf("problem creating odfi periodic scheduler: %v", err)
+		}
+		env.Logger.Info().Logf("starting ODFI periodic scheduler interval=%v", env.Config.Inbound.ODFI.Interval)
+		env.ODFIFiles = odfiFiles
+
+		// Start the scheduler in an anonymous goroutine
+		go func() {
+			if err := env.ODFIFiles.Start(); err != nil {
+				env.Logger.Info().Logf("error with ODFI periodic scheduler: %v", err)
+			}
+		}()
+
+		prev := env.Shutdown
+		env.Shutdown = func() {
+			prev()
+			env.ODFIFiles.Shutdown()
+		}
+	}
 
 	return env, nil
 }

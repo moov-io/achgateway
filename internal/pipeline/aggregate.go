@@ -37,6 +37,7 @@ import (
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/transform"
 	"github.com/moov-io/achgateway/internal/upload"
+	"github.com/moov-io/base"
 	"github.com/moov-io/base/log"
 )
 
@@ -156,7 +157,7 @@ func (xfagg *aggregator) withEachFile(when time.Time) error {
 		return fmt.Errorf("merging ACH files: %v", err)
 	}
 
-	if err := xfagg.eventEmitter.FilesUploaded(processed.shardKey, processed.fileIDs); err != nil {
+	if err := xfagg.emitFilesUploaded(processed); err != nil {
 		xfagg.logger.LogErrorf("ERROR sending files uploaded event: %v", err)
 	}
 
@@ -171,13 +172,30 @@ func (xfagg *aggregator) manualCutoff(waiter manuallyTriggeredCutoff) {
 		waiter.C <- err
 	} else {
 		// Publish event of File uploads
-		if err := xfagg.eventEmitter.FilesUploaded(processed.shardKey, processed.fileIDs); err != nil {
+		if err := xfagg.emitFilesUploaded(processed); err != nil {
 			xfagg.logger.LogErrorf("ERROR sending files uploaded event: %v", err)
 		}
 		waiter.C <- err
 	}
 
 	xfagg.logger.Log("ended manual cutoff window processing")
+}
+
+func (xfagg *aggregator) emitFilesUploaded(proc *processedFiles) error {
+	var el base.ErrorList
+	for i := range proc.fileIDs {
+		err := xfagg.eventEmitter.Send(events.Event{
+			Event: events.FileUploaded{
+				FileID:     proc.fileIDs[i],
+				ShardKey:   proc.shardKey,
+				UploadedAt: time.Now(),
+			},
+		})
+		if err != nil {
+			el.Add(err)
+		}
+	}
+	return el
 }
 
 func (xfagg *aggregator) runTransformers(agent upload.Agent, outgoing *ach.File) error {

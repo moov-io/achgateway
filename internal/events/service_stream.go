@@ -20,7 +20,6 @@ package events
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/service"
@@ -47,19 +46,12 @@ func newStreamService(logger log.Logger, cfg *service.KafkaConfig) (*streamServi
 	}, nil
 }
 
-func (ss *streamService) FilesUploaded(shardKey string, fileIDs []string) error {
-	for i := range fileIDs {
-		msg := FileUploaded{
-			FileID:     fileIDs[i],
-			ShardKey:   shardKey,
-			UploadedAt: time.Now(),
-		}
-		err := ss.topic.Send(context.Background(), &pubsub.Message{
-			Body: msg.Bytes(),
-		})
-		if err != nil {
-			return fmt.Errorf("error emitting file upload event: %v", err)
-		}
+func (ss *streamService) Send(evt Event) error {
+	err := ss.topic.Send(context.Background(), &pubsub.Message{
+		Body: evt.Bytes(),
+	})
+	if err != nil {
+		return fmt.Errorf("error emitting %s: %v", evt.Type, err)
 	}
 	return nil
 }

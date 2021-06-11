@@ -39,8 +39,7 @@ type Config struct {
 	Admin         Admin
 	Inbound       Inbound
 	Events        *EventsConfig
-	Shards        Shards
-	ShardMappings map[string]string
+	Sharding      Sharding
 	Upload        UploadAgents
 	Notifications Notifications
 	AuditTrail    AuditTrails
@@ -49,25 +48,25 @@ type Config struct {
 
 func (cfg *Config) Validate() error {
 	if err := cfg.Admin.Validate(); err != nil {
-		return fmt.Errorf("XX: %v", err)
+		return fmt.Errorf("admin: %v", err)
 	}
 	if err := cfg.Inbound.Validate(); err != nil {
-		return fmt.Errorf("XX: %v", err)
+		return fmt.Errorf("inbound: %v", err)
 	}
-	if err := cfg.Shards.Validate(); err != nil {
-		return fmt.Errorf("XX: %v", err)
+	if err := cfg.Sharding.Validate(); err != nil {
+		return fmt.Errorf("sharding: %v", err)
 	}
 	if err := cfg.Upload.Validate(); err != nil {
-		return fmt.Errorf("XX: %v", err)
+		return fmt.Errorf("upload: %v", err)
 	}
 	if err := cfg.Notifications.Validate(); err != nil {
-		return fmt.Errorf("XX: %v", err)
+		return fmt.Errorf("notifications: %v", err)
 	}
 	if err := cfg.AuditTrail.Validate(); err != nil {
-		return fmt.Errorf("XX: %v", err)
+		return fmt.Errorf("audittrail: %v", err)
 	}
 	if err := cfg.Errors.Validate(); err != nil {
-		return fmt.Errorf("XX: %v", err)
+		return fmt.Errorf("errors: %v", err)
 	}
 	return nil
 }

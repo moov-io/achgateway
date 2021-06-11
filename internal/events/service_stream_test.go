@@ -18,44 +18,34 @@
 package events
 
 import (
-	"encoding/json"
-	"net/http"
+	"context"
 	"testing"
 
-	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
 	"github.com/moov-io/base"
-	"github.com/moov-io/base/admin"
-	"github.com/moov-io/base/log"
-
 	"github.com/stretchr/testify/require"
 )
 
-func TestWebhookService(t *testing.T) {
-	admin := admin.NewServer(":0")
-	go admin.Listen()
-	t.Cleanup(func() { admin.Shutdown() })
+func TestStreamService(t *testing.T) {
+	pub, sub := streamtest.InmemStream(t)
+	svc := &streamService{topic: pub}
 
-	var body *FileUploaded
-	admin.AddHandler("/hook", func(w http.ResponseWriter, r *http.Request) {
-		var wrapper FileUploaded
-		if err := json.NewDecoder(r.Body).Decode(&wrapper); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-		} else {
-			body = &wrapper
-			w.WriteHeader(http.StatusOK)
-		}
-	})
-
-	svc, err := newWebhookService(log.NewNopLogger(), &service.WebhookConfig{
-		Endpoint: "http://" + admin.BindAddr() + "/hook",
+	shardKey, fileID := base.ID(), base.ID()
+	err := svc.Send(Event{
+		Event: FileUploaded{
+			FileID:   fileID,
+			ShardKey: shardKey,
+		},
 	})
 	require.NoError(t, err)
 
-	shardKey := base.ID()
-	fileIDs := []string{base.ID()}
-	err = svc.FilesUploaded(shardKey, fileIDs)
+	msg, err := sub.Receive(context.Background())
 	require.NoError(t, err)
+	msg.Ack()
+
+	var body FileUploaded
+	require.NoError(t, ReadEvent(msg.Body, &body))
 
 	require.Equal(t, shardKey, body.ShardKey)
-	require.Equal(t, fileIDs[0], body.FileID)
+	require.Equal(t, fileID, body.FileID)
 }

@@ -4,25 +4,45 @@ ACHGateway:
   Inbound:
     HTTP:
       BindAddress: ":8484"
+    ODFI:
+      Publishing:
+        Kafka:
+          brokers:
+            - kafka1:9092
+          key: admin
+          secret: secret
+          tls: false
+          topic: "ach.odfi-files"
+      Interval: "1m"
+      ShardNames:
+        - "testing"
+      Storage:
+        Directory: "./storage-1/"
+        CleanupLocalDirectory: true
+  Events:
+    Webhook:
+      Endpoint: "http://localhost:9999"
   Consul:
     Address: "127.0.0.1:8500"
     Scheme: "http"
     SessionPath: "achgateway/test/"
     Tags: []
     HealthCheckInterval: "10s"
-  Shards:
-    - name: "testing"
-      cutoffs:
-        timezone: "America/Los_Angeles"
-        windows:
-          - "10:30"
-          - "14:00"
-      uploadAgent: "local-ftp"
-      output:
-        format: "nacha"
-  # ShardMappings:
-  #   # Example static mapping if we didn't have the database defined.
-  #   "foo": "testing"
+  Sharding:
+    Shards:
+      - name: "testing"
+        cutoffs:
+          timezone: "America/Los_Angeles"
+          windows:
+            - "10:30"
+            - "14:00"
+        uploadAgent: "local-ftp"
+        output:
+          format: "nacha"
+    Mappings:
+      # Example static mapping if we didn't have the database defined.
+      # "foo": "testing"
+    Default: "testing"
   Upload:
     agents:
       - id: "local-ftp"
@@ -36,7 +56,7 @@ ACHGateway:
           reconciliation: "/reconciliation/"
           return: "/returned/"
     merging:
-      directory: "storage-1"
+      directory: "./storage-1/"
   Database:
     DatabaseName: "achgateway"
     MySQL:

@@ -15,36 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package events
+package odfi
 
 import (
-	"errors"
-
-	"github.com/moov-io/achgateway/internal/service"
-	"github.com/moov-io/base/log"
+	"github.com/moov-io/base/admin"
 )
 
-type Emitter interface {
-	Send(evt Event) error
+type MockScheduler struct {
+	Err error
 }
 
-func NewEmitter(logger log.Logger, cfg *service.EventsConfig) (Emitter, error) {
-	if cfg == nil {
-		return &MockEmitter{}, nil
-	}
-	if cfg.Stream != nil {
-		if cfg.Stream.Kafka != nil {
-			return newStreamService(logger, cfg.Stream.Kafka)
-		}
-	}
-	if cfg.Webhook != nil {
-		return newWebhookService(logger, cfg.Webhook)
-	}
-	return nil, errors.New("unknown events config")
+func (s *MockScheduler) Start() error {
+	return s.Err
 }
 
-type MockEmitter struct{}
+func (*MockScheduler) Shutdown() {}
 
-func (*MockEmitter) Send(evt Event) error {
-	return nil
-}
+func (*MockScheduler) RegisterRoutes(_ *admin.Server) {}

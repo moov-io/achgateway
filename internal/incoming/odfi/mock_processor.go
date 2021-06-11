@@ -15,33 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package events
+package odfi
 
-import (
-	"context"
-	"encoding/json"
-	"testing"
+type MockProcessor struct {
+	Err error
+}
 
-	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
-	"github.com/moov-io/base"
-	"github.com/stretchr/testify/require"
-)
+func (pc *MockProcessor) Type() string {
+	return "mock"
+}
 
-func TestStreamService(t *testing.T) {
-	pub, sub := streamtest.InmemStream(t)
-	svc := &streamService{topic: pub}
-
-	shardKey := base.ID()
-	fileIDs := []string{base.ID()}
-	err := svc.FilesUploaded(shardKey, fileIDs)
-	require.NoError(t, err)
-
-	msg, err := sub.Receive(context.Background())
-	require.NoError(t, err)
-
-	var body FileUploaded
-	require.NoError(t, json.Unmarshal(msg.Body, &body))
-
-	require.Equal(t, shardKey, body.ShardKey)
-	require.Equal(t, fileIDs[0], body.FileID)
+func (pc *MockProcessor) Handle(file File) error {
+	return pc.Err
 }

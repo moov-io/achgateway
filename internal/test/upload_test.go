@@ -68,15 +68,17 @@ var (
 		Inbound: service.Inbound{
 			InMem: &service.InMemory{},
 		},
-		Shards: service.Shards{
-			{
-				Name: "prod",
-				Cutoffs: service.Cutoffs{
-					Timezone: "America/Los_Angeles",
-					Windows:  []string{"12:03"},
+		Sharding: service.Sharding{
+			Shards: []service.Shard{
+				{
+					Name: "prod",
+					Cutoffs: service.Cutoffs{
+						Timezone: "America/Los_Angeles",
+						Windows:  []string{"12:03"},
+					},
+					OutboundFilenameTemplate: `{{ date "20060102" }}-{{ date "150405.00000" }}-{{ .RoutingNumber }}.ach`,
+					UploadAgent:              "ftp-test",
 				},
-				OutboundFilenameTemplate: `{{ date "20060102" }}-{{ date "150405.00000" }}-{{ .RoutingNumber }}.ach`,
-				UploadAgent:              "ftp-test",
 			},
 		},
 		Upload: service.UploadAgents{

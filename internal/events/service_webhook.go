@@ -21,7 +21,6 @@ import (
 	"bytes"
 	"fmt"
 	"net/url"
-	"time"
 
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
@@ -29,14 +28,14 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 )
 
-type webService struct {
+type webhookService struct {
 	cfg      service.WebhookConfig
 	client   *retryablehttp.Client
 	endpoint *url.URL
 	logger   log.Logger
 }
 
-func newWebhookService(logger log.Logger, cfg *service.WebhookConfig) (*webService, error) {
+func newWebhookService(logger log.Logger, cfg *service.WebhookConfig) (*webhookService, error) {
 	if cfg == nil || cfg.Endpoint == "" {
 		return nil, nil
 	}
@@ -44,7 +43,7 @@ func newWebhookService(logger log.Logger, cfg *service.WebhookConfig) (*webServi
 	if err != nil {
 		return nil, fmt.Errorf("webhook: %v", err)
 	}
-	return &webService{
+	return &webhookService{
 		cfg:      *cfg,
 		client:   retryablehttp.NewClient(),
 		endpoint: u,
@@ -52,24 +51,17 @@ func newWebhookService(logger log.Logger, cfg *service.WebhookConfig) (*webServi
 	}, nil
 }
 
-func (w *webService) FilesUploaded(shardKey string, fileIDs []string) error {
-	for i := range fileIDs {
-		msg := FileUploaded{
-			FileID:     fileIDs[i],
-			ShardKey:   shardKey,
-			UploadedAt: time.Now(),
-		}
-		req, err := retryablehttp.NewRequest("POST", w.endpoint.String(), bytes.NewReader(msg.Bytes()))
-		if err != nil {
-			return fmt.Errorf("error preparing request: %v", err)
-		}
-		resp, err := w.client.Do(req)
-		if err != nil {
-			w.logger.Info().Logf("problem sending fileID=%s webhook: %v", fileIDs[i], err)
-		}
-		if resp.Body != nil {
-			resp.Body.Close()
-		}
+func (w *webhookService) Send(evt Event) error {
+	req, err := retryablehttp.NewRequest("POST", w.endpoint.String(), bytes.NewReader(evt.Bytes()))
+	if err != nil {
+		return fmt.Errorf("error preparing request: %v", err)
+	}
+	resp, err := w.client.Do(req)
+	if err != nil {
+		w.logger.Info().Logf("problem sending event: %v", err)
+	}
+	if resp != nil && resp.Body != nil {
+		resp.Body.Close()
 	}
 	return nil
 }

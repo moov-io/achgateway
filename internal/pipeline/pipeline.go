@@ -45,19 +45,19 @@ func Start(
 
 	// register each shard's aggregator
 	shardAggregators := make(map[string]*aggregator)
-	for i := range cfg.Shards {
-		xfagg, err := newAggregator(logger, consul, eventEmitter, cfg.Shards[i], cfg.Upload)
+	for i := range cfg.Sharding.Shards {
+		xfagg, err := newAggregator(logger, consul, eventEmitter, cfg.Sharding.Shards[i], cfg.Upload)
 		if err != nil {
-			return nil, fmt.Errorf("problem starting shard=%s: %v", cfg.Shards[i].Name, err)
+			return nil, fmt.Errorf("problem starting shard=%s: %v", cfg.Sharding.Shards[i].Name, err)
 		}
 
 		go xfagg.Start(ctx)
 
-		shardAggregators[cfg.Shards[i].Name] = xfagg
+		shardAggregators[cfg.Sharding.Shards[i].Name] = xfagg
 	}
 
 	// register our fileReceiver and start it
-	receiver := newFileReceiver(logger, shardRepository, shardAggregators, httpFiles, streamFiles)
+	receiver := newFileReceiver(logger, cfg.Sharding.Default, shardRepository, shardAggregators, httpFiles, streamFiles)
 	go receiver.Start(ctx)
 
 	return receiver, nil

@@ -15,54 +15,41 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package service
+package odfi
 
 import (
-	"errors"
+	"net/http"
+
+	"github.com/moov-io/base/admin"
+	moovhttp "github.com/moov-io/base/http"
 )
 
-type EventsConfig struct {
-	Stream  *EventsStream
-	Webhook *WebhookConfig
+func (s *PeriodicScheduler) RegisterRoutes(svc *admin.Server) {
+	svc.AddHandler("/trigger-inbound", s.triggerInboundProcessing())
 }
 
-func (cfg *EventsConfig) Validate() error {
-	if cfg == nil {
-		return nil
-	}
-	if err := cfg.Stream.Validate(); err != nil {
-		return err
-	}
-	if err := cfg.Webhook.Validate(); err != nil {
-		return err
-	}
-	return nil
+type manuallyTriggeredInbound struct {
+	C chan error
 }
 
-type EventsStream struct {
-	Kafka *KafkaConfig
-}
+func (s *PeriodicScheduler) triggerInboundProcessing() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 
-func (cfg *EventsStream) Validate() error {
-	if cfg == nil {
-		return nil
-	}
-	if err := cfg.Kafka.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
+		// send off the manual request
+		waiter := manuallyTriggeredInbound{
+			C: make(chan error, 1),
+		}
+		s.inboundTrigger <- waiter
 
-type WebhookConfig struct {
-	Endpoint string
-}
-
-func (cfg *WebhookConfig) Validate() error {
-	if cfg == nil {
-		return nil
+		if err := <-waiter.C; err != nil {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			moovhttp.Problem(w, err)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
 	}
-	if cfg.Endpoint == "" {
-		return errors.New("missing endpoint")
-	}
-	return nil
 }
