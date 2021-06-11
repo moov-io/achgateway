@@ -1,3 +1,9 @@
+## v0.4.0 (Released 2021-06-11)
+
+IMPROVEMENTS
+
+- events: move models into exported package
+
 ## v0.3.0 (Released 2021-06-11)
 
 ADDITIONS
