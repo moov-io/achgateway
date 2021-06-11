@@ -1,3 +1,14 @@
+## v0.3.0 (Released 2021-06-11)
+
+ADDITIONS
+
+- events: setup events for incoming ODFI files (Corrections, Incoming, Prenotes, Reconciliation, Returns)
+
+IMPROVEMENTS
+
+- config: better validation error messages
+- pipeline: allow for a default shard
+
 ## v0.2.2 (Released 2021-06-09)
 
 BUG FIXES
