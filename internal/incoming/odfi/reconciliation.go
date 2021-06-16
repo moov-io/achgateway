@@ -108,18 +108,23 @@ func (pc *creditReconciliation) Handle(file File) error {
 			recons = append(recons, batch)
 		}
 	}
-
 	if len(recons) > 0 {
-		pc.svc.Send(models.Event{
-			Event: models.ReconciliationFile{
-				Filename:        filepath.Base(file.Filepath),
-				File:            file.ACHFile,
-				Reconciliations: recons,
-			},
+		pc.sendEvent(models.ReconciliationFile{
+			Filename:        filepath.Base(file.Filepath),
+			File:            file.ACHFile,
+			Reconciliations: recons,
 		})
 	}
-
 	return nil
+}
+
+func (pc *creditReconciliation) sendEvent(event interface{}) {
+	if pc.svc != nil {
+		err := pc.svc.Send(models.Event{Event: event})
+		if err != nil {
+			pc.logger.Logf("error sending reconciliations event: %v", err)
+		}
+	}
 }
 
 func isCreditEntry(ed *ach.EntryDetail) bool {

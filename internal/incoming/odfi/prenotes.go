@@ -84,18 +84,23 @@ func (pc *prenoteEmitter) Handle(file File) error {
 			).Add(1)
 		}
 	}
-
 	if len(batches) > 0 {
-		pc.svc.Send(models.Event{
-			Event: models.PrenoteFile{
-				Filename: filepath.Base(file.Filepath),
-				File:     file.ACHFile,
-				Batches:  batches,
-			},
+		pc.sendEvent(models.PrenoteFile{
+			Filename: filepath.Base(file.Filepath),
+			File:     file.ACHFile,
+			Batches:  batches,
 		})
 	}
-
 	return nil
+}
+
+func (pc *prenoteEmitter) sendEvent(event interface{}) {
+	if pc.svc != nil {
+		err := pc.svc.Send(models.Event{Event: event})
+		if err != nil {
+			pc.logger.Logf("error sending pre-note event: %v", err)
+		}
+	}
 }
 
 // isPrenoteEntry checks if a given EntryDetail matches the pre-notification
