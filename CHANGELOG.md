@@ -1,3 +1,9 @@
+## v0.4.1 (Released 2021-06-15)
+
+BUG FIXES
+
+- incoming/odfi: fix nil panic on sending events
+
 ## v0.4.0 (Released 2021-06-11)
 
 IMPROVEMENTS
