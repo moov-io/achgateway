@@ -35,7 +35,7 @@ require (
 	github.com/ory/dockertest/v3 v3.6.5
 	github.com/ory/mail/v3 v3.0.0
 	github.com/pelletier/go-toml v1.9.0 // indirect
-	github.com/pkg/sftp v1.13.1
+	github.com/pkg/sftp v1.13.0
 	github.com/prometheus/client_golang v1.10.0
 	github.com/prometheus/common v0.23.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1
@@ -50,10 +50,10 @@ require (
 	gocloud.dev v0.22.0
 	gocloud.dev/pubsub/kafkapubsub v0.22.0
 	goftp.io/server v0.4.0
-	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
+	golang.org/x/crypto v0.0.0-20210506145944-38f3c27a63bf
 	golang.org/x/mod v0.4.2 // indirect
 	golang.org/x/net v0.0.0-20210505214959-0714010a04ed // indirect
-	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22 // indirect
+	golang.org/x/sys v0.0.0-20210503173754-0981d6026fa6 // indirect
 	google.golang.org/api v0.46.0 // indirect
 	google.golang.org/genproto v0.0.0-20210506142907-4a47615972c2 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
