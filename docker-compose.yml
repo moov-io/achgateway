@@ -7,14 +7,14 @@ services:
     image: mysql:latest
     restart: always
     ports:
-    - "3306:3306"
+      - "3306:3306"
     environment:
-    - MYSQL_DATABASE=achgateway
-    - MYSQL_USER=achgateway
-    - MYSQL_PASSWORD=achgateway
-    - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=achgateway
+      - MYSQL_USER=achgateway
+      - MYSQL_PASSWORD=achgateway
+      - MYSQL_ROOT_PASSWORD=root
     networks:
-    - intranet
+      - intranet
     tmpfs: # Run this mysql in memory as its used for testing
       - /var/lib/mysql
 
@@ -23,7 +23,7 @@ services:
     container_name: consul-server
     restart: always
     volumes:
-     - ./dev/consul/server.json:/consul/config/server.json:ro
+      - ./dev/consul/server.json:/consul/config/server.json:ro
     networks:
       - consul
     ports:
@@ -37,7 +37,7 @@ services:
     container_name: consul-client
     restart: always
     volumes:
-     - ./dev/consul/client.json:/consul/config/client.json:ro
+      - ./dev/consul/client.json:/consul/config/client.json:ro
     networks:
       - consul
     command: "agent"
@@ -73,7 +73,7 @@ services:
       PORT_COMMAND: "docker port $$(hostname) 9092/tcp | cut -d: -f2"
       HOSTNAME_COMMAND: "route -n | awk '/UG[ \t]/{print $$2}'"
     volumes:
-     - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock
     tmpfs: # Run this mysql in memory as its used for testing
       - /tmp/kafka-logs
 
