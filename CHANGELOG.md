@@ -1,3 +1,13 @@
+## v0.4.2 (Released 2021-06-18)
+
+IMPROVEMENTS
+
+- docs: getting started example
+
+BUG FIXES
+
+- pipeline: properly return nil error from emitFilesUploaded
+
 ## v0.4.1 (Released 2021-06-15)
 
 BUG FIXES
