@@ -39,9 +39,6 @@ type FTPTransferAgent struct {
 	mu     sync.Mutex // protects all read/write methods
 }
 
-// TODO(adam): What sort of metrics should we collect? Just each operation into a histogram?
-// If so we could wrap those in an Agent shim with Prometheus
-
 func newFTPTransferAgent(logger log.Logger, cfg *service.UploadAgent) (*FTPTransferAgent, error) {
 	if cfg == nil || cfg.FTP == nil {
 		return nil, errors.New("nil FTP config")

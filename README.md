@@ -72,7 +72,7 @@ Describing ACH file './testdata/ftp-server/outbound/20210618-233820-231380104.ac
   1           1           2                  100000            100000
 ```
 
-__Optional__ Initiate inbound file processing:
+Initiate inbound file processing:
 ```
 $ curl -XPUT "http://localhost:9494/trigger-inbound"
 achgateway_1  | ts=2021-06-18T23:39:06Z msg="starting odfi periodic processing for testing" level=info app=achgateway version=v0.4.1
