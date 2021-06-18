@@ -174,7 +174,7 @@ func (xfagg *aggregator) manualCutoff(waiter manuallyTriggeredCutoff) {
 	} else {
 		// Publish event of File uploads
 		if err := xfagg.emitFilesUploaded(processed); err != nil {
-			xfagg.logger.LogErrorf("ERROR sending files uploaded event: %v", err)
+			xfagg.logger.LogErrorf("ERROR sending manual files uploaded event: %v", err)
 		}
 		waiter.C <- err
 	}
@@ -195,6 +195,9 @@ func (xfagg *aggregator) emitFilesUploaded(proc *processedFiles) error {
 		if err != nil {
 			el.Add(err)
 		}
+	}
+	if el.Empty() {
+		return nil
 	}
 	return el
 }
