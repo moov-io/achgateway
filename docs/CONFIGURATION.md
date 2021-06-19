@@ -19,7 +19,7 @@ ACHGateway:
 ```
 
 ### Database
-```
+```yaml
   Database:
     MySQL:
       Address: <string>
@@ -37,7 +37,7 @@ ACHGateway:
 
 ### Consul
 
-```
+```yaml
   Consul:
     Address: <string>
     Scheme: <string>
@@ -48,7 +48,7 @@ ACHGateway:
 ```
 
 ### Inbound
-```
+```yaml
   Inbound:
     HTTP:
       BindAddress: <string>
@@ -95,7 +95,7 @@ ACHGateway:
 ```
 
 ### Eventing
-```
+```yaml
   Events:
     Stream:
       Kafka
@@ -112,7 +112,7 @@ ACHGateway:
 ```
 
 ### Sharding
-```
+```yaml
   Sharding:
     Shards:
       - Name: <string>
@@ -161,7 +161,7 @@ ACHGateway:
 ```
 
 ### Upload Agents
-```
+```yaml
   Upload:
     Agents:
     - ID: <string>
@@ -212,13 +212,13 @@ ACHGateway:
 ```
 
 ### Notifications
-```
+```yaml
   Notifications:
     # TODO(adam)
 ```
 
 ### Audit Trail
-```
+```yaml
   AuditTrail:
     - ID: <string>
       BucketURI: <string>
@@ -230,7 +230,7 @@ ACHGateway:
 ```
 
 ### Error Alerting
-```
+```yaml
   Errors:
     PagerDuty:
       ApiKey: <string>
