@@ -9,41 +9,235 @@ Custom configuration for this application may be specified via an environment va
 
 - [Default Configuration](../configs/config.default.yml)
 - [Config Source Code](../pkg/service/model_config.go)
-- Full Configuration
-  ```yaml
-  ACHGateway:
 
-    # Service configurations
-    Servers:
+### General Configuration
 
-      # Public service configuration
-      Public:
-        Bind:
-          # Address and port to listen on.
-          Address: ":8200"
+```yaml
+ACHGateway:
+  Admin:
+    BindAddress: <string>
+```
 
-      # Health/Admin service configuration.
-      Admin:
-        Bind:
-          # Address and port to listen on.
-          Address: ":8201"
+### Database
+```
+  Database:
+    MySQL:
+      Address: <string>
+      User: <string>
+      Password: <string>
+      Connections:
+        MaxOpen: <integer>
+        MaxIdle: <integer>
+        MaxLifetime: <duration>
+        MaxIdleTime: <duration>
+    SQLite:
+      Path: <string>
+    DatabaseName: <string>
+```
 
-    # All database configuration is done here. Only one connector can be configured.
-    Database:
+### Consul
 
-      # Database name to use for selected connector.
-      DatabaseName: "identity"
+```
+  Consul:
+    Address: <string>
+    Scheme: <string>
+    SessionPath: <string>
+    Tags:
+      - <string>
+    HealthCheckInterval: <duration>
+```
 
-      # MySql configuration
-      MySQL:
-        Address: tcp(mysqlidentity:3306)
-        User: identity
-        Password: identity
+### Inbound
+```
+  Inbound:
+    HTTP:
+      BindAddress: <string>
+    InMem:
+      URL: <string>
+    Kafka:
+      Brokers:
+        - <string>
+      Key: <string>
+      Secret: <string>
+      Group: <string>
+      Topic: <string>
+      TLS: <boolean>
+      AutoCommit: <boolean>
+    ODFI:
+      Processors:
+        Corrections:
+          Enabled: <boolean>
+        Reconciliation:
+          Enabled: <boolean>
+          PathMatcher: <string>
+        Prenotes:
+          Enabled: <boolean>
+        Returns:
+          Enabled: <boolean>
+      Publishing:
+        Kafka:
+          Brokers:
+            - <string>
+          Key: <string>
+          Secret: <string>
+          Group: <string>
+          Topic: <string>
+          TLS: <boolean>
+          AutoCommit: <boolean>
+      Interval: <duration>
+      ShardNames:
+        - <string>
+      Storage:
+        Directory: <string>
+        CleanupLocalDirectory: <boolean>
+        KeepRemoteFiles: <boolean>
+        RemoveZeroByteFiles: <boolean>
+```
 
-      # OR uses the sqllite db
-      SQLLite:
-        Path: ":memory:"
-  ```
+### Eventing
+```
+  Events:
+    Stream:
+      Kafka
+        Brokers:
+          - <string>
+        Key: <string>
+        Secret: <string>
+        Group: <string>
+        Topic: <string>
+        TLS: <boolean>
+        AutoCommit: <boolean>
+    Webhook:
+      Endpoint: <string>
+```
+
+### Sharding
+```
+  Sharding:
+    Shards:
+      - Name: <string>
+        Cutoffs:
+          Timezone: <string>
+          Windows:
+            - <string>
+        PreUpload:
+          GPG:
+            KeyFile: <string>
+            Signer:
+              KeyFile: <string>
+              KeyPassword: <string>
+        UploadAgent: <string>
+        OutboundFilenameTemplate: <string>
+        Output:
+          Format: <string>
+        Notifications:
+          Email:
+            - ID: <string>
+              From: <string>
+              To:
+                - <string>
+              ConnectionURI: <string>
+              Template: <string>
+              CompanyName: <string>
+          PagerDuty:
+            - ID: <string>
+              ApiKey: <string>
+              From: <string>
+              ServiceKey: <string>
+          Slack:
+            - ID: <string>
+              WebhookURL: <string>
+          Retry:
+            Interval: <duration>
+            MaxRetries: <integer>
+        Audit:
+          - ID: <string>
+            BucketURI: <string>
+            GPG:
+              KeyFile: <string>
+              Signer:
+                KeyFile: <string>
+                KeyPassword: <string>
+```
+
+### Upload Agents
+```
+  Upload:
+    Agents:
+    - ID: <string>
+      # Configuration for using a remote File Transfer Protocol server
+      # for ACH file uploads.
+      FTP:
+        Hostname: <host>
+        Username: <string>
+        [ Password: <secret> ]
+        [ CAFile: <filename> ]
+        [ DialTimeout: <duration> | default = 10s ]
+        # Offer EPSV to be used if the FTP server supports it.
+        [ DisabledEPSV: <boolean> | default = false ]
+      # Configuration for using a remote SSH File Transfer Protocol server
+      # for ACH file uploads
+      SFTP:
+        Hostname: <host>
+        Username: <string>
+        [ Password: <secret> ]
+        [ ClientPrivateKey: <filename> ]
+        [ HostPublicKey: <filename> ]
+        [ DialTimeout: <duration> | default = 10s ]
+        [ MaxConnectionsPerFile: <number> | default = 1 ]
+        # Sets the maximum size of the payload, measured in bytes.
+        # Try lowering this on "failed to send packet header: EOF" errors.
+        [ MaxPacketSize: <number> | default = 20480 ]
+      Paths:
+        # These paths point to directories on the remote FTP/SFTP server.
+        Inbound: <filename>
+        Outbound: <filename>
+        Reconciliation: <filename>
+        Return: <filename>
+      Notifications:
+        Email:
+          - <string>
+        PagerDuty:
+          - <string>
+        Slack:
+          - <string>
+      AllowedIPs: <string>
+    Merging:
+      Directory: <string>
+      FlattenBatches: {}
+    Retry:
+      Interval: <duration>
+      MaxRetries: <integer>
+    DefaultAgentID: <string>
+```
+
+### Notifications
+```
+  Notifications:
+    # TODO(adam)
+```
+
+### Audit Trail
+```
+  AuditTrail:
+    - ID: <string>
+      BucketURI: <string>
+      GPG:
+        KeyFile: <string>
+        Signer:
+          KeyFile: <string>
+          KeyPassword: <string>
+```
+
+### Error Alerting
+```
+  Errors:
+    PagerDuty:
+      ApiKey: <string>
+      RoutingKey: <string>
+    Mock:
+      Enabled: <boolean>
+```
 
 ---
 **[Next - Running](RUNNING.md)**
