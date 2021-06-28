@@ -35,9 +35,11 @@ jobs:
       run: make install
 
     - name: Setup
+      if: runner.os == 'Linux'
       run: make setup
 
     - name: Check
+      if: runner.os == 'Linux'
       run: make check
 
     - name: Upload Code Coverage
@@ -49,6 +51,7 @@ jobs:
       run: make dev-docker
 
     - name: Docker Push
+      if: runner.os == 'Linux'
       run: |+
           echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
           make dev-push
