@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest] # macos-latest, windows-latest
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
@@ -64,7 +64,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest] # macos-latest, windows-latest
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
@@ -157,10 +157,10 @@ jobs:
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
-    # - name: Quay.io Push
-    #   run: |+
-    #       echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin quay.io
-    #       make quay-push
-    #   env:
-    #     DOCKER_USERNAME: ${{ secrets.QUAY_USERNAME }}
-    #     DOCKER_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+    - name: Quay.io Push
+      run: |+
+          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin quay.io
+          make quay-push
+      env:
+        DOCKER_USERNAME: ${{ secrets.QUAY_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
