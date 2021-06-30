@@ -99,7 +99,7 @@ achgateway accepts files over HTTP and kafka to queue them up for upload at a Na
 
 ## Project Status
 
-This project is currently under development and could introduce breaking changes to reach a stable status. Currently it runs in production. We are looking for community feedback so please try out our code or give us feedback!
+This project is used in production at an early stage and might undergo breaking changes to reach a stable status. We are looking for community feedback so please try out our code or give us feedback!
 
 ## Getting Help
 

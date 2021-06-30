@@ -1,6 +1,6 @@
 <!-- generated-from:276563301e0ac3cc464835f2e4747fe3042483aa7e30931de7b7c5e5ed742c94 DO NOT REMOVE, DO UPDATE -->
 # ACH Gateway
-**[Purpose](README.md)** | **[Configuration](CONFIGURATION.md)** | **Running** | **[Client](../pkg/client/README.md)**
+**[Purpose](README.md)** | **[Configuration](CONFIGURATION.md)** | **Running**
 
 ---
 
@@ -24,6 +24,3 @@ You can download [our docker image `moov/achgateway`](https://hub.docker.com/r/m
 ```
 make run
 ```
-
----
-**[Next - Client](../pkg/client/README.md)**

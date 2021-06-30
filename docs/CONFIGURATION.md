@@ -1,6 +1,6 @@
 <!-- generated-from:c55598a61b9a43ce98e8500432e597669da2f8955b40d9e772eac6011e2bb1c5 DO NOT REMOVE, DO UPDATE -->
 # ACH Gateway
-**[Purpose](README.md)** | **Configuration** | **[Running](RUNNING.md)** | **[Client](../pkg/client/README.md)**
+**[Purpose](README.md)** | **Configuration** | **[Running](RUNNING.md)**
 
 ---
 
