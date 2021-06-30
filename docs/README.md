@@ -74,7 +74,7 @@ When a cutoff time is tirggered there are several steps to be performed for each
       1. With moov-io/ach's `MergeFiles(...)` function
    1. Optionally `FlattenBatches()` on files and encrypt file contents (e.g. GPG)
    1. Render filename from template, prepare output formatting
-   1. Save file to `uploaded/*.ach` inside of our `storage/merging` directory
+   1. Save file to `uploaded/*.ach` inside of our `storage/merging/:key/` directory
    1. Save file to audittrail storage
    1. **Upload ACH file** to remote server
    1. Notify via Slack, PD, email, etc
@@ -125,7 +125,7 @@ Please open issue if you run into problems here.
 When achgateway uploads an ACH file to the ODFI server it can verify the remote server's hostname resolves to a whitelisted IP or CIDR range.
 This supports certain network controls to prevent DNS poisoning or misconfigured routing.
 
-Setting `file_transfer_configs.allowed_ips` can be done with values like: `35.211.43.9` (specific IP address), `10.4.0.0/16` (CIDR range), `10.1.0.12,10.3.0.0/16` (Multiple values)
+Setting an `UploadAgent`'s `AllowedIPs` property can be done with values like: `35.211.43.9` (specific IP address), `10.4.0.0/16` (CIDR range), `10.1.0.12,10.3.0.0/16` (Multiple values)
 
 ### SFTP Host and Client Key Verification
 
@@ -135,15 +135,14 @@ authenticating achgateway and the remote server prior to any file uploads.
 **Public Key** (SSH Authorized key format)
 
 ```
-Column: file_transfer_configs.host_public_key
-
+SFTP Config: HostPublicKey
 Format: ssh-rsa AAAAB...wwW95ttP3pdwb7Z computer-hostname
 ```
 
 **Private Key** (PKCS#8)
 
 ```
-Column: file_transfer_configs.client_private_key
+SFTP Config: ClientPrivateKey
 
 Format:
 -----BEGIN RSA PRIVATE KEY-----
