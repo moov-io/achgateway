@@ -1,6 +1,15 @@
 <!--generated-from:11badeae7f5171e6ec312a610718a7a4ac276e18df06d4d715e771702f50aba8 DO NOT REMOVE, DO UPDATE -->
-moov-io/achgateway
-===
+[![Moov Banner Logo](https://user-images.githubusercontent.com/20115216/104214617-885b3c80-53ec-11eb-8ce0-9fc745fb5bfc.png)](https://github.com/moov-io)
+
+<p align="center">
+  <a href="https://github.com/moov-io/achgateway/blob/master/docs/README.md">Project Documentation</a>
+  ·
+  <a href="https://slack.moov.io/">Community</a>
+  ·
+  <a href="https://moov.io/blog/">Blog</a>
+  <br>
+  <br>
+</p>
 
 [![GoDoc](https://godoc.org/github.com/moov-io/achgateway?status.svg)](https://godoc.org/github.com/moov-io/achgateway)
 [![Build Status](https://github.com/moov-io/achgateway/workflows/Go/badge.svg)](https://github.com/moov-io/achgateway/actions)
@@ -8,15 +17,13 @@ moov-io/achgateway
 [![Go Report Card](https://goreportcard.com/badge/github.com/moov-io/achgateway)](https://goreportcard.com/report/github.com/moov-io/achgateway)
 [![Apache 2 licensed](https://img.shields.io/badge/license-Apache2-blue.svg)](https://raw.githubusercontent.com/moov-io/achgateway/master/LICENSE)
 
-An extensible, highly available, distributed, and fault tolerant ACH uploader and downloader.
-ACH Gateway creates events for outside services and transforms files prior to upload to fit real-world
-requirements of production systems.
+# moov-io/achgateway
 
-Docs: [docs](https://moov-io.github.io/achgateway/) | [open api specification](api/api.yml)
+An extensible, highly-available, distributed, and fault-tolerant ACH uploader and downloader. ACH Gateway creates events for outside services and transforms files prior to upload to fit real-world requirements of production systems.
 
-## Getting Started
+## Getting started
 
-Read through the [project docs](docs/README.md) over here to get an understanding of the purpose of this project and how to run it.
+Read through the [project docs](docs/README.md) to gain an understanding of this project's purpose and how to run it.
 
 We publish a [public Docker image `moov/achgateway`](https://hub.docker.com/r/moov/achgateway/) from Docker Hub or use this repository. No configuration is required to serve on `:8484` and metrics at `:9494/metrics` in Prometheus format.
 
@@ -95,22 +102,22 @@ achgateway_1  | ts=2021-06-18T23:39:06Z msg="finished odfi periodic processing f
 
 ## Usage
 
-achgateway accepts files over HTTP and kafka to queue them up for upload at a Nacha cutoff time. This allows systems and humans to publish files and have them be optimized for upload. achgateway is inspired from [the work done in moov-io/paygate](https://github.com/moov-io/paygate) and is used in production at Moov.
+achgateway accepts files over HTTP and Kafka to queue them up for upload at a Nacha cutoff time. This allows systems and humans to publish files and have them be optimized for upload. achgateway is inspired by [the work done in moov-io/paygate](https://github.com/moov-io/paygate) and is used in production at Moov.
 
-## Project Status
+## Project status
 
 This project is used in production at an early stage and might undergo breaking changes to reach a stable status. We are looking for community feedback so please try out our code or give us feedback!
 
-## Getting Help
+## Getting help
 
  channel | info
  ------- | -------
 [Project Documentation](./docs/README.md) | Our project documentation available online.
-Twitter [@moov_io](https://twitter.com/moov_io)	| You can follow Moov.IO's Twitter feed to get updates on our project(s). You can also tweet us questions or just share blogs or stories.
+Twitter [@moov](https://twitter.com/moov)	| You can follow Moov.io's Twitter feed to get updates on our project(s). You can also tweet us questions or just share blogs or stories.
 [GitHub Issue](https://github.com/moov-io/achgateway/issues) | If you are able to reproduce a problem please open a GitHub Issue under the specific project that caused the error.
 [moov-io slack](https://slack.moov.io/) | Join our slack channel (`#ach`) to have an interactive discussion about the development of the project.
 
-## Supported and Tested Platforms
+## Supported and tested platforms
 
 - 64-bit Linux (Ubuntu, Debian), macOS, and Windows
 
@@ -120,12 +127,12 @@ Yes please! Please review our [Contributing guide](CONTRIBUTING.md) and [Code of
 
 This project uses [Go Modules](https://github.com/golang/go/wiki/Modules) and uses Go 1.14 or higher. See [Golang's install instructions](https://golang.org/doc/install) for help setting up Go. You can download the source code and we offer [tagged and released versions](https://github.com/moov-io/achgateway/releases/latest) as well. We highly recommend you use a tagged release for production.
 
-### Test Coverage
+### Test coverage
 
-Improving test coverage is a good candidate for new contributors while also allowing the project to move more quickly by reducing regressions issues that might not be caught before a release is pushed out to our users. One great way to improve coverage is by adding edge cases and different inputs to functions (or [contributing and running fuzzers](https://github.com/dvyukov/go-fuzz)).
+Improving test coverage is a great candidate for new contributors and allows the project to move more quickly by reducing regression issues that might not be caught before a release is pushed out to our users. One great way to improve coverage is by adding edge cases and different inputs to functions (or [contributing and running fuzzers](https://github.com/dvyukov/go-fuzz)).
 
-Tests can run processes (like sqlite databases), but should only do so locally.
+Tests can run processes (like SQLite databases), but should only do so locally.
 
 ## License
 
-Apache License 2.0 See [LICENSE](LICENSE) for details.
+Apache License 2.0 - See [LICENSE](LICENSE) for details.
