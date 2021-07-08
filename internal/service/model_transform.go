@@ -17,53 +17,19 @@
 
 package service
 
-import (
-	"errors"
-)
-
-type EventsConfig struct {
-	Stream    *EventsStream
-	Webhook   *WebhookConfig
-	Transform *TransformConfig
+type TransformConfig struct {
+	Encoding   *EncodingConfig
+	Encryption *EncryptionConfig
 }
 
-func (cfg *EventsConfig) Validate() error {
-	if cfg == nil {
-		return nil
-	}
-	if err := cfg.Stream.Validate(); err != nil {
-		return err
-	}
-	if err := cfg.Webhook.Validate(); err != nil {
-		return err
-	}
-	return nil
+type EncodingConfig struct {
+	Base64 bool
 }
 
-type EventsStream struct {
-	Kafka *KafkaConfig
+type EncryptionConfig struct {
+	AES *AESConfig
 }
 
-func (cfg *EventsStream) Validate() error {
-	if cfg == nil {
-		return nil
-	}
-	if err := cfg.Kafka.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-type WebhookConfig struct {
-	Endpoint string
-}
-
-func (cfg *WebhookConfig) Validate() error {
-	if cfg == nil {
-		return nil
-	}
-	if cfg.Endpoint == "" {
-		return errors.New("missing endpoint")
-	}
-	return nil
+type AESConfig struct {
+	Key string
 }

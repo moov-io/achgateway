@@ -45,6 +45,7 @@ func (cfg Inbound) Validate() error {
 
 type HTTPConfig struct {
 	BindAddress string
+	Transform   *TransformConfig
 }
 
 type InMemory struct {
@@ -70,6 +71,8 @@ type KafkaConfig struct {
 	// to the broker" rather than a Kafka broker's meaning of "commit consumer
 	// offsets on read" which leads to "at-most-once" delivery.
 	AutoCommit bool
+
+	Transform *TransformConfig
 }
 
 func (cfg *KafkaConfig) Validate() error {
@@ -91,6 +94,7 @@ type ODFIFiles struct {
 	Interval   time.Duration
 	ShardNames []string
 	Storage    ODFIStorage
+	Transform  *TransformConfig
 }
 
 func (cfg *ODFIFiles) Validate() error {
