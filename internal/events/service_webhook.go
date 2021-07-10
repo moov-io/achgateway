@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/moov-io/achgateway/internal/compliance"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
@@ -30,13 +31,14 @@ import (
 )
 
 type webhookService struct {
-	cfg      service.WebhookConfig
-	client   *retryablehttp.Client
-	endpoint *url.URL
-	logger   log.Logger
+	cfg             service.WebhookConfig
+	transformConfig *service.TransformConfig
+	client          *retryablehttp.Client
+	endpoint        *url.URL
+	logger          log.Logger
 }
 
-func newWebhookService(logger log.Logger, cfg *service.WebhookConfig) (*webhookService, error) {
+func newWebhookService(logger log.Logger, transformConfig *service.TransformConfig, cfg *service.WebhookConfig) (*webhookService, error) {
 	if cfg == nil || cfg.Endpoint == "" {
 		return nil, nil
 	}
@@ -45,15 +47,20 @@ func newWebhookService(logger log.Logger, cfg *service.WebhookConfig) (*webhookS
 		return nil, fmt.Errorf("webhook: %v", err)
 	}
 	return &webhookService{
-		cfg:      *cfg,
-		client:   retryablehttp.NewClient(),
-		endpoint: u,
-		logger:   logger,
+		cfg:             *cfg,
+		transformConfig: transformConfig,
+		client:          retryablehttp.NewClient(),
+		endpoint:        u,
+		logger:          logger,
 	}, nil
 }
 
 func (w *webhookService) Send(evt models.Event) error {
-	req, err := retryablehttp.NewRequest("POST", w.endpoint.String(), bytes.NewReader(evt.Bytes()))
+	bs, err := compliance.Protect(w.transformConfig, evt)
+	if err != nil {
+		return err
+	}
+	req, err := retryablehttp.NewRequest("POST", w.endpoint.String(), bytes.NewReader(bs))
 	if err != nil {
 		return fmt.Errorf("error preparing request: %v", err)
 	}

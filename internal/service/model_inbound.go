@@ -44,8 +44,9 @@ func (cfg Inbound) Validate() error {
 }
 
 type HTTPConfig struct {
-	BindAddress string
-	Transform   *TransformConfig
+	BindAddress  string
+	Transform    *TransformConfig
+	MaxBodyBytes int64
 }
 
 type InMemory struct {
@@ -94,7 +95,6 @@ type ODFIFiles struct {
 	Interval   time.Duration
 	ShardNames []string
 	Storage    ODFIStorage
-	Transform  *TransformConfig
 }
 
 func (cfg *ODFIFiles) Validate() error {

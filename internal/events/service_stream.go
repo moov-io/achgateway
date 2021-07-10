@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/moov-io/achgateway/internal/compliance"
 	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/models"
@@ -30,10 +31,11 @@ import (
 )
 
 type streamService struct {
-	topic *pubsub.Topic
+	transformConfig *service.TransformConfig
+	topic           *pubsub.Topic
 }
 
-func newStreamService(logger log.Logger, cfg *service.KafkaConfig) (*streamService, error) {
+func newStreamService(logger log.Logger, transformConfig *service.TransformConfig, cfg *service.KafkaConfig) (*streamService, error) {
 	topic, err := stream.Topic(logger, &service.Config{
 		Inbound: service.Inbound{
 			Kafka: cfg,
@@ -48,8 +50,12 @@ func newStreamService(logger log.Logger, cfg *service.KafkaConfig) (*streamServi
 }
 
 func (ss *streamService) Send(evt models.Event) error {
-	err := ss.topic.Send(context.Background(), &pubsub.Message{
-		Body: evt.Bytes(),
+	bs, err := compliance.Protect(ss.transformConfig, evt)
+	if err != nil {
+		return err
+	}
+	err = ss.topic.Send(context.Background(), &pubsub.Message{
+		Body: bs,
 	})
 	if err != nil {
 		return fmt.Errorf("error emitting %s: %v", evt.Type, err)

@@ -30,6 +30,7 @@ import (
 
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
+	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
 
 	"github.com/gorilla/mux"
@@ -39,7 +40,7 @@ import (
 func TestCreateFileHandler(t *testing.T) {
 	topic, sub := streamtest.InmemStream(t)
 
-	controller := NewFilesController(log.NewNopLogger(), topic)
+	controller := NewFilesController(log.NewNopLogger(), service.HTTPConfig{}, topic)
 	r := mux.NewRouter()
 	controller.AppendRoutes(r)
 
@@ -67,7 +68,7 @@ func TestCreateFileHandler(t *testing.T) {
 func TestCreateFileHandlerErr(t *testing.T) {
 	topic, _ := streamtest.InmemStream(t)
 
-	controller := NewFilesController(log.NewNopLogger(), topic)
+	controller := NewFilesController(log.NewNopLogger(), service.HTTPConfig{}, topic)
 	r := mux.NewRouter()
 	controller.AppendRoutes(r)
 

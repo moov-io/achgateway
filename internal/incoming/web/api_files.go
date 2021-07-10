@@ -23,25 +23,30 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/moov-io/ach"
+	"github.com/moov-io/achgateway/internal/compliance"
 	"github.com/moov-io/achgateway/internal/incoming"
+	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
 
 	"github.com/gorilla/mux"
 	"gocloud.dev/pubsub"
 )
 
-func NewFilesController(logger log.Logger, pub *pubsub.Topic) *FilesController {
+func NewFilesController(logger log.Logger, cfg service.HTTPConfig, pub *pubsub.Topic) *FilesController {
 	return &FilesController{
 		logger:    logger,
+		cfg:       cfg,
 		publisher: pub,
 	}
 }
 
 type FilesController struct {
 	logger    log.Logger
+	cfg       service.HTTPConfig
 	publisher *pubsub.Topic
 }
 
@@ -51,7 +56,6 @@ func (c *FilesController) AppendRoutes(router *mux.Router) *mux.Router {
 		Methods("POST").
 		Path("/shards/{shardKey}/files/{fileID}").
 		HandlerFunc(c.CreateFileHandler)
-
 	return router
 }
 
@@ -63,13 +67,17 @@ func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	var buf bytes.Buffer // secondary reader for json decode, if needed
-	reader := io.TeeReader(r.Body, &buf)
+	bs, err := c.readBody(r)
+	if err != nil {
+		c.logger.LogErrorf("error reading file: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-	file, err := ach.NewReader(reader).Read()
+	file, err := ach.NewReader(bytes.NewReader(bs)).Read()
 	if err != nil {
 		// attempt JSON decode
-		f, err := ach.FileFromJSON(buf.Bytes())
+		f, err := ach.FileFromJSON(bs)
 		if f == nil || err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
@@ -81,6 +89,21 @@ func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Reque
 		c.logger.LogErrorf("error publishing fileID=%s: %v", fileID, err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
+}
+
+func (c *FilesController) readBody(req *http.Request) ([]byte, error) {
+	defer req.Body.Close()
+
+	var reader io.Reader = req.Body
+	if c.cfg.MaxBodyBytes > 0 {
+		reader = io.LimitReader(reader, c.cfg.MaxBodyBytes)
+	}
+	bs, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	return compliance.Reveal(c.cfg.Transform, bs)
 }
 
 func publishFile(pub *pubsub.Topic, shardKey, fileID string, file *ach.File) error {

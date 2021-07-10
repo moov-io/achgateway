@@ -140,7 +140,7 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		env.PublicRouter = mux.NewRouter()
 
 		// append HTTP routes
-		web.NewFilesController(env.Config.Logger, httpFiles).AppendRoutes(env.PublicRouter)
+		web.NewFilesController(env.Config.Logger, env.Config.Inbound.HTTP, httpFiles).AppendRoutes(env.PublicRouter)
 	}
 
 	// Setup our Consul client (if configured)

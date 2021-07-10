@@ -57,7 +57,11 @@ func Start(
 	}
 
 	// register our fileReceiver and start it
-	receiver := newFileReceiver(logger, cfg.Sharding.Default, shardRepository, shardAggregators, httpFiles, streamFiles)
+	var transformConfig *service.TransformConfig
+	if cfg.Inbound.Kafka != nil && cfg.Inbound.Kafka.Transform != nil {
+		transformConfig = cfg.Inbound.Kafka.Transform
+	}
+	receiver := newFileReceiver(logger, cfg.Sharding.Default, shardRepository, shardAggregators, httpFiles, streamFiles, transformConfig)
 	go receiver.Start(ctx)
 
 	return receiver, nil

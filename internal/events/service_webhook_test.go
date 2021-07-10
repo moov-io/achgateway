@@ -49,7 +49,7 @@ func TestWebhookService(t *testing.T) {
 		}
 	})
 
-	svc, err := newWebhookService(log.NewNopLogger(), &service.WebhookConfig{
+	svc, err := newWebhookService(log.NewNopLogger(), nil, &service.WebhookConfig{
 		Endpoint: "http://" + admin.BindAddr() + "/hook",
 	})
 	require.NoError(t, err)
