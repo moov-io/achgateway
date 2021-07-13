@@ -4,7 +4,7 @@ FROM golang:1.16-buster as builder
 WORKDIR /src
 ARG VERSION
 
-RUN apt-get update && apt-get install -y make gcc g++ ca-certificates
+RUN apt-get update && apt-get upgrade -y && apt-get install -y make gcc g++ ca-certificates
 
 COPY . .
 
@@ -15,7 +15,7 @@ LABEL maintainer="Moov <support@moov.io>"
 
 WORKDIR /
 
-RUN apt-get update && apt-get install -y ca-certificates curl \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y ca-certificates curl \
 	&& rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /src/bin/achgateway /app/
