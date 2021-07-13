@@ -23,6 +23,8 @@ import (
 
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/shards"
+	"github.com/moov-io/achgateway/pkg/compliance"
+	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
 
 	"gocloud.dev/pubsub"
@@ -39,6 +41,8 @@ type FileReceiver struct {
 
 	httpFiles   *pubsub.Subscription
 	streamFiles *pubsub.Subscription
+
+	transformConfig *models.TransformConfig
 }
 
 func newFileReceiver(
@@ -48,6 +52,7 @@ func newFileReceiver(
 	shardAggregators map[string]*aggregator,
 	httpFiles *pubsub.Subscription,
 	streamFiles *pubsub.Subscription,
+	transformConfig *models.TransformConfig,
 ) *FileReceiver {
 	return &FileReceiver{
 		logger:           logger,
@@ -56,6 +61,7 @@ func newFileReceiver(
 		shardAggregators: shardAggregators,
 		httpFiles:        httpFiles,
 		streamFiles:      streamFiles,
+		transformConfig:  transformConfig,
 	}
 }
 
@@ -113,8 +119,16 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 		if msg != nil {
 			msg.Ack()
 
+			// Optionally decode and decrypt message
+			data := msg.Body
+			data, err = compliance.Reveal(fr.transformConfig, data)
+			if err != nil {
+				fr.logger.Error().LogErrorf("unable to reveal incoming.ACHFile: %v", err)
+			}
+
+			// Parse our incoming ACHFile
 			var file incoming.ACHFile
-			if err := json.Unmarshal(msg.Body, &file); err != nil {
+			if err := json.Unmarshal(data, &file); err != nil {
 				fr.logger.Error().LogErrorf("unable to parse incoming.ACHFile: %v", err)
 				return
 			}

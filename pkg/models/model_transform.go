@@ -15,39 +15,21 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package events
+package models
 
-import (
-	"context"
-	"testing"
+type TransformConfig struct {
+	Encoding   *EncodingConfig
+	Encryption *EncryptionConfig
+}
 
-	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
-	"github.com/moov-io/achgateway/pkg/models"
-	"github.com/moov-io/base"
+type EncodingConfig struct {
+	Base64 bool
+}
 
-	"github.com/stretchr/testify/require"
-)
+type EncryptionConfig struct {
+	AES *AESConfig
+}
 
-func TestStreamService(t *testing.T) {
-	pub, sub := streamtest.InmemStream(t)
-	svc := &streamService{topic: pub}
-
-	shardKey, fileID := base.ID(), base.ID()
-	err := svc.Send(models.Event{
-		Event: models.FileUploaded{
-			FileID:   fileID,
-			ShardKey: shardKey,
-		},
-	})
-	require.NoError(t, err)
-
-	msg, err := sub.Receive(context.Background())
-	require.NoError(t, err)
-	msg.Ack()
-
-	var body models.FileUploaded
-	require.NoError(t, models.ReadEvent(msg.Body, &body))
-
-	require.Equal(t, shardKey, body.ShardKey)
-	require.Equal(t, fileID, body.FileID)
+type AESConfig struct {
+	Key string
 }

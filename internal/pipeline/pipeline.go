@@ -25,6 +25,7 @@ import (
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/shards"
+	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
 
 	"gocloud.dev/pubsub"
@@ -57,7 +58,11 @@ func Start(
 	}
 
 	// register our fileReceiver and start it
-	receiver := newFileReceiver(logger, cfg.Sharding.Default, shardRepository, shardAggregators, httpFiles, streamFiles)
+	var transformConfig *models.TransformConfig
+	if cfg.Inbound.Kafka != nil && cfg.Inbound.Kafka.Transform != nil {
+		transformConfig = cfg.Inbound.Kafka.Transform
+	}
+	receiver := newFileReceiver(logger, cfg.Sharding.Default, shardRepository, shardAggregators, httpFiles, streamFiles, transformConfig)
 	go receiver.Start(ctx)
 
 	return receiver, nil

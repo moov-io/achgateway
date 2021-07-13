@@ -125,7 +125,7 @@ func TestUploads(t *testing.T) {
 	httpPub, httpSub := streamtest.InmemStream(t)
 	_, streamSub := streamtest.InmemStream(t)
 
-	fileController := web.NewFilesController(logger, httpPub)
+	fileController := web.NewFilesController(logger, service.HTTPConfig{}, httpPub)
 	r := mux.NewRouter()
 	fileController.AppendRoutes(r)
 

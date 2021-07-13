@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package service
+package compliance
 
 import (
 	"errors"
@@ -23,49 +23,28 @@ import (
 	"github.com/moov-io/achgateway/pkg/models"
 )
 
-type EventsConfig struct {
-	Stream    *EventsStream
-	Webhook   *WebhookConfig
-	Transform *models.TransformConfig
+type cryptor interface {
+	Encrypt(data []byte) ([]byte, error)
+	Decrypt(data []byte) ([]byte, error)
 }
 
-func (cfg *EventsConfig) Validate() error {
-	if cfg == nil {
-		return nil
+func newCryptor(cfg *models.EncryptionConfig) (cryptor, error) {
+	switch {
+	case cfg == nil:
+		return &mockCryptor{}, nil
+
+	case cfg.AES != nil:
+		return newAESCryptor(cfg.AES)
 	}
-	if err := cfg.Stream.Validate(); err != nil {
-		return err
-	}
-	if err := cfg.Webhook.Validate(); err != nil {
-		return err
-	}
-	return nil
+	return nil, errors.New("unknown encryption")
 }
 
-type EventsStream struct {
-	Kafka *KafkaConfig
+type mockCryptor struct{}
+
+func (c *mockCryptor) Encrypt(data []byte) ([]byte, error) {
+	return data, nil
 }
 
-func (cfg *EventsStream) Validate() error {
-	if cfg == nil {
-		return nil
-	}
-	if err := cfg.Kafka.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-type WebhookConfig struct {
-	Endpoint string
-}
-
-func (cfg *WebhookConfig) Validate() error {
-	if cfg == nil {
-		return nil
-	}
-	if cfg.Endpoint == "" {
-		return errors.New("missing endpoint")
-	}
-	return nil
+func (c *mockCryptor) Decrypt(data []byte) ([]byte, error) {
+	return data, nil
 }

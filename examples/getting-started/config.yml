@@ -4,6 +4,10 @@ ACHGateway:
   Inbound:
     HTTP:
       BindAddress: ":8484"
+      # Transform:
+      #   Encryption:
+      #     AES:
+      #       Key: "secret"
     ODFI:
       Publishing:
         Kafka:

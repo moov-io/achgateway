@@ -35,11 +35,11 @@ func NewEmitter(logger log.Logger, cfg *service.EventsConfig) (Emitter, error) {
 	}
 	if cfg.Stream != nil {
 		if cfg.Stream.Kafka != nil {
-			return newStreamService(logger, cfg.Stream.Kafka)
+			return newStreamService(logger, cfg.Transform, cfg.Stream.Kafka)
 		}
 	}
 	if cfg.Webhook != nil {
-		return newWebhookService(logger, cfg.Webhook)
+		return newWebhookService(logger, cfg.Transform, cfg.Webhook)
 	}
 	return nil, errors.New("unknown events config")
 }

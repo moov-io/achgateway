@@ -15,57 +15,27 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package service
+package compliance
 
 import (
-	"errors"
+	"testing"
 
 	"github.com/moov-io/achgateway/pkg/models"
+
+	"github.com/stretchr/testify/require"
 )
 
-type EventsConfig struct {
-	Stream    *EventsStream
-	Webhook   *WebhookConfig
-	Transform *models.TransformConfig
-}
+func TestCoder(t *testing.T) {
+	ec, err := newCoder(&models.EncodingConfig{
+		Base64: true,
+	})
+	require.NoError(t, err)
 
-func (cfg *EventsConfig) Validate() error {
-	if cfg == nil {
-		return nil
-	}
-	if err := cfg.Stream.Validate(); err != nil {
-		return err
-	}
-	if err := cfg.Webhook.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
+	enc, err := ec.Encode([]byte("hello, world"))
+	require.NoError(t, err)
+	require.Equal(t, "aGVsbG8sIHdvcmxk", string(enc))
 
-type EventsStream struct {
-	Kafka *KafkaConfig
-}
-
-func (cfg *EventsStream) Validate() error {
-	if cfg == nil {
-		return nil
-	}
-	if err := cfg.Kafka.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-type WebhookConfig struct {
-	Endpoint string
-}
-
-func (cfg *WebhookConfig) Validate() error {
-	if cfg == nil {
-		return nil
-	}
-	if cfg.Endpoint == "" {
-		return errors.New("missing endpoint")
-	}
-	return nil
+	dec, err := ec.Decode(enc)
+	require.NoError(t, err)
+	require.Equal(t, "hello, world", string(dec))
 }

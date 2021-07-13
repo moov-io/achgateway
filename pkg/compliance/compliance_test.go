@@ -15,39 +15,55 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package events
+package compliance
 
 import (
-	"context"
+	"strings"
 	"testing"
+	"time"
 
-	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestStreamService(t *testing.T) {
-	pub, sub := streamtest.InmemStream(t)
-	svc := &streamService{topic: pub}
-
-	shardKey, fileID := base.ID(), base.ID()
-	err := svc.Send(models.Event{
-		Event: models.FileUploaded{
-			FileID:   fileID,
-			ShardKey: shardKey,
+func TestCompliance(t *testing.T) {
+	cfg := &models.TransformConfig{
+		Encryption: &models.EncryptionConfig{
+			AES: &models.AESConfig{
+				Key: strings.Repeat("1", 16),
+			},
 		},
-	})
+	}
+	// randomly decide if we're going to base64 encode or not
+	if time.Now().Unix()/2 == 0 {
+		cfg.Encoding = &models.EncodingConfig{
+			Base64: true,
+		}
+	}
+
+	fileID, shardKey := base.ID(), base.ID()
+	evt := models.Event{
+		Event: models.FileUploaded{
+			FileID:     fileID,
+			ShardKey:   shardKey,
+			Filename:   "20210709-0001.ach",
+			UploadedAt: time.Now(),
+		},
+	}
+
+	encrypted, err := Protect(cfg, evt)
 	require.NoError(t, err)
+	require.Greater(t, len(encrypted), 0)
 
-	msg, err := sub.Receive(context.Background())
+	decrypted, err := Reveal(cfg, encrypted)
 	require.NoError(t, err)
-	msg.Ack()
+	require.Greater(t, len(decrypted), 0)
 
-	var body models.FileUploaded
-	require.NoError(t, models.ReadEvent(msg.Body, &body))
-
-	require.Equal(t, shardKey, body.ShardKey)
-	require.Equal(t, fileID, body.FileID)
+	var uploaded models.FileUploaded
+	require.NoError(t, models.ReadEvent(decrypted, &uploaded))
+	require.Equal(t, fileID, uploaded.FileID)
+	require.Equal(t, shardKey, uploaded.ShardKey)
+	require.Equal(t, "20210709-0001.ach", uploaded.Filename)
 }
