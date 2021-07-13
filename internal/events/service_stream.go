@@ -21,9 +21,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/moov-io/achgateway/internal/compliance"
 	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/pkg/compliance"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
 
@@ -31,11 +31,11 @@ import (
 )
 
 type streamService struct {
-	transformConfig *service.TransformConfig
+	transformConfig *models.TransformConfig
 	topic           *pubsub.Topic
 }
 
-func newStreamService(logger log.Logger, transformConfig *service.TransformConfig, cfg *service.KafkaConfig) (*streamService, error) {
+func newStreamService(logger log.Logger, transformConfig *models.TransformConfig, cfg *service.KafkaConfig) (*streamService, error) {
 	topic, err := stream.Topic(logger, &service.Config{
 		Inbound: service.Inbound{
 			Kafka: cfg,

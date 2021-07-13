@@ -24,6 +24,7 @@ import (
 	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base"
+
 	"github.com/stretchr/testify/require"
 )
 

@@ -22,8 +22,8 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/moov-io/achgateway/internal/compliance"
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/pkg/compliance"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
 
@@ -32,13 +32,13 @@ import (
 
 type webhookService struct {
 	cfg             service.WebhookConfig
-	transformConfig *service.TransformConfig
+	transformConfig *models.TransformConfig
 	client          *retryablehttp.Client
 	endpoint        *url.URL
 	logger          log.Logger
 }
 
-func newWebhookService(logger log.Logger, transformConfig *service.TransformConfig, cfg *service.WebhookConfig) (*webhookService, error) {
+func newWebhookService(logger log.Logger, transformConfig *models.TransformConfig, cfg *service.WebhookConfig) (*webhookService, error) {
 	if cfg == nil || cfg.Endpoint == "" {
 		return nil, nil
 	}

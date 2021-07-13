@@ -15,14 +15,21 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package crypt
+package models
 
-type MockCryptor struct{}
-
-func (c *MockCryptor) Encrypt(data []byte) ([]byte, error) {
-	return data, nil
+type TransformConfig struct {
+	Encoding   *EncodingConfig
+	Encryption *EncryptionConfig
 }
 
-func (c *MockCryptor) Decrypt(data []byte) ([]byte, error) {
-	return data, nil
+type EncodingConfig struct {
+	Base64 bool
+}
+
+type EncryptionConfig struct {
+	AES *AESConfig
+}
+
+type AESConfig struct {
+	Key string
 }

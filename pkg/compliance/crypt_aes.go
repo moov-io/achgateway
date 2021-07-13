@@ -18,71 +18,57 @@
 package compliance
 
 import (
-	"encoding/json"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"errors"
+	"io"
 
-	"github.com/moov-io/achgateway/internal/crypt"
-	"github.com/moov-io/achgateway/internal/encode"
-	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/models"
 )
 
-func Protect(cfg *service.TransformConfig, evt models.Event) ([]byte, error) {
-	bs, err := json.Marshal(evt)
-	if err != nil {
-		return nil, err
-	}
-	// Return early if there are no encode/encrypt actions to take
-	if cfg == nil {
-		return bs, nil
-	}
-
-	// Encrypt
-	cc, err := crypt.New(cfg.Encryption)
-	if err != nil {
-		return nil, err
-	}
-	bs, err = cc.Encrypt(bs)
-	if err != nil {
-		return nil, err
-	}
-
-	// Encode
-	ec, err := encode.New(cfg.Encoding)
-	if err != nil {
-		return nil, err
-	}
-	bs, err = ec.Encode(bs)
-	if err != nil {
-		return nil, err
-	}
-
-	return bs, nil
+type aesCryptor struct {
+	cfg *models.AESConfig
 }
 
-func Reveal(cfg *service.TransformConfig, data []byte) ([]byte, error) {
-	if cfg == nil {
-		return data, nil
-	}
+func newAESCryptor(cfg *models.AESConfig) (*aesCryptor, error) {
+	return &aesCryptor{cfg}, nil
+}
 
-	// Decode
-	ec, err := encode.New(cfg.Encoding)
+func (c *aesCryptor) Encrypt(data []byte) ([]byte, error) {
+	cphr, err := aes.NewCipher([]byte(c.cfg.Key))
 	if err != nil {
 		return nil, err
 	}
-	bs, err := ec.Decode(data)
+	gcm, err := cipher.NewGCM(cphr)
 	if err != nil {
 		return nil, err
 	}
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
+		return nil, err
+	}
+	out := gcm.Seal(nonce, nonce, data, nil)
+	return out, nil
+}
 
-	// Decrypt
-	cc, err := crypt.New(cfg.Encryption)
+func (c *aesCryptor) Decrypt(ciphertext []byte) ([]byte, error) {
+	cphr, err := aes.NewCipher([]byte(c.cfg.Key))
 	if err != nil {
 		return nil, err
 	}
-	bs, err = cc.Decrypt(bs)
+	gcm, err := cipher.NewGCM(cphr)
 	if err != nil {
 		return nil, err
 	}
-
-	return bs, nil
+	nonceSize := gcm.NonceSize()
+	if len(ciphertext) < nonceSize {
+		return nil, errors.New("nonce is too small")
+	}
+	nonce, encryptedMessage := ciphertext[:nonceSize], ciphertext[nonceSize:]
+	plaintext, err := gcm.Open(nil, nonce, encryptedMessage, nil)
+	if err != nil {
+		return nil, err
+	}
+	return plaintext, nil
 }

@@ -21,10 +21,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/moov-io/achgateway/internal/compliance"
 	"github.com/moov-io/achgateway/internal/incoming"
-	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/shards"
+	"github.com/moov-io/achgateway/pkg/compliance"
+	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
 
 	"gocloud.dev/pubsub"
@@ -42,7 +42,7 @@ type FileReceiver struct {
 	httpFiles   *pubsub.Subscription
 	streamFiles *pubsub.Subscription
 
-	transformConfig *service.TransformConfig
+	transformConfig *models.TransformConfig
 }
 
 func newFileReceiver(
@@ -52,7 +52,7 @@ func newFileReceiver(
 	shardAggregators map[string]*aggregator,
 	httpFiles *pubsub.Subscription,
 	streamFiles *pubsub.Subscription,
-	transformConfig *service.TransformConfig,
+	transformConfig *models.TransformConfig,
 ) *FileReceiver {
 	return &FileReceiver{
 		logger:           logger,

@@ -15,17 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package encode
+package compliance
 
 import (
 	"testing"
 
-	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/pkg/models"
+
 	"github.com/stretchr/testify/require"
 )
 
 func TestCoder(t *testing.T) {
-	ec, err := New(&service.EncodingConfig{
+	ec, err := newCoder(&models.EncodingConfig{
 		Base64: true,
 	})
 	require.NoError(t, err)

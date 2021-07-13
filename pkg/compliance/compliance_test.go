@@ -22,7 +22,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base"
 
@@ -30,16 +29,16 @@ import (
 )
 
 func TestCompliance(t *testing.T) {
-	cfg := &service.TransformConfig{
-		Encryption: &service.EncryptionConfig{
-			AES: &service.AESConfig{
+	cfg := &models.TransformConfig{
+		Encryption: &models.EncryptionConfig{
+			AES: &models.AESConfig{
 				Key: strings.Repeat("1", 16),
 			},
 		},
 	}
 	// randomly decide if we're going to base64 encode or not
 	if time.Now().Unix()/2 == 0 {
-		cfg.Encoding = &service.EncodingConfig{
+		cfg.Encoding = &models.EncodingConfig{
 			Base64: true,
 		}
 	}

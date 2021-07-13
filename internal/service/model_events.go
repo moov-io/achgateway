@@ -19,12 +19,14 @@ package service
 
 import (
 	"errors"
+
+	"github.com/moov-io/achgateway/pkg/models"
 )
 
 type EventsConfig struct {
 	Stream    *EventsStream
 	Webhook   *WebhookConfig
-	Transform *TransformConfig
+	Transform *models.TransformConfig
 }
 
 func (cfg *EventsConfig) Validate() error {

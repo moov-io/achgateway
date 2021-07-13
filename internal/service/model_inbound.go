@@ -21,6 +21,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/moov-io/achgateway/pkg/models"
 )
 
 type Inbound struct {
@@ -45,7 +47,7 @@ func (cfg Inbound) Validate() error {
 
 type HTTPConfig struct {
 	BindAddress  string
-	Transform    *TransformConfig
+	Transform    *models.TransformConfig
 	MaxBodyBytes int64
 }
 
@@ -73,7 +75,7 @@ type KafkaConfig struct {
 	// offsets on read" which leads to "at-most-once" delivery.
 	AutoCommit bool
 
-	Transform *TransformConfig
+	Transform *models.TransformConfig
 }
 
 func (cfg *KafkaConfig) Validate() error {

@@ -15,22 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package encode
+package compliance
 
 import (
 	"bytes"
 	"encoding/base64"
 	"errors"
 
-	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/pkg/models"
 )
 
-type Coder interface {
+type coder interface {
 	Encode(data []byte) ([]byte, error)
 	Decode(data []byte) ([]byte, error)
 }
 
-func New(cfg *service.EncodingConfig) (Coder, error) {
+func newCoder(cfg *models.EncodingConfig) (coder, error) {
 	switch {
 	case cfg == nil:
 		return &mockCoder{}, nil

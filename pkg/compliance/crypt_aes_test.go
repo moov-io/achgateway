@@ -15,26 +15,34 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package crypt
+package compliance
 
 import (
-	"errors"
+	"strings"
+	"testing"
 
-	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/pkg/models"
+
+	"github.com/stretchr/testify/require"
 )
 
-type Cryptor interface {
-	Encrypt(data []byte) ([]byte, error)
-	Decrypt(data []byte) ([]byte, error)
-}
+func TestCryptor__AES(t *testing.T) {
+	cc, err := newCryptor(&models.EncryptionConfig{
+		AES: &models.AESConfig{
+			Key: strings.Repeat("1", 16),
+		},
+	})
+	require.NoError(t, err)
 
-func New(cfg *service.EncryptionConfig) (Cryptor, error) {
-	switch {
-	case cfg == nil:
-		return &MockCryptor{}, nil
+	enc, err := cc.Encrypt([]byte("hello, world"))
+	require.NoError(t, err)
+	require.Greater(t, len(enc), 0)
 
-	case cfg.AES != nil:
-		return newAESCryptor(cfg.AES)
-	}
-	return nil, errors.New("unknown encryption")
+	dec1, err := cc.Decrypt(enc)
+	require.NoError(t, err)
+	require.Equal(t, "hello, world", string(dec1))
+
+	dec2, err := cc.Decrypt(enc)
+	require.NoError(t, err)
+	require.Equal(t, "hello, world", string(dec2))
 }

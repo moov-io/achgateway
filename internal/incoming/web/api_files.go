@@ -27,9 +27,9 @@ import (
 	"net/http"
 
 	"github.com/moov-io/ach"
-	"github.com/moov-io/achgateway/internal/compliance"
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/pkg/compliance"
 	"github.com/moov-io/base/log"
 
 	"github.com/gorilla/mux"
