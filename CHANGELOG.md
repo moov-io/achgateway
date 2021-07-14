@@ -1,3 +1,13 @@
+## v0.5.0 (Released 2021-07-14)
+
+ADDITIONS
+
+- compliance: add functions for securing reading/writing events
+
+BUILD
+
+- build: upgrade deps in docker images
+
 ## v0.4.3 (Released 2021-06-28)
 
 This release contains MacOS and Windows binaries.
