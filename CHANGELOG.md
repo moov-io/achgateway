@@ -1,3 +1,10 @@
+## v0.5.1 (Released 2021-07-15)
+
+IMPROVEMENTS
+
+- models: expose incoming ACHFile and CancelACHFile
+- service: remove outdated ODFI Publishing config
+
 ## v0.5.0 (Released 2021-07-14)
 
 ADDITIONS
