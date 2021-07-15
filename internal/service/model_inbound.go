@@ -93,7 +93,6 @@ func (cfg *KafkaConfig) Validate() error {
 
 type ODFIFiles struct {
 	Processors ODFIProcessors
-	Publishing ODFIPublishing
 	Interval   time.Duration
 	ShardNames []string
 	Storage    ODFIStorage
@@ -105,9 +104,6 @@ func (cfg *ODFIFiles) Validate() error {
 	}
 	if err := cfg.Processors.Validate(); err != nil {
 		return fmt.Errorf("processors: %v", err)
-	}
-	if err := cfg.Publishing.Validate(); err != nil {
-		return fmt.Errorf("publishing: %v", err)
 	}
 	if cfg.Interval <= 0*time.Second {
 		return errors.New("invalid interval")
