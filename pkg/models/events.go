@@ -87,6 +87,13 @@ type ReturnFile struct {
 	Returns  []Batch   `json:"returns"`
 }
 
+// QueueACHFile is an event that achgateway receives to enqueue an ACH file for upload to the
+// ODFI at a later cutoff time.
+type QueueACHFile incoming.ACHFile
+
+// CancelACHFile is an event that achgateway receives to cancel uploading a file to the ODFI.
+type CancelACHFile incoming.ACHFile
+
 type FileUploaded struct {
 	FileID     string    `json:"fileID"`
 	ShardKey   string    `json:"shardKey"`
