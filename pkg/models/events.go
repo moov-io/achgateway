@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/moov-io/ach"
+	"github.com/moov-io/achgateway/internal/incoming"
 )
 
 type Event struct {
@@ -58,29 +59,38 @@ type Batch struct {
 	Entries []*ach.EntryDetail `json:"entryDetails"`
 }
 
+// CorrectionFile is an event for when an Addenda98 record is found within a file
+// from the ODFI. This is also called a "Notification of Change" (NOC).
 type CorrectionFile struct {
 	Filename    string    `json:"filename"`
 	File        *ach.File `json:"file"`
 	Corrections []Batch   `json:"corrections"`
 }
 
+// IncomingFile is an event for when an ODFI receives an ACH file from another FI
+// signifying entries to process (e.g. another FI is debiting your account).
 type IncomingFile struct {
 	Filename string    `json:"filename"`
 	File     *ach.File `json:"file"`
 }
 
+// PrenoteFile is an event for when an ODFI receives a "pre-notification" ACH file.
+// This type of file is used to validate accounts exist and are usable for ACH.
 type PrenoteFile struct {
 	Filename string    `json:"filename"`
 	File     *ach.File `json:"file"`
 	Batches  []Batch   `json:"batches"`
 }
 
+// ReconciliationFile is a file whose entries match entries initiated with the ODFI.
 type ReconciliationFile struct {
 	Filename        string    `json:"filename"`
 	File            *ach.File `json:"file"`
 	Reconciliations []Batch   `json:"returns"`
 }
 
+// ReturnFile is an event for when an Addenda99 record is found within a file
+// from the ODFI. This is also called a "return".
 type ReturnFile struct {
 	Filename string    `json:"filename"`
 	File     *ach.File `json:"file"`
@@ -94,6 +104,9 @@ type QueueACHFile incoming.ACHFile
 // CancelACHFile is an event that achgateway receives to cancel uploading a file to the ODFI.
 type CancelACHFile incoming.ACHFile
 
+// FileUploaded is an event sent after a queued file has been uploaded to the ODFI.
+// The entries and batches may have been merged into a larger file to optimize on cost,
+// network performance, or other configuration.
 type FileUploaded struct {
 	FileID     string    `json:"fileID"`
 	ShardKey   string    `json:"shardKey"`
