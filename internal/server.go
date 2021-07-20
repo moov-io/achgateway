@@ -67,9 +67,16 @@ func bootHTTPServer(name string, routes *mux.Router, errs chan<- error, logger l
 
 	// Start main HTTP server
 	go func() {
-		logger.Info().Log(fmt.Sprintf("%s listening on %s", name, config.BindAddress))
-		if err := serve.ListenAndServe(); err != nil {
-			errs <- logger.Fatal().LogErrorf("problem starting http: %w", err).Err()
+		if config.TLS.CertFile != "" && config.TLS.KeyFile != "" {
+			logger.Info().Log(fmt.Sprintf("%s listening on %s for HTTPS", name, config.BindAddress))
+			if err := serve.ListenAndServeTLS(config.TLS.CertFile, config.TLS.KeyFile); err != nil {
+				errs <- logger.Fatal().LogErrorf("problem starting https: %w", err).Err()
+			}
+		} else {
+			logger.Info().Log(fmt.Sprintf("%s listening on %s for HTTP", name, config.BindAddress))
+			if err := serve.ListenAndServe(); err != nil {
+				errs <- logger.Fatal().LogErrorf("problem starting http: %w", err).Err()
+			}
 		}
 	}()
 

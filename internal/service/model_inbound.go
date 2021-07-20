@@ -46,7 +46,9 @@ func (cfg Inbound) Validate() error {
 }
 
 type HTTPConfig struct {
-	BindAddress  string
+	BindAddress string
+	TLS         TLSConfig
+
 	Transform    *models.TransformConfig
 	MaxBodyBytes int64
 }
