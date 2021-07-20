@@ -1,3 +1,9 @@
+## v0.6.0 (Unreleased)
+
+ADDITIONS
+
+- inbound: support TLS over http
+
 ## v0.5.1 (Released 2021-07-15)
 
 IMPROVEMENTS
