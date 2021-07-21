@@ -171,10 +171,11 @@ is the shard key associated to every file.
 achgateway can operate multiple input vectors which are merged into a singular Queue. This allows
 an HTTP endpoint, kafka consumer, and other inputs.
 
-The following messages are produced out to the Queue.
+The following messages are produced out to the Queue. Read [the `pkg/models` package](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/models)
+for more information on events.
 
 ```go
-type ACHFile struct {
+type QueueACHFile struct {
 	FileID   string    `json:"fileID"`
 	ShardKey string    `json:"shardKey"`
 	File     *ach.File `json:"file"`
