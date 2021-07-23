@@ -21,6 +21,8 @@
 
 An extensible, highly-available, distributed, and fault-tolerant ACH uploader and downloader. ACH Gateway creates events for outside services and transforms files prior to upload to fit real-world requirements of production systems.
 
+If you believe you have identified a security vulnerability please responsibly report the issue as via email to security@moov.io. Please do not post it to a public issue tracker.
+
 ## Getting started
 
 Read through the [project docs](docs/README.md) to gain an understanding of this project's purpose and how to run it.
