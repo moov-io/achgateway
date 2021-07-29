@@ -53,6 +53,9 @@ func (cfg *Config) Validate() error {
 	if err := cfg.Inbound.Validate(); err != nil {
 		return fmt.Errorf("inbound: %v", err)
 	}
+	if err := cfg.Events.Validate(); err != nil {
+		return fmt.Errorf("events: %v", err)
+	}
 	if err := cfg.Sharding.Validate(); err != nil {
 		return fmt.Errorf("sharding: %v", err)
 	}

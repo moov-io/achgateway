@@ -37,4 +37,11 @@ func Test_ConfigLoading(t *testing.T) {
 	gc := &service.GlobalConfig{}
 	err := ConfigService.Load(gc)
 	require.Nil(t, err)
+
+	// Set properties so config validates. Due to moov-io/base's config merging
+	// we don't enable these because there is no way to disable them.
+	gc.ACHGateway.Errors.Mock = &service.MockAlerting{}
+
+	// Validate config
+	require.NoError(t, gc.ACHGateway.Validate())
 }
