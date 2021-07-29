@@ -17,4 +17,27 @@
 
 package odfi
 
-// TODO(adam):
+import (
+	"testing"
+
+	"github.com/moov-io/achgateway/internal/events"
+	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/base/log"
+
+	"github.com/stretchr/testify/require"
+)
+
+func TestReturns(t *testing.T) {
+	cfg := service.ODFIReturns{
+		Enabled: true,
+	}
+	eventsService, err := events.NewEmitter(log.NewNopLogger(), &service.EventsConfig{
+		Webhook: &service.WebhookConfig{
+			Endpoint: "https://cb.moov.io/incoming",
+		},
+	})
+	require.NoError(t, err)
+
+	emitter := ReturnEmitter(log.NewNopLogger(), cfg, eventsService)
+	require.NotNil(t, emitter)
+}

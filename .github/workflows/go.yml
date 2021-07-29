@@ -40,6 +40,8 @@ jobs:
 
     - name: Check
       if: runner.os == 'Linux'
+      env:
+        COVER_THRESHOLD: 44.5
       run: make check
 
     - name: Upload Code Coverage
