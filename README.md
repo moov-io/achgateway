@@ -4,6 +4,8 @@
 <p align="center">
   <a href="https://github.com/moov-io/achgateway/blob/master/docs/README.md">Project Documentation</a>
   ·
+  <a href="https://moov.io/blog/education/ach-gateway-guide/">Quickstart Guide</a>
+  ·
   <a href="https://slack.moov.io/">Community</a>
   ·
   <a href="https://moov.io/blog/">Blog</a>
