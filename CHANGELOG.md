@@ -4,6 +4,17 @@ ADDITIONS
 
 - inbound: support TLS over http
 
+## v0.5.2 (Released 2021-08-03)
+
+BUG FIXES
+
+- pipeline: check incoming ACHFile is valid prior to accepting
+
+BUILD
+
+- build: update go.mod / go.sum
+- build: use debian stable's slim image
+
 ## v0.5.1 (Released 2021-07-15)
 
 IMPROVEMENTS
