@@ -18,6 +18,8 @@
 package incoming
 
 import (
+	"errors"
+
 	"github.com/moov-io/ach"
 )
 
@@ -25,6 +27,19 @@ type ACHFile struct {
 	FileID   string    `json:"id"`
 	ShardKey string    `json:"shardKey"`
 	File     *ach.File `json:"file"`
+}
+
+func (f ACHFile) Validate() error {
+	if f.FileID == "" {
+		return errors.New("missing fileID")
+	}
+	if f.ShardKey == "" {
+		return errors.New("missing shardKey")
+	}
+	if f.File == nil {
+		return errors.New("missing File")
+	}
+	return nil
 }
 
 type CancelACHFile struct {
