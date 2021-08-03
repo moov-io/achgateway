@@ -132,6 +132,10 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 				fr.logger.Error().LogErrorf("unable to parse incoming.ACHFile: %v", err)
 				return
 			}
+			if err := file.Validate(); err != nil {
+				fr.logger.Error().LogErrorf("invalid ACHFile: %v", err)
+				return
+			}
 			fr.logger.Logf("begin handle received ACHFile=%s of %d bytes", file.FileID, len(msg.Body))
 
 			shardName, err := fr.shardRepository.Lookup(file.ShardKey)
