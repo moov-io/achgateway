@@ -29,7 +29,7 @@ func (s *MockStorage) Close() error {
 	return s.Err
 }
 
-func (s *MockStorage) SaveFile(filename string, file *ach.File) error {
+func (s *MockStorage) SaveFile(hostname, filename string, file *ach.File) error {
 	if s.Err != nil {
 		uploadFilesErrors.With("type", "mock").Add(1)
 	} else {
