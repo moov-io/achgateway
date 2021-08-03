@@ -19,6 +19,12 @@ type FilenameData struct {
 
 	// GPG is true if the file has been encrypted with GPG
 	GPG bool
+
+	// Index is the Nth file uploaded for a shard during a cutoff time
+	Index int
+
+	// ShardName is the name of a shard uploading this file
+	ShardName string
 }
 
 var filenameFunctions template.FuncMap = map[string]interface{}{
@@ -27,6 +33,12 @@ var filenameFunctions template.FuncMap = map[string]interface{}{
 	},
 	"env": func(name string) string {
 		return os.Getenv(name)
+	},
+	"lower": func(s string) string {
+		return strings.ToLower(s)
+	},
+	"upper": func(s string) string {
+		return strings.ToUpper(s)
 	},
 }
 

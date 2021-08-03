@@ -78,6 +78,14 @@ func TestFilenameTemplate__functions(t *testing.T) {
 			tmpl:     `{{ date "2006-01-02" }}`,
 			expected: time.Now().Format("2006-01-02"),
 		},
+		{
+			tmpl:     `foo-{{ upper .ShardName }}-{{ .Index }}.ach`,
+			expected: "foo-LIVE-1.ach",
+			data: FilenameData{
+				ShardName: "live",
+				Index:     1,
+			},
+		},
 	}
 	for i := range cases {
 		res, err := RenderACHFilename(cases[i].tmpl, cases[i].data)
