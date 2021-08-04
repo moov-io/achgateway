@@ -1,8 +1,18 @@
-## v0.6.0 (Unreleased)
+## v0.6.0 (Released 2021-08-04)
 
 ADDITIONS
 
+- audittrail: save agent hostname in blob path
 - inbound: support TLS over http
+- upload: offer ShardName and Index for filename templates
+
+BUG FIXES
+
+- web: fix hand-over of events through compliance protection
+
+BUILD
+
+- docs: mention nacha and moov-io/ach json formats
 
 ## v0.5.2 (Released 2021-08-03)
 
