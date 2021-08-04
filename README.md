@@ -41,7 +41,15 @@ achgateway_1  | ts=2021-06-18T23:38:06Z msg="public listening on :8484" version=
 achgateway_1  | ts=2021-06-18T23:38:06Z msg="listening on [::]:9494" version=v0.4.1 level=info app=achgateway
 ```
 
-Submit a file to achgateway:
+Submit a file to achgateway (Nacha ACH format):
+```
+$ curl -XPOST "http://localhost:8484/shards/foo2/files/f6" --data @./testdata/ppd-debit.ach
+...
+achgateway_1  | ts=2021-06-18T23:38:16Z msg="begin handle received ACHFile=f6 of 1918 bytes" level=info app=achgateway version=v0.4.1
+achgateway_1  | ts=2021-06-18T23:38:16Z msg="finished handling ACHFile=f6" level=info app=achgateway version=v0.4.1
+```
+
+Submit a file to achgateway (moov-io ACH JSON format):
 ```
 $ curl -XPOST "http://localhost:8484/shards/foo/files/f4" --data @./testdata/ppd-valid.json
 ...
