@@ -20,7 +20,6 @@ package web
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -30,6 +29,7 @@ import (
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/compliance"
+	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
 
 	"github.com/gorilla/mux"
@@ -85,7 +85,7 @@ func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Reque
 		file = *f
 	}
 
-	if err := publishFile(c.publisher, shardKey, fileID, &file); err != nil {
+	if err := c.publishFile(shardKey, fileID, &file); err != nil {
 		c.logger.LogErrorf("error publishing fileID=%s: %v", fileID, err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
@@ -106,23 +106,24 @@ func (c *FilesController) readBody(req *http.Request) ([]byte, error) {
 	return compliance.Reveal(c.cfg.Transform, bs)
 }
 
-func publishFile(pub *pubsub.Topic, shardKey, fileID string, file *ach.File) error {
-	var body bytes.Buffer
-	err := json.NewEncoder(&body).Encode(incoming.ACHFile{
-		FileID:   fileID,
-		ShardKey: shardKey,
-		File:     file,
+func (c *FilesController) publishFile(shardKey, fileID string, file *ach.File) error {
+	bs, err := compliance.Protect(c.cfg.Transform, models.Event{
+		Event: incoming.ACHFile{
+			FileID:   fileID,
+			ShardKey: shardKey,
+			File:     file,
+		},
 	})
 	if err != nil {
-		return fmt.Errorf("fileID=%s unable to encode ACH file: %v", fileID, err)
+		return fmt.Errorf("unable to protect event: %v", err)
 	}
 
 	meta := make(map[string]string)
 	meta["fileID"] = fileID
 	meta["shardKey"] = shardKey
 
-	return pub.Send(context.Background(), &pubsub.Message{
-		Body:     body.Bytes(),
+	return c.publisher.Send(context.Background(), &pubsub.Message{
+		Body:     bs,
 		Metadata: meta,
 	})
 }
