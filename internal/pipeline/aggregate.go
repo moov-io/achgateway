@@ -232,7 +232,7 @@ func (xfagg *aggregator) uploadFile(agent upload.Agent, res *transform.Result) e
 	}
 
 	// Record the file in our audit trail
-	if err := xfagg.auditStorage.SaveFile(filename, res.File); err != nil {
+	if err := xfagg.auditStorage.SaveFile(agent.Hostname(), filename, res.File); err != nil {
 		uploadFilesErrors.With().Add(1)
 		return fmt.Errorf("problem saving file in audit record: %v", err)
 	}

@@ -33,7 +33,7 @@ var (
 // File retention after upload is not part of this storage.
 type Storage interface {
 	// SaveFile will encrypt and copy the ACH file to the configured file storage.
-	SaveFile(filename string, file *ach.File) error
+	SaveFile(hostname, filename string, file *ach.File) error
 
 	GetFile(filepath string) (io.ReadCloser, error)
 

@@ -67,7 +67,7 @@ func (bs *blobStorage) Close() error {
 	return bs.bucket.Close()
 }
 
-func (bs *blobStorage) SaveFile(filename string, file *ach.File) error {
+func (bs *blobStorage) SaveFile(hostname, filename string, file *ach.File) error {
 	result := &transform.Result{File: file}
 
 	var buf bytes.Buffer
@@ -83,7 +83,7 @@ func (bs *blobStorage) SaveFile(filename string, file *ach.File) error {
 	}
 
 	// write the file in a sub-path of the yyy-mm-dd
-	path := fmt.Sprintf("files/%s/%s", time.Now().Format("2006-01-02"), filename)
+	path := fmt.Sprintf("files/%s/%s/%s", hostname, time.Now().Format("2006-01-02"), filename)
 	w, err := bs.bucket.NewWriter(context.Background(), path, nil)
 	if err != nil {
 		uploadFilesErrors.With("type", "blob").Add(1)
