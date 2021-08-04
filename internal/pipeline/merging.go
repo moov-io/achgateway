@@ -49,7 +49,7 @@ type XferMerging interface {
 	HandleXfer(xfer incoming.ACHFile) error
 	HandleCancel(cancel incoming.CancelACHFile) error
 
-	WithEachMerged(f func(upload.Agent, *ach.File) error) (*processedFiles, error)
+	WithEachMerged(f func(int, upload.Agent, *ach.File) error) (*processedFiles, error)
 }
 
 func NewMerging(logger log.Logger, consul *consul.Wrapper, shard service.Shard, cfg service.UploadAgents) (XferMerging, error) {
@@ -173,7 +173,7 @@ func newProcessedFiles(shardKey string, matches []string) *processedFiles {
 	return processed
 }
 
-func (m *filesystemMerging) WithEachMerged(f func(upload.Agent, *ach.File) error) (*processedFiles, error) {
+func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) error) (*processedFiles, error) {
 	// move the current directory so it's isolated and easier to debug later on
 	dir, err := m.isolateMergableDir()
 	if err != nil {
@@ -215,7 +215,7 @@ func (m *filesystemMerging) WithEachMerged(f func(upload.Agent, *ach.File) error
 	return processed, nil
 }
 
-func (m *filesystemMerging) withEachOrganizationDirectory(dir string, shardKey string, agent upload.Agent, f func(upload.Agent, *ach.File) error) (*processedFiles, error) {
+func (m *filesystemMerging) withEachOrganizationDirectory(dir string, shardKey string, agent upload.Agent, f func(int, upload.Agent, *ach.File) error) (*processedFiles, error) {
 	path := filepath.Join(dir, "*.ach")
 	matches, err := getNonCanceledMatches(path)
 	if err != nil {
@@ -277,7 +277,7 @@ func (m *filesystemMerging) withEachOrganizationDirectory(dir string, shardKey s
 		}
 		// Perform the file upload if we are the shard leader
 		if isLeader, err := m.consul.Acquire(shardKey); isLeader && err == nil {
-			if err := f(agent, files[i]); err != nil {
+			if err := f(i, agent, files[i]); err != nil {
 				el.Add(fmt.Errorf("problem from callback: %v", err))
 			} else {
 				successfulRemoteWrites++

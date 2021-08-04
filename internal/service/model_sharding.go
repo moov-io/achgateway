@@ -30,6 +30,7 @@ var (
 	// The format consists of a few parts: "year month day" timestamp, "hour minute" timestamp, and routing number
 	//
 	// Examples:
+	//  - 20191010-0830-LiveODFI.ach      (.ShardName of "LiveODFI")
 	//  - 20191010-0830-987654320.ach
 	//  - 20191010-0830-987654320.ach.gpg (GPG encrypted)
 	DefaultFilenameTemplate = `{{ date "20060102" }}-{{ date "150405" }}-{{ .RoutingNumber }}.ach{{ if .GPG }}.gpg{{ end }}`

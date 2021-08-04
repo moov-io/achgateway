@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"time"
 
 	"github.com/moov-io/ach"
@@ -202,15 +203,15 @@ func (xfagg *aggregator) emitFilesUploaded(proc *processedFiles) error {
 	return el
 }
 
-func (xfagg *aggregator) runTransformers(agent upload.Agent, outgoing *ach.File) error {
+func (xfagg *aggregator) runTransformers(index int, agent upload.Agent, outgoing *ach.File) error {
 	result, err := transform.ForUpload(outgoing, xfagg.preuploadTransformers)
 	if err != nil {
 		return err
 	}
-	return xfagg.uploadFile(agent, result)
+	return xfagg.uploadFile(index, agent, result)
 }
 
-func (xfagg *aggregator) uploadFile(agent upload.Agent, res *transform.Result) error {
+func (xfagg *aggregator) uploadFile(index int, agent upload.Agent, res *transform.Result) error {
 	if res == nil || res.File == nil {
 		return errors.New("uploadFile: nil Result / File")
 	}
@@ -218,6 +219,8 @@ func (xfagg *aggregator) uploadFile(agent upload.Agent, res *transform.Result) e
 	data := upload.FilenameData{
 		RoutingNumber: res.File.Header.ImmediateDestination,
 		GPG:           len(res.Encrypted) > 0,
+		ShardName:     prepareShardName(xfagg.shard.Name),
+		Index:         index,
 	}
 	filename, err := upload.RenderACHFilename(xfagg.shard.FilenameTemplate(), data)
 	if err != nil {
@@ -256,6 +259,10 @@ func (xfagg *aggregator) uploadFile(agent upload.Agent, res *transform.Result) e
 	}
 
 	return err
+}
+
+func prepareShardName(shardName string) string {
+	return strings.ToUpper(strings.ReplaceAll(shardName, " ", "-"))
 }
 
 func (xfagg *aggregator) notifyAfterUpload(filename string, file *ach.File, agent upload.Agent, uploadErr error) error {
