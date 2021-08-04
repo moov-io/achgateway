@@ -20,7 +20,6 @@ package web
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -31,6 +30,7 @@ import (
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
 
 	"github.com/gorilla/mux"
@@ -58,7 +58,7 @@ func TestCreateFileHandler(t *testing.T) {
 	require.NoError(t, err)
 
 	var file incoming.ACHFile
-	require.NoError(t, json.Unmarshal(msg.Body, &file))
+	require.NoError(t, models.ReadEvent(msg.Body, &file))
 
 	require.Equal(t, "f1", file.FileID)
 	require.Equal(t, "s1", file.ShardKey)

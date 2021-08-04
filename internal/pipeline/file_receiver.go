@@ -19,7 +19,6 @@ package pipeline
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/shards"
@@ -128,10 +127,11 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 
 			// Parse our incoming ACHFile
 			var file incoming.ACHFile
-			if err := json.Unmarshal(data, &file); err != nil {
+			if err := models.ReadEvent(data, &file); err != nil {
 				fr.logger.Error().LogErrorf("unable to parse incoming.ACHFile: %v", err)
 				return
 			}
+
 			if err := file.Validate(); err != nil {
 				fr.logger.Error().LogErrorf("invalid ACHFile: %v", err)
 				return
