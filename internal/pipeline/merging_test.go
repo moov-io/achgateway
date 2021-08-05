@@ -33,7 +33,7 @@ func TestMerging__getNonCanceledMatches(t *testing.T) {
 	dir := t.TempDir()
 
 	write := func(filename string) string {
-		err := ioutil.WriteFile(filepath.Join(dir, filename), nil, 0644)
+		err := ioutil.WriteFile(filepath.Join(dir, filename), nil, 0600)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -131,6 +131,7 @@ func sftpConnect(logger log.Logger, cfg service.UploadAgent) (*ssh.Client, io.Wr
 		hostKeyCallbackOnce.Do(func() {
 			hostKeyCallback(logger)
 		})
+		//nolint:gosec
 		conf.HostKeyCallback = ssh.InsecureIgnoreHostKey() // insecure default
 	}
 	switch {

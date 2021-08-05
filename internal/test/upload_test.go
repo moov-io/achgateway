@@ -193,6 +193,7 @@ func countEntries(file *ach.File) (out int) {
 }
 
 func randomACHFile(t *testing.T) *ach.File {
+	//nolint:gosec
 	if rand.Int31()%2 == 0 {
 		file, err := ach.ReadFile(filepath.Join("..", "..", "testdata", "ppd-debit.ach"))
 		require.NoError(t, err)
@@ -207,7 +208,9 @@ func randomACHFile(t *testing.T) *ach.File {
 }
 
 func traceNumber(routingNumber string) string {
-	v := fmt.Sprintf("%s%d", routingNumber, rand.Int63n(1e15))
+	// nolint:gosec
+	num := rand.Int63n(1e15)
+	v := fmt.Sprintf("%s%d", routingNumber, num)
 	if utf8.RuneCountInString(v) > 15 {
 		return v[:15]
 	}
