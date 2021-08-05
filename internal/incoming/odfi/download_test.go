@@ -41,7 +41,7 @@ func TestDownloader__deleteFiles(t *testing.T) {
 
 	// write a file and expect it to be deleted
 	path := filepath.Join(dl.dir, agent.InboundPath(), "foo.ach")
-	if err := ioutil.WriteFile(path, []byte("testing"), 0644); err != nil {
+	if err := ioutil.WriteFile(path, []byte("testing"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	if err := dl.deleteFiles(); err != nil {
@@ -70,7 +70,7 @@ func TestDownloader__deleteEmptyDirs(t *testing.T) {
 
 	// write a file and expect it to be deleted
 	path := filepath.Join(dl.dir, agent.InboundPath(), "foo.ach")
-	if err := ioutil.WriteFile(path, []byte("testing"), 0644); err != nil {
+	if err := ioutil.WriteFile(path, []byte("testing"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	if err := dl.deleteEmptyDirs(agent); err != nil {

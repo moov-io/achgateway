@@ -25,7 +25,7 @@ import (
 
 func TestProcessor__process(t *testing.T) {
 	dir := t.TempDir()
-	if err := ioutil.WriteFile(filepath.Join(dir, "invalid.ach"), []byte("invalid-ach-file"), 0644); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(dir, "invalid.ach"), []byte("invalid-ach-file"), 0600); err != nil {
 		t.Fatal(err)
 	}
 
