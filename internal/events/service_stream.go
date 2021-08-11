@@ -45,7 +45,8 @@ func newStreamService(logger log.Logger, transformConfig *models.TransformConfig
 		return nil, fmt.Errorf("events stream: %v", err)
 	}
 	return &streamService{
-		topic: topic,
+		topic:           topic,
+		transformConfig: transformConfig,
 	}, nil
 }
 
