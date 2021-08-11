@@ -1,3 +1,13 @@
+## v0.6.1 (Released 2021-08-11)
+
+BUG FIXES
+
+- events: pass in config transfer to stream service
+
+IMPROVEMENTS
+
+- meta: fixup from adding gosec linter
+
 ## v0.6.0 (Released 2021-08-04)
 
 ADDITIONS
