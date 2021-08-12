@@ -19,32 +19,15 @@ package models
 
 import (
 	"encoding/json"
+	"strings"
+	"testing"
 
-	"github.com/moov-io/base/mask"
+	"github.com/stretchr/testify/require"
 )
 
-type TransformConfig struct {
-	Encoding   *EncodingConfig
-	Encryption *EncryptionConfig
-}
-
-type EncodingConfig struct {
-	Base64 bool
-}
-
-type EncryptionConfig struct {
-	AES *AESConfig
-}
-
-type AESConfig struct {
-	Key string
-}
-
-func (cfg *AESConfig) MarshalJSON() ([]byte, error) {
-	type Aux struct {
-		Key string
-	}
-	return json.Marshal(Aux{
-		Key: mask.Password(cfg.Key),
-	})
+func TestAESConfigMasking(t *testing.T) {
+	cfg := &AESConfig{Key: strings.Repeat("1", 32)}
+	bs, err := json.Marshal(cfg)
+	require.NoError(t, err)
+	require.Equal(t, bs, []byte(`{"Key":"1*****1"}`))
 }
