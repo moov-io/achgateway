@@ -1,3 +1,9 @@
+## v0.6.2 (Released 2021-08-13)
+
+IMPROVEMENTS
+
+- models: mask AESConfig's Key in JSON marshaling
+
 ## v0.6.1 (Released 2021-08-11)
 
 BUG FIXES
