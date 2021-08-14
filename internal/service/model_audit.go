@@ -18,10 +18,12 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 
+	"github.com/moov-io/achgateway/internal/mask"
 	"github.com/moov-io/base/strx"
 )
 
@@ -64,4 +66,15 @@ type Signer struct {
 
 func (cfg *Signer) Password() string {
 	return strx.Or(os.Getenv("PIPELINE_SIGNING_KEY_PASSWORD"), cfg.KeyPassword)
+}
+
+func (cfg *Signer) MarshalJSON() ([]byte, error) {
+	type Aux struct {
+		KeyFile     string
+		KeyPassword string
+	}
+	return json.Marshal(Aux{
+		KeyFile:     cfg.KeyFile,
+		KeyPassword: mask.Password(cfg.Password()),
+	})
 }

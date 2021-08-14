@@ -17,31 +17,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package service
+package service_test
 
 import (
-	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
+	"errors"
+	"testing"
 
+	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func NewTerminationListener() chan error {
-	errs := make(chan error)
+func TestTermination(t *testing.T) {
+	listener := service.NewTerminationListener()
+	err := make(chan error)
 	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-		errs <- fmt.Errorf("%s", <-c)
+		err <- service.AwaitTermination(log.NewNopLogger(), listener)
 	}()
+	listener <- errors.New("foo")
 
-	return errs
-}
-
-func AwaitTermination(logger log.Logger, terminationListener chan error) error {
-	if err := <-terminationListener; err != nil {
-		return logger.Fatal().LogErrorf("Terminated: %v", err).Err()
-	}
-	return nil
+	got := <-err
+	require.Error(t, got)
+	assert.Contains(t, got.Error(), "Terminated: foo")
 }

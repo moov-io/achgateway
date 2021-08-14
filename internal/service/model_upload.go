@@ -19,6 +19,7 @@ package service
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -80,6 +81,27 @@ type FTP struct {
 	DisabledEPSV bool
 }
 
+func (cfg *FTP) MarshalJSON() ([]byte, error) {
+	type Aux struct {
+		Hostname string
+		Username string
+		Password string
+
+		CAFilepath   string
+		DialTimeout  time.Duration
+		DisabledEPSV bool
+	}
+	return json.Marshal(Aux{
+		Hostname: cfg.Hostname,
+		Username: cfg.Username,
+		Password: mask.Password(cfg.Password),
+
+		CAFilepath:   cfg.CAFilepath,
+		DialTimeout:  cfg.DialTimeout,
+		DisabledEPSV: cfg.DisabledEPSV,
+	})
+}
+
 func (cfg *FTP) CAFile() string {
 	if cfg == nil {
 		return ""
@@ -120,6 +142,33 @@ type SFTP struct {
 	DialTimeout           time.Duration
 	MaxConnectionsPerFile int
 	MaxPacketSize         int
+}
+
+func (cfg *SFTP) MarshalJSON() ([]byte, error) {
+	type Aux struct {
+		Hostname string
+		Username string
+
+		Password         string
+		ClientPrivateKey string
+		HostPublicKey    string
+
+		DialTimeout           time.Duration
+		MaxConnectionsPerFile int
+		MaxPacketSize         int
+	}
+	return json.Marshal(Aux{
+		Hostname: cfg.Hostname,
+		Username: cfg.Username,
+
+		Password:         mask.Password(cfg.Password),
+		ClientPrivateKey: cfg.ClientPrivateKey,
+		HostPublicKey:    cfg.HostPublicKey,
+
+		DialTimeout:           cfg.DialTimeout,
+		MaxConnectionsPerFile: cfg.MaxConnectionsPerFile,
+		MaxPacketSize:         cfg.MaxPacketSize,
+	})
 }
 
 func (cfg *SFTP) Timeout() time.Duration {

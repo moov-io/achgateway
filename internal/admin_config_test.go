@@ -1,5 +1,3 @@
-// generated-from:1707fd7fce48bdd1cbfbbd9efcc7347ad3bdc8b6b8286d28dde59f4d919c4df0 DO NOT REMOVE, DO UPDATE
-
 // Licensed to The Moov Authors under one or more contributor
 // license agreements. See the NOTICE file distributed with
 // this work for additional information regarding copyright
@@ -17,31 +15,35 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package service
+package internal
 
 import (
-	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
+	"net/http"
+	"testing"
 
-	"github.com/moov-io/base/log"
+	"github.com/moov-io/achgateway/internal/service"
+
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/require"
 )
 
-func NewTerminationListener() chan error {
-	errs := make(chan error)
-	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-		errs <- fmt.Errorf("%s", <-c)
-	}()
+func TestAdminConfig(t *testing.T) {
+	r := mux.NewRouter()
+	env := NewTestEnvironment(t, r)
+	t.Cleanup(env.Shutdown)
 
-	return errs
-}
+	env.RunServers(service.NewTerminationListener())
+	env.registerConfigRoute()
 
-func AwaitTermination(logger log.Logger, terminationListener chan error) error {
-	if err := <-terminationListener; err != nil {
-		return logger.Fatal().LogErrorf("Terminated: %v", err).Err()
+	req, err := http.NewRequest("GET", "http://"+env.AdminServer.BindAddr()+"/config", nil)
+	require.NoError(t, err)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	if resp.Body != nil {
+		resp.Body.Close()
 	}
-	return nil
 }

@@ -1,5 +1,3 @@
-// generated-from:1707fd7fce48bdd1cbfbbd9efcc7347ad3bdc8b6b8286d28dde59f4d919c4df0 DO NOT REMOVE, DO UPDATE
-
 // Licensed to The Moov Authors under one or more contributor
 // license agreements. See the NOTICE file distributed with
 // this work for additional information regarding copyright
@@ -20,28 +18,15 @@
 package service
 
 import (
-	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
+	"encoding/json"
+	"testing"
 
-	"github.com/moov-io/base/log"
+	"github.com/stretchr/testify/require"
 )
 
-func NewTerminationListener() chan error {
-	errs := make(chan error)
-	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-		errs <- fmt.Errorf("%s", <-c)
-	}()
-
-	return errs
-}
-
-func AwaitTermination(logger log.Logger, terminationListener chan error) error {
-	if err := <-terminationListener; err != nil {
-		return logger.Fatal().LogErrorf("Terminated: %v", err).Err()
-	}
-	return nil
+func TestSignerMasking(t *testing.T) {
+	cfg := &Signer{KeyFile: "/foo.pem", KeyPassword: "secret"}
+	bs, err := json.Marshal(cfg)
+	require.NoError(t, err)
+	require.Equal(t, bs, []byte(`{"KeyFile":"/foo.pem","KeyPassword":"s****t"}`))
 }
