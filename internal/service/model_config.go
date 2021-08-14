@@ -42,7 +42,6 @@ type Config struct {
 	Sharding      Sharding
 	Upload        UploadAgents
 	Notifications Notifications
-	AuditTrail    AuditTrails
 	Errors        ErrorAlerting
 }
 
@@ -64,9 +63,6 @@ func (cfg *Config) Validate() error {
 	}
 	if err := cfg.Notifications.Validate(); err != nil {
 		return fmt.Errorf("notifications: %v", err)
-	}
-	if err := cfg.AuditTrail.Validate(); err != nil {
-		return fmt.Errorf("audittrail: %v", err)
 	}
 	if err := cfg.Errors.Validate(); err != nil {
 		return fmt.Errorf("errors: %v", err)
