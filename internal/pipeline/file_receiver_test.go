@@ -41,7 +41,7 @@ func testFileReceiver(t *testing.T) *FileReceiver {
 	cfg := &models.TransformConfig{}
 
 	fileRec := newFileReceiver(logger, shard, shardRepo, shardAggregators, httpFiles, streamFiles, cfg)
-	fileRec.Start(context.Background())
+	go fileRec.Start(context.Background())
 	t.Cleanup(func() { fileRec.Shutdown() })
 
 	return fileRec
