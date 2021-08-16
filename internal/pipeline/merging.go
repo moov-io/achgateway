@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -35,7 +36,6 @@ import (
 	"github.com/moov-io/achgateway/internal/upload"
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/log"
-	"github.com/moov-io/base/strx"
 )
 
 // XferMerging represents logic for accepting ACH files to be merged together.
@@ -92,7 +92,7 @@ func (m *filesystemMerging) writeACHFile(xfer incoming.ACHFile) error {
 		return err
 	}
 
-	path := filepath.Join(m.baseDir, xfer.ShardKey)
+	path := filepath.Join(m.baseDir, fmt.Sprintf("shard-%s", m.shard.Name), xfer.ShardKey)
 	os.MkdirAll(path, 0777)
 
 	path = filepath.Join(path, fmt.Sprintf("%s.ach", xfer.FileID))
@@ -104,7 +104,7 @@ func (m *filesystemMerging) writeACHFile(xfer incoming.ACHFile) error {
 }
 
 func (m *filesystemMerging) HandleCancel(cancel incoming.CancelACHFile) error {
-	path := filepath.Join(m.baseDir, cancel.ShardKey)
+	path := filepath.Join(m.baseDir, fmt.Sprintf("shard-%s", m.shard.Name), cancel.ShardKey)
 	os.MkdirAll(path, 0777)
 
 	// Write the canceled file
@@ -118,10 +118,10 @@ func (m *filesystemMerging) HandleCancel(cancel incoming.CancelACHFile) error {
 	}
 }
 
-func (m *filesystemMerging) isolateMergableDir() (string, error) {
+func (m *filesystemMerging) isolateMergableDir(shardID string) (string, error) {
 	// rename m.baseDir so we're the only accessor for it, then recreate m.baseDir
 	parent, _ := filepath.Split(m.baseDir)
-	newdir := filepath.Join(parent, time.Now().Format("20060102-150405"))
+	newdir := filepath.Join(parent, fmt.Sprintf("%s-%s", shardID, time.Now().Format("20060102-150405")))
 	if err := os.Rename(m.baseDir, newdir); err != nil {
 		return newdir, err
 	}
@@ -174,31 +174,36 @@ func newProcessedFiles(shardKey string, matches []string) *processedFiles {
 }
 
 func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) error) (*processedFiles, error) {
+	processed := &processedFiles{}
+
+	// Grab our upload Agent
+	agent, err := upload.New(m.logger, m.cfg, m.shard.UploadAgent)
+	if err != nil {
+		return processed, fmt.Errorf("agent: %v", err)
+	}
+	m.logger.Logf("found %T agent from shard's uploadAgent=%s", agent, m.shard.UploadAgent)
+	if agent == nil {
+		return processed, errors.New("missing upload.Agent")
+	}
+
 	// move the current directory so it's isolated and easier to debug later on
-	dir, err := m.isolateMergableDir()
+	dir, err := m.isolateMergableDir(m.shard.Name)
 	if err != nil {
 		return nil, fmt.Errorf("problem isolating newdir=%s error=%v", dir, err)
 	}
+
 	// Grab each tenant directory and process it
 	dirs, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("problem reading tenant dirs: %v", err)
 	}
 
-	// Process each Organization directory
-	processed := &processedFiles{}
+	// Process each shard'd directory
 	for i := range dirs {
 		if dirs[i].IsDir() {
 			shardKey := filepath.Base(dirs[i].Name())
 			logger := m.logger.Set("shardKey", log.String(shardKey))
 			logger.Logf("processing mergable directory %s", dirs[i].Name())
-
-			// Grab our upload Agent
-			agent, err := upload.New(m.logger, m.cfg, strx.Or(m.shard.UploadAgent, m.cfg.DefaultAgentID))
-			if err != nil {
-				return processed, fmt.Errorf("agent: %v", err)
-			}
-			logger.Logf("found %T agent", agent)
 
 			// Hand off the directory to be merged and uploaded
 			proc, err := m.withEachOrganizationDirectory(filepath.Join(dir, dirs[i].Name()), shardKey, agent, f)
