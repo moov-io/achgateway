@@ -1,3 +1,10 @@
+## v0.6.3 (Released 2021-08-17)
+
+BUG FIXES
+
+- pipeline: keep shard files isolated when merging
+- streamtest: use random inmem subscription
+
 ## v0.6.2 (Released 2021-08-13)
 
 IMPROVEMENTS
