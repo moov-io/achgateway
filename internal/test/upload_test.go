@@ -29,6 +29,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 	"unicode/utf8"
@@ -76,15 +77,24 @@ var (
 						Timezone: "America/Los_Angeles",
 						Windows:  []string{"12:03"},
 					},
-					OutboundFilenameTemplate: `{{ date "20060102" }}-{{ date "150405.00000" }}-{{ .RoutingNumber }}.ach`,
-					UploadAgent:              "ftp-test",
+					OutboundFilenameTemplate: `{{ .ShardName }}-{{ date "150405.00000" }}-{{ .RoutingNumber }}.ach`,
+					UploadAgent:              "ftp-live",
+				},
+				{
+					Name: "beta",
+					Cutoffs: service.Cutoffs{
+						Timezone: "America/New_York",
+						Windows:  []string{"14:30"},
+					},
+					OutboundFilenameTemplate: `{{ .ShardName }}-{{ date "150405.00000" }}-{{ .RoutingNumber }}.ach`,
+					UploadAgent:              "ftp-live",
 				},
 			},
 		},
 		Upload: service.UploadAgents{
 			Agents: []service.UploadAgent{
 				{
-					ID: "ftp-test",
+					ID: "ftp-live",
 					FTP: &service.FTP{
 						Hostname: "127.0.0.1:2121",
 						Username: "admin",
@@ -98,7 +108,6 @@ var (
 					},
 				},
 			},
-			DefaultAgentID: "ftp-test",
 		},
 	}
 )
@@ -158,6 +167,10 @@ func TestUploads(t *testing.T) {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
+	filenamePrefixCounts := countFilenamePrefixes(t, outboundPath)
+	require.Greater(t, filenamePrefixCounts["BETA"], 0)
+	require.Greater(t, filenamePrefixCounts["PROD"], 0)
+
 	createdFiles, err := ach.ReadDir(outboundPath)
 	require.NoError(t, err)
 
@@ -173,6 +186,28 @@ func setupTestDirectory(t *testing.T, cfg *service.Config) string {
 
 	cfg.Upload.Agents[0].Paths.Outbound = filepath.Base(dir)
 	return dir
+}
+
+func countFilenamePrefixes(t *testing.T, outboundPath string) map[string]int {
+	t.Helper()
+
+	out := make(map[string]int)
+
+	fds, err := ioutil.ReadDir(outboundPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range fds {
+		if fds[i].Mode().IsRegular() {
+			parts := strings.Split(filepath.Base(fds[i].Name()), "-")
+			out[parts[0]] += 1
+		}
+	}
+	if len(out) != 2 {
+		t.Fatalf("unexpected shard counts: %v", out)
+	}
+	t.Logf("found %v shards", out)
+	return out
 }
 
 func countAllEntries(files []*ach.File) (out int) {
@@ -245,7 +280,11 @@ func setupShards(t *testing.T, repo *shards.MockRepository) []string {
 	var out []string
 	for i := 0; i < 10; i++ {
 		shardKey := base.ID()
-		repo.Shards[shardKey] = "prod"
+		if i%2 == 0 {
+			repo.Shards[shardKey] = "prod"
+		} else {
+			repo.Shards[shardKey] = "beta"
+		}
 		out = append(out, shardKey)
 	}
 	return out

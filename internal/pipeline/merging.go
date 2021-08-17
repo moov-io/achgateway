@@ -35,7 +35,6 @@ import (
 	"github.com/moov-io/achgateway/internal/upload"
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/log"
-	"github.com/moov-io/base/strx"
 )
 
 // XferMerging represents logic for accepting ACH files to be merged together.
@@ -57,11 +56,13 @@ func NewMerging(logger log.Logger, consul *consul.Wrapper, shard service.Shard, 
 	if cfg.Merging.Directory != "" {
 		dir = filepath.Join(cfg.Merging.Directory, "mergable")
 	}
-
+	dir, err := filepath.Abs(dir)
+	if err != nil {
+		return nil, fmt.Errorf("unable to expand %s: %v", dir, err)
+	}
 	if err := os.MkdirAll(dir, 0777); err != nil {
 		return nil, err
 	}
-
 	return &filesystemMerging{
 		baseDir: dir,
 		logger:  logger,
@@ -92,23 +93,24 @@ func (m *filesystemMerging) writeACHFile(xfer incoming.ACHFile) error {
 		return err
 	}
 
-	path := filepath.Join(m.baseDir, xfer.ShardKey)
+	path := filepath.Join(m.baseDir, m.shard.Name)
 	os.MkdirAll(path, 0777)
 
 	path = filepath.Join(path, fmt.Sprintf("%s.ach", xfer.FileID))
+
 	if err := ioutil.WriteFile(path, buf.Bytes(), 0600); err != nil {
 		return err
 	}
-
 	return nil
 }
 
 func (m *filesystemMerging) HandleCancel(cancel incoming.CancelACHFile) error {
-	path := filepath.Join(m.baseDir, cancel.ShardKey)
+	path := filepath.Join(m.baseDir, m.shard.Name)
 	os.MkdirAll(path, 0777)
 
-	// Write the canceled file
 	path = filepath.Join(path, fmt.Sprintf("%s.ach", cancel.FileID))
+
+	// Write the canceled file
 	if _, err := os.Stat(path); err != nil && os.IsNotExist(err) {
 		// file doesn't exist, so write one
 		return ioutil.WriteFile(path+".canceled", nil, 0600)
@@ -119,13 +121,15 @@ func (m *filesystemMerging) HandleCancel(cancel incoming.CancelACHFile) error {
 }
 
 func (m *filesystemMerging) isolateMergableDir() (string, error) {
-	// rename m.baseDir so we're the only accessor for it, then recreate m.baseDir
-	parent, _ := filepath.Split(m.baseDir)
-	newdir := filepath.Join(parent, time.Now().Format("20060102-150405"))
-	if err := os.Rename(m.baseDir, newdir); err != nil {
+	// rename the shard directory so we're the only accessor for it, then recreate it
+	olddir := filepath.Join(m.baseDir, m.shard.Name)
+
+	newdir := filepath.Join(filepath.Dir(m.baseDir), fmt.Sprintf("%s-%v", m.shard.Name, time.Now().Format("20060102-150405")))
+
+	if err := os.Rename(olddir, newdir); err != nil {
 		return newdir, err
 	}
-	return newdir, os.Mkdir(m.baseDir, 0777) // create m.baseDir again
+	return newdir, nil
 }
 
 func getNonCanceledMatches(path string) ([]string, error) {
@@ -174,56 +178,20 @@ func newProcessedFiles(shardKey string, matches []string) *processedFiles {
 }
 
 func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) error) (*processedFiles, error) {
+	processed := &processedFiles{}
+
 	// move the current directory so it's isolated and easier to debug later on
 	dir, err := m.isolateMergableDir()
 	if err != nil {
 		return nil, fmt.Errorf("problem isolating newdir=%s error=%v", dir, err)
 	}
-	// Grab each tenant directory and process it
-	dirs, err := ioutil.ReadDir(dir)
+
+	matches, err := getNonCanceledMatches(filepath.Join(dir, "*.ach"))
 	if err != nil {
-		return nil, fmt.Errorf("problem reading tenant dirs: %v", err)
+		return nil, fmt.Errorf("problem with %s glob: %v", dir, err)
 	}
 
-	// Process each Organization directory
-	processed := &processedFiles{}
-	for i := range dirs {
-		if dirs[i].IsDir() {
-			shardKey := filepath.Base(dirs[i].Name())
-			logger := m.logger.Set("shardKey", log.String(shardKey))
-			logger.Logf("processing mergable directory %s", dirs[i].Name())
-
-			// Grab our upload Agent
-			agent, err := upload.New(m.logger, m.cfg, strx.Or(m.shard.UploadAgent, m.cfg.DefaultAgentID))
-			if err != nil {
-				return processed, fmt.Errorf("agent: %v", err)
-			}
-			logger.Logf("found %T agent", agent)
-
-			// Hand off the directory to be merged and uploaded
-			proc, err := m.withEachOrganizationDirectory(filepath.Join(dir, dirs[i].Name()), shardKey, agent, f)
-			if err != nil {
-				return processed, fmt.Errorf("each tenant (%s): %v", filepath.Base(dirs[i].Name()), err)
-			}
-
-			logger.Logf("processed %d files: %#v", len(proc.fileIDs), proc.fileIDs)
-			processed.fileIDs = append(processed.fileIDs, proc.fileIDs...)
-		} else {
-			m.logger.Logf("unexpected file info: %v", dirs[i].Name())
-		}
-	}
-	return processed, nil
-}
-
-func (m *filesystemMerging) withEachOrganizationDirectory(dir string, shardKey string, agent upload.Agent, f func(int, upload.Agent, *ach.File) error) (*processedFiles, error) {
-	path := filepath.Join(dir, "*.ach")
-	matches, err := getNonCanceledMatches(path)
-	if err != nil {
-		return nil, fmt.Errorf("problem with %s glob: %v", path, err)
-	}
-
-	tenantID := filepath.Base(dir)
-	logger := m.logger.Set("tenantID", log.String(tenantID))
+	logger := m.logger.Set("shardName", log.String(m.shard.Name))
 	logger.Logf("found %d matching ACH files: %#v", len(matches), matches)
 
 	var files []*ach.File
@@ -260,6 +228,13 @@ func (m *filesystemMerging) withEachOrganizationDirectory(dir string, shardKey s
 		os.MkdirAll(dir, 0777)
 	}
 
+	// Grab our upload Agent
+	agent, err := upload.New(m.logger, m.cfg, m.shard.UploadAgent)
+	if err != nil {
+		return processed, fmt.Errorf("agent: %v", err)
+	}
+	logger.Logf("found %T agent", agent)
+
 	// Write each file to our remote agent
 	successfulRemoteWrites := 0
 	for i := range files {
@@ -276,14 +251,14 @@ func (m *filesystemMerging) withEachOrganizationDirectory(dir string, shardKey s
 			el.Add(fmt.Errorf("problem writing merged file: %v", err))
 		}
 		// Perform the file upload if we are the shard leader
-		if isLeader, err := m.consul.Acquire(shardKey); isLeader && err == nil {
+		if isLeader, err := m.consul.Acquire(m.shard.Name); isLeader && err == nil {
 			if err := f(i, agent, files[i]); err != nil {
 				el.Add(fmt.Errorf("problem from callback: %v", err))
 			} else {
 				successfulRemoteWrites++
 			}
 		} else {
-			logger.Logf("skipping file upload for shardKey=%s", shardKey)
+			logger.Logf("skipping file upload for shard=%s", m.shard.Name)
 		}
 	}
 
@@ -293,7 +268,7 @@ func (m *filesystemMerging) withEachOrganizationDirectory(dir string, shardKey s
 		return nil, el
 	}
 
-	return newProcessedFiles(shardKey, matches), nil
+	return newProcessedFiles(m.shard.Name, matches), nil
 }
 
 func saveMergedFile(dir string, file *ach.File) error {
