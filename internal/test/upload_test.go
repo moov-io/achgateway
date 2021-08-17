@@ -89,6 +89,15 @@ var (
 					OutboundFilenameTemplate: `{{ .ShardName }}-{{ date "150405.00000" }}-{{ .RoutingNumber }}.ach`,
 					UploadAgent:              "ftp-live",
 				},
+				// This shard is never used, but we include it to verify merge/upload works
+				{
+					Name: "testing",
+					Cutoffs: service.Cutoffs{
+						Timezone: "America/New_York",
+						Windows:  []string{"14:30"},
+					},
+					UploadAgent: "ftp-live",
+				},
 			},
 		},
 		Upload: service.UploadAgents{

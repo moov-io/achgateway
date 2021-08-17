@@ -126,10 +126,13 @@ func (m *filesystemMerging) isolateMergableDir() (string, error) {
 
 	newdir := filepath.Join(filepath.Dir(m.baseDir), fmt.Sprintf("%s-%v", m.shard.Name, time.Now().Format("20060102-150405")))
 
-	if err := os.Rename(olddir, newdir); err != nil {
-		return newdir, err
+	if _, err := os.Stat(olddir); err != nil && os.IsNotExist(err) {
+		// If our old directory does not exist, just create it
+		return newdir, os.MkdirAll(newdir, 0777)
 	}
-	return newdir, nil
+
+	// Otherwise attempt to isolate the directory
+	return newdir, os.Rename(olddir, newdir)
 }
 
 func getNonCanceledMatches(path string) ([]string, error) {
