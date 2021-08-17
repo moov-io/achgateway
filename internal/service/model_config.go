@@ -32,17 +32,16 @@ type GlobalConfig struct {
 }
 
 type Config struct {
-	Logger        log.Logger `json:"-"`
-	Clients       *ClientConfig
-	Database      database.DatabaseConfig
-	Consul        *consul.Config
-	Admin         Admin
-	Inbound       Inbound
-	Events        *EventsConfig
-	Sharding      Sharding
-	Upload        UploadAgents
-	Notifications Notifications
-	Errors        ErrorAlerting
+	Logger   log.Logger `json:"-"`
+	Clients  *ClientConfig
+	Database database.DatabaseConfig
+	Consul   *consul.Config
+	Admin    Admin
+	Inbound  Inbound
+	Events   *EventsConfig
+	Sharding Sharding
+	Upload   UploadAgents
+	Errors   ErrorAlerting
 }
 
 func (cfg *Config) Validate() error {
@@ -60,9 +59,6 @@ func (cfg *Config) Validate() error {
 	}
 	if err := cfg.Upload.Validate(); err != nil {
 		return fmt.Errorf("upload: %v", err)
-	}
-	if err := cfg.Notifications.Validate(); err != nil {
-		return fmt.Errorf("notifications: %v", err)
 	}
 	if err := cfg.Errors.Validate(); err != nil {
 		return fmt.Errorf("errors: %v", err)
