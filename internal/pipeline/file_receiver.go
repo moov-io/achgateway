@@ -110,6 +110,9 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 	if sub == nil {
 		return out
 	}
+	cleanup := func() {
+		out <- nil
+	}
 	go func() {
 		msg, err := sub.Receive(ctx)
 		if err != nil {
@@ -129,20 +132,23 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 			var file incoming.ACHFile
 			if err := models.ReadEvent(data, &file); err != nil {
 				fr.logger.Error().LogErrorf("unable to parse incoming.ACHFile: %v", err)
+				cleanup()
 				return
 			}
 
 			if err := file.Validate(); err != nil {
 				fr.logger.Error().LogErrorf("invalid ACHFile: %v", err)
+				cleanup()
 				return
 			}
-			fr.logger.Logf("begin handle received ACHFile=%s of %d bytes", file.FileID, len(msg.Body))
 
 			shardName, err := fr.shardRepository.Lookup(file.ShardKey)
 			if err != nil {
 				fr.logger.Error().LogErrorf("problem looking up shardKey=%s: %v", file.ShardKey, err)
+				cleanup()
 				return
 			}
+			fr.logger.Logf("begin handle received ACHFile=%s of %d bytes on shard=%s", file.FileID, len(msg.Body), shardName)
 
 			agg, exists := fr.shardAggregators[shardName]
 			if !exists {
@@ -150,11 +156,13 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 				if !exists {
 					filesMissingShardAggregators.With().Add(1)
 					fr.logger.Error().LogErrorf("missing shardAggregator for shardKey=%s shardName=%s", file.ShardKey, shardName)
+					cleanup()
 					return
 				}
 			}
 			if agg == nil {
 				fr.logger.Error().LogErrorf("nil shardAggregator for shardKey=%s shardName=%s", file.ShardKey, shardName)
+				cleanup()
 				return
 			}
 
@@ -163,10 +171,11 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 				out <- err
 			} else {
 				fr.logger.Logf("finished handling ACHFile=%s", file.FileID)
-				out <- nil
+				cleanup()
 			}
 		} else {
 			fr.logger.Log("nil message received")
+			cleanup()
 		}
 	}()
 	return out
