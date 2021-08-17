@@ -1,3 +1,9 @@
+## v0.6.4 (Released 2021-08-17)
+
+BUG FIXES
+
+- pipeline: create dir so it can be isolated if it doesn't exist
+
 ## v0.6.3 (Released 2021-08-17)
 
 BUG FIXES
