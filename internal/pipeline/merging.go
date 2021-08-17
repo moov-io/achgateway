@@ -93,7 +93,10 @@ func (m *filesystemMerging) writeACHFile(xfer incoming.ACHFile) error {
 		return err
 	}
 
-	path := filepath.Join(m.baseDir, m.shard.Name, fmt.Sprintf("%s.ach", xfer.FileID))
+	path := filepath.Join(m.baseDir, m.shard.Name)
+	os.MkdirAll(path, 0777)
+
+	path = filepath.Join(path, fmt.Sprintf("%s.ach", xfer.FileID))
 
 	if err := ioutil.WriteFile(path, buf.Bytes(), 0600); err != nil {
 		return err
@@ -103,9 +106,11 @@ func (m *filesystemMerging) writeACHFile(xfer incoming.ACHFile) error {
 
 func (m *filesystemMerging) HandleCancel(cancel incoming.CancelACHFile) error {
 	path := filepath.Join(m.baseDir, m.shard.Name)
+	os.MkdirAll(path, 0777)
+
+	path = filepath.Join(path, fmt.Sprintf("%s.ach", cancel.FileID))
 
 	// Write the canceled file
-	path = filepath.Join(path, fmt.Sprintf("%s.ach", cancel.FileID))
 	if _, err := os.Stat(path); err != nil && os.IsNotExist(err) {
 		// file doesn't exist, so write one
 		return ioutil.WriteFile(path+".canceled", nil, 0600)
@@ -116,7 +121,7 @@ func (m *filesystemMerging) HandleCancel(cancel incoming.CancelACHFile) error {
 }
 
 func (m *filesystemMerging) isolateMergableDir() (string, error) {
-	// rename m.baseDir so we're the only accessor for it, then recreate m.baseDir
+	// rename the shard directory so we're the only accessor for it, then recreate it
 	olddir := filepath.Join(m.baseDir, m.shard.Name)
 
 	newdir := filepath.Join(filepath.Dir(m.baseDir), fmt.Sprintf("%s-%v", m.shard.Name, time.Now().Format("20060102-150405")))
@@ -124,7 +129,7 @@ func (m *filesystemMerging) isolateMergableDir() (string, error) {
 	if err := os.Rename(olddir, newdir); err != nil {
 		return newdir, err
 	}
-	return newdir, nil // os.Mkdir(m.baseDir, 0777) // create m.baseDir again
+	return newdir, nil
 }
 
 func getNonCanceledMatches(path string) ([]string, error) {
