@@ -19,7 +19,9 @@ package streamtest
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/moov-io/achgateway/internal/incoming/stream"
@@ -33,10 +35,11 @@ import (
 func InmemStream(t *testing.T) (*pubsub.Topic, *pubsub.Subscription) {
 	t.Helper()
 
+	n, _ := rand.Int(rand.Reader, big.NewInt(10000))
 	conf := &service.Config{
 		Inbound: service.Inbound{
 			InMem: &service.InMemory{
-				URL: fmt.Sprintf("mem://achgateway-%s", t.Name()),
+				URL: fmt.Sprintf("mem://achgateway-%s-%d", t.Name(), n),
 			},
 		},
 	}
