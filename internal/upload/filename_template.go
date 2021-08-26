@@ -43,7 +43,7 @@ var filenameFunctions template.FuncMap = map[string]interface{}{
 }
 
 func RenderACHFilename(raw string, data FilenameData) (string, error) {
-	t, err := template.New(data.RoutingNumber).Funcs(filenameFunctions).Parse(raw)
+	t, err := template.New(data.RoutingNumber).Funcs(filenameFunctions).Parse(strings.TrimSpace(raw))
 	if err != nil {
 		return "", err
 	}
@@ -52,7 +52,7 @@ func RenderACHFilename(raw string, data FilenameData) (string, error) {
 	if err := t.Execute(&buf, data); err != nil {
 		return "", err
 	}
-	return buf.String(), nil
+	return strings.TrimSpace(buf.String()), nil
 }
 
 // RoundSequenceNumber converts a sequence (int) to it's string value, which means 0-9 followed by A-Z

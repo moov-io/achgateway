@@ -143,7 +143,7 @@ func (cfg *Output) Validate() error {
 
 func (cfg *Shard) FilenameTemplate() string {
 	if cfg == nil || cfg.OutboundFilenameTemplate == "" {
-		return DefaultFilenameTemplate
+		return strings.TrimSpace(DefaultFilenameTemplate)
 	}
-	return cfg.OutboundFilenameTemplate
+	return strings.TrimSpace(cfg.OutboundFilenameTemplate)
 }

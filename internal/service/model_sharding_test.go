@@ -1,5 +1,3 @@
-// generated-from:441ae94818c824e252f84ad979ce3b376d077307353125e1e53d4b1343013dc4 DO NOT REMOVE, DO UPDATE
-
 // Licensed to The Moov Authors under one or more contributor
 // license agreements. See the NOTICE file distributed with
 // this work for additional information regarding copyright
@@ -17,30 +15,34 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package service_test
+package service
 
 import (
+	"strings"
 	"testing"
 
-	"github.com/moov-io/base/config"
-	"github.com/moov-io/base/log"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
-
-	"github.com/moov-io/achgateway/internal/service"
 )
 
-func Test_ConfigLoading(t *testing.T) {
-	logger := log.NewNopLogger()
-	ConfigService := config.NewService(logger)
+func TestShardRead(t *testing.T) {
+	data := strings.NewReader(`
+name: "testing"
+cutoffs:
+  timezone: "America/New_York"
+  windows: ["12:30"]
+uploadAgent: "testing"
+outboundFilenameTemplate: |+
 
-	gc := &service.GlobalConfig{}
-	err := ConfigService.Load(gc)
-	require.Nil(t, err)
+  {{ .ShardName }}-{{ .Index }}.ach
+`)
+	var cfg Shard
 
-	// Set properties so config validates. Due to moov-io/base's config merging
-	// we don't enable these because there is no way to disable them.
-	gc.ACHGateway.Errors.Mock = &service.MockAlerting{}
+	deflt := viper.New()
+	deflt.SetConfigType("yaml")
 
-	// Validate config
-	require.NoError(t, gc.ACHGateway.Validate())
+	require.NoError(t, deflt.ReadConfig(data))
+	require.NoError(t, deflt.Unmarshal(&cfg))
+
+	require.Equal(t, "{{ .ShardName }}-{{ .Index }}.ach", cfg.FilenameTemplate())
 }

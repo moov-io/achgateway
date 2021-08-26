@@ -21,6 +21,7 @@ require (
 	github.com/prometheus/client_golang v1.11.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sethvargo/go-retry v0.1.0
+	github.com/spf13/viper v1.8.0
 	github.com/stretchr/testify v1.7.0
 	gocloud.dev v0.22.0
 	gocloud.dev/pubsub/kafkapubsub v0.22.0
