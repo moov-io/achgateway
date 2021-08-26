@@ -1,3 +1,10 @@
+## v0.6.5 (Released 2021-08-26)
+
+BUG FIXES
+
+- service: remove unused Notifications root config
+- upload: trim filename templates
+
 ## v0.6.4 (Released 2021-08-17)
 
 BUG FIXES
