@@ -98,7 +98,9 @@ Templates use Go's [`text/template` syntax](https://golang.org/pkg/text/template
 
 Example:
 
-> {{ .ShardName }}-{{ date "20060102" }}-{{ .Index }}.ach{{ if .GPG }}.gpg{{ end }}
+```
+{{ .ShardName }}-{{ date "20060102" }}-{{ .Index }}.ach{{ if .GPG }}.gpg{{ end }}
+```
 
 The following fields are passed to templates giving them data to build a filename from:
 
