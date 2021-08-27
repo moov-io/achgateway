@@ -98,27 +98,74 @@ Templates use Go's [`text/template` syntax](https://golang.org/pkg/text/template
 
 Example:
 
-> {{ date "20060102" }}-{{ .RoutingNumber }}.ach{{ if .GPG }}.gpg{{ end }}
+> {{ .ShardName }}-{{ date "20060102" }}-{{ .Index }}.ach{{ if .GPG }}.gpg{{ end }}
 
-The following struct is passed to templates giving them data to build a filename from:
+The following fields are passed to templates giving them data to build a filename from:
 
-```Go
-type filenameData struct {
-	RoutingNumber string
-
-	// GPG is true if the file has been encrypted with GPG
-	GPG bool
-}
-```
+- `ShardName`: string of the shard performing an upload
+- `GPG`: boolean
+- `Index`: intger
 
 Also, several functions are available (in addition to Go's standard template functions)
 
-- `date`: Takes a Go [`Time` format](https://golang.org/pkg/time/#Time.Format) and returns the formatted string
+- `date` Takes a Go [`Time` format](https://golang.org/pkg/time/#Time.Format) and returns the formatted string
 - `env` Takes an environment variable name and returns the value from `os.Getenv`.
+- `lower` and `upper` convert a string into lowercase or uppercase
 
 Note: By default filenames have sequence numbers which are incremented by achgateway and are assumed to be in a specific format.
 It is currently (as of 2019-10-14) undefined behavior what happens to incremented sequence numbers when filenames are in a different format.
 Please open issue if you run into problems here.
+
+### Notifications
+
+achgateway supports multiple notification options on each `Shard`. These will be pushed out on each file upload.
+
+#### Email
+
+Example:
+
+```
+Sharding:
+  Shards:
+  - id: "production"
+    notifications:
+      email:
+      - id: "production"
+        from: "noreply@company.net"
+        to:
+          - "ach@bank.com"
+        companyName: "Acme Corp"
+```
+
+#### PagerDuty
+
+Example:
+
+```
+Sharding:
+  Shards:
+  - id: "production"
+    notifications:
+      pagerduty:
+      - id: "production"
+        apiKey: "..."
+        from: "..."
+        serviceKey: "..."
+```
+
+#### Slack
+
+Example:
+
+```
+Sharding:
+  Shards:
+  - id: "production"
+    notifications:
+      slack:
+      - id: "production"
+        webhookURL: "https://hooks.slack.com/services/..."
+```
 
 ### IP Whitelisting
 
