@@ -1,3 +1,17 @@
+## v0.7.0 (Released 2021-09-02)
+
+ADDITIONS
+
+- models: add SetValidation methods for each event type
+
+IMPROVEMENTS
+
+- models: allow reading partial files within events
+
+BUILD
+
+- build: upgrade github.com/moov-io/ach to v1.12.0
+
 ## v0.6.5 (Released 2021-08-26)
 
 BUG FIXES
