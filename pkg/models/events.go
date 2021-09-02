@@ -89,6 +89,13 @@ type ReconciliationFile struct {
 	Reconciliations []Batch   `json:"returns"`
 }
 
+func (evt *ReconciliationFile) SetValidation(opts *ach.ValidateOpts) {
+	if evt.File == nil {
+		evt.File = ach.NewFile()
+	}
+	evt.File.SetValidation(opts)
+}
+
 // ReturnFile is an event for when an Addenda99 record is found within a file
 // from the ODFI. This is also called a "return".
 type ReturnFile struct {
