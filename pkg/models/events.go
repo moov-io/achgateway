@@ -67,11 +67,25 @@ type CorrectionFile struct {
 	Corrections []Batch   `json:"corrections"`
 }
 
+func (evt *CorrectionFile) SetValidation(opts *ach.ValidateOpts) {
+	if evt.File == nil {
+		evt.File = ach.NewFile()
+	}
+	evt.File.SetValidation(opts)
+}
+
 // IncomingFile is an event for when an ODFI receives an ACH file from another FI
 // signifying entries to process (e.g. another FI is debiting your account).
 type IncomingFile struct {
 	Filename string    `json:"filename"`
 	File     *ach.File `json:"file"`
+}
+
+func (evt *IncomingFile) SetValidation(opts *ach.ValidateOpts) {
+	if evt.File == nil {
+		evt.File = ach.NewFile()
+	}
+	evt.File.SetValidation(opts)
 }
 
 // PrenoteFile is an event for when an ODFI receives a "pre-notification" ACH file.
@@ -82,11 +96,25 @@ type PrenoteFile struct {
 	Batches  []Batch   `json:"batches"`
 }
 
+func (evt *PrenoteFile) SetValidation(opts *ach.ValidateOpts) {
+	if evt.File == nil {
+		evt.File = ach.NewFile()
+	}
+	evt.File.SetValidation(opts)
+}
+
 // ReconciliationFile is a file whose entries match entries initiated with the ODFI.
 type ReconciliationFile struct {
 	Filename        string    `json:"filename"`
 	File            *ach.File `json:"file"`
 	Reconciliations []Batch   `json:"returns"`
+}
+
+func (evt *ReconciliationFile) SetValidation(opts *ach.ValidateOpts) {
+	if evt.File == nil {
+		evt.File = ach.NewFile()
+	}
+	evt.File.SetValidation(opts)
 }
 
 // ReturnFile is an event for when an Addenda99 record is found within a file
@@ -97,9 +125,23 @@ type ReturnFile struct {
 	Returns  []Batch   `json:"returns"`
 }
 
+func (evt *ReturnFile) SetValidation(opts *ach.ValidateOpts) {
+	if evt.File == nil {
+		evt.File = ach.NewFile()
+	}
+	evt.File.SetValidation(opts)
+}
+
 // QueueACHFile is an event that achgateway receives to enqueue an ACH file for upload to the
 // ODFI at a later cutoff time.
 type QueueACHFile incoming.ACHFile
+
+func (evt *QueueACHFile) SetValidation(opts *ach.ValidateOpts) {
+	if evt.File == nil {
+		evt.File = ach.NewFile()
+	}
+	evt.File.SetValidation(opts)
+}
 
 // CancelACHFile is an event that achgateway receives to cancel uploading a file to the ODFI.
 type CancelACHFile incoming.ACHFile

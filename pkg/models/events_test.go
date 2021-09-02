@@ -18,7 +18,9 @@
 package models
 
 import (
+	"bytes"
 	"encoding/json"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -58,4 +60,34 @@ func TestEvent(t *testing.T) {
 		ShardKey:   base.ID(),
 		UploadedAt: time.Now(),
 	}, `"type":"FileUploaded"`)
+}
+
+func TestPartialReconciliationFile(t *testing.T) {
+	file, err := ach.ReadFile(filepath.Join("testdata", "partial-recon.ach"))
+	require.NotNil(t, err)
+	require.True(t, base.Has(err, ach.ErrFileHeader))
+
+	var bs bytes.Buffer
+	json.NewEncoder(&bs).Encode(Event{
+		Event: &ReconciliationFile{
+			Filename: "partial-recon.ach",
+			File:     file,
+		},
+	})
+
+	var evt ReconciliationFile
+	evt.SetValidation(&ach.ValidateOpts{
+		AllowMissingFileHeader:  true,
+		AllowMissingFileControl: true,
+	})
+	t.Logf("%#v", evt.File)
+	t.Logf("")
+
+	err = ReadEvent(bs.Bytes(), &evt)
+
+	t.Logf("%v", err)
+	t.Logf("%#v", evt.File)
+
+	batches := evt.File.Batches
+	require.Len(t, batches, 2)
 }
