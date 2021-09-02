@@ -20,7 +20,7 @@ require (
 	github.com/jlaffaye/ftp v0.0.0-20210307004419-5d4190119067
 	github.com/lightstep/lightstep-tracer-go v0.18.1 // indirect
 	github.com/markbates/pkger v0.17.1
-	github.com/moov-io/ach v1.11.1-0.20210902180349-dee39a234375
+	github.com/moov-io/ach v1.12.0
 	github.com/moov-io/base v0.23.0
 	github.com/oklog/oklog v0.3.2 // indirect
 	github.com/oklog/run v1.0.0 // indirect

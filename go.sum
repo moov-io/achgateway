@@ -667,6 +667,8 @@ github.com/moov-io/ach v1.11.1-0.20210902175108-01fe821f6dde h1:Z+Sf0YdBeRejc39p
 github.com/moov-io/ach v1.11.1-0.20210902175108-01fe821f6dde/go.mod h1:ns5JEMlIktMMGc/v6fbE3+alhkeN8NIYPiaD/KP7Jk8=
 github.com/moov-io/ach v1.11.1-0.20210902180349-dee39a234375 h1:r34nXpyb+IClMVK7NQNTGVB5+ZIWa2Nm9JWaxUJ8l7c=
 github.com/moov-io/ach v1.11.1-0.20210902180349-dee39a234375/go.mod h1:ns5JEMlIktMMGc/v6fbE3+alhkeN8NIYPiaD/KP7Jk8=
+github.com/moov-io/ach v1.12.0 h1:LE3oTDQFB3FfNhGlf9BiHXG7mAexcSHY9Pb9NkeY7b0=
+github.com/moov-io/ach v1.12.0/go.mod h1:ns5JEMlIktMMGc/v6fbE3+alhkeN8NIYPiaD/KP7Jk8=
 github.com/moov-io/base v0.19.0/go.mod h1:lU4wZfFEjIDkiQ58o1sSKsKFLy9R4noJWAr3t/rxaek=
 github.com/moov-io/base v0.20.0 h1:hbokxt9b0zD7lJXScSPcwkeUXrKja+H89iJRhT/dkyQ=
 github.com/moov-io/base v0.20.0/go.mod h1:XcnzCcvP06Nvvqawsi2U3b6Tr6/o4fUBXxbrrF7DxdY=
