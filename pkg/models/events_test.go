@@ -80,13 +80,9 @@ func TestPartialReconciliationFile(t *testing.T) {
 		AllowMissingFileHeader:  true,
 		AllowMissingFileControl: true,
 	})
-	t.Logf("%#v", evt.File)
-	t.Logf("")
 
 	err = ReadEvent(bs.Bytes(), &evt)
-
-	t.Logf("%v", err)
-	t.Logf("%#v", evt.File)
+	require.NoError(t, err)
 
 	batches := evt.File.Batches
 	require.Len(t, batches, 2)
