@@ -107,7 +107,7 @@ func (evt *PrenoteFile) SetValidation(opts *ach.ValidateOpts) {
 type ReconciliationFile struct {
 	Filename        string    `json:"filename"`
 	File            *ach.File `json:"file"`
-	Reconciliations []Batch   `json:"returns"`
+	Reconciliations []Batch   `json:"reconciliations"`
 }
 
 func (evt *ReconciliationFile) SetValidation(opts *ach.ValidateOpts) {
