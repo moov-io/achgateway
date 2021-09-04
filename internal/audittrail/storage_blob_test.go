@@ -6,11 +6,9 @@ package audittrail
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/service"
@@ -36,12 +34,11 @@ func TestBlobStorage(t *testing.T) {
 	file, err := ach.ReadFile(ppdPath)
 	require.NoError(t, err)
 
-	if err := store.SaveFile("ftp.dev.com", "saved.ach", file); err != nil {
+	if err := store.SaveFile("ftp.dev.com/saved.ach", file); err != nil {
 		t.Fatal(err)
 	}
 
-	path := fmt.Sprintf("files/ftp.dev.com/%s/saved.ach", time.Now().Format("2006-01-02"))
-	r, err := store.GetFile(path)
+	r, err := store.GetFile("ftp.dev.com/saved.ach")
 	require.NoError(t, err)
 	defer r.Close()
 

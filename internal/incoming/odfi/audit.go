@@ -15,54 +15,40 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package service
+package odfi
 
 import (
-	"encoding/json"
-	"errors"
-	"os"
+	"fmt"
 
-	"github.com/moov-io/achgateway/internal/mask"
-	"github.com/moov-io/base/strx"
+	"github.com/moov-io/ach"
+	"github.com/moov-io/achgateway/internal/audittrail"
+	"github.com/moov-io/achgateway/internal/service"
 )
 
-type AuditTrail struct {
-	ID        string
-	BucketURI string
-	GPG       *GPG
+type AuditSaver struct {
+	storage  audittrail.Storage
+	hostname string
 }
 
-func (cfg *AuditTrail) Validate() error {
-	if cfg == nil {
+func (as *AuditSaver) save(filepath string, file *ach.File) error {
+	if as == nil {
 		return nil
 	}
-	if cfg.BucketURI == "" {
-		return errors.New("missing bucket_uri")
+	return as.storage.SaveFile(filepath, file)
+}
+
+func SaveFilesIntoAuditTrail(hostname string, cfg *service.AuditTrail) (*AuditSaver, error) {
+	if cfg == nil {
+		return nil, nil
 	}
-	return nil
-}
 
-type GPG struct {
-	KeyFile string
-	Signer  *Signer
-}
-
-type Signer struct {
-	KeyFile     string
-	KeyPassword string
-}
-
-func (cfg *Signer) Password() string {
-	return strx.Or(os.Getenv("PIPELINE_SIGNING_KEY_PASSWORD"), cfg.KeyPassword)
-}
-
-func (cfg *Signer) MarshalJSON() ([]byte, error) {
-	type Aux struct {
-		KeyFile     string
-		KeyPassword string
+	storage, err := audittrail.NewStorage(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("odfi: audit: %v", err)
 	}
-	return json.Marshal(Aux{
-		KeyFile:     cfg.KeyFile,
-		KeyPassword: mask.Password(cfg.Password()),
-	})
+
+	return &AuditSaver{
+		storage:  storage,
+		hostname: hostname,
+	}, nil
 }

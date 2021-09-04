@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"reflect"
+	"time"
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/base"
@@ -78,14 +79,14 @@ func (pcs Processors) HandleAll(file File) error {
 	return el
 }
 
-func ProcessFiles(dl *downloadedFiles, fileProcessors Processors) error {
+func ProcessFiles(dl *downloadedFiles, auditSaver *AuditSaver, fileProcessors Processors) error {
 	var el base.ErrorList
 	dirs, err := ioutil.ReadDir(dl.dir)
 	if err != nil {
 		return fmt.Errorf("reading %s: %v", dl.dir, err)
 	}
 	for i := range dirs {
-		if err := process(filepath.Join(dl.dir, dirs[i].Name()), fileProcessors); err != nil {
+		if err := process(filepath.Join(dl.dir, dirs[i].Name()), auditSaver, fileProcessors); err != nil {
 			el.Add(fmt.Errorf("%s: %v", dirs[i], err))
 		}
 	}
@@ -95,7 +96,7 @@ func ProcessFiles(dl *downloadedFiles, fileProcessors Processors) error {
 	return el
 }
 
-func process(dir string, fileProcessors Processors) error {
+func process(dir string, auditSaver *AuditSaver, fileProcessors Processors) error {
 	infos, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return fmt.Errorf("reading %s: %v", dir, err)
@@ -112,6 +113,15 @@ func process(dir string, fileProcessors Processors) error {
 				continue
 			}
 		}
+		// Persist the file if needed
+		path := fmt.Sprintf("odfi/%s/%s/%s/%s", auditSaver.hostname, dir, time.Now().Format("2006-01-02"), infos[i].Name())
+		err = auditSaver.save(path, file)
+		if err != nil {
+			el.Add(fmt.Errorf("audittrail %s error: %v", infos[i].Name(), err))
+			continue
+		}
+
+		// Pass the file off to our handler
 		err = fileProcessors.HandleAll(File{
 			Filepath: filepath.Join(dir, infos[i].Name()),
 			ACHFile:  file,
