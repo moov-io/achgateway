@@ -22,7 +22,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/models"
@@ -92,11 +91,6 @@ func (pc *creditReconciliation) Handle(file File) error {
 		}
 		entries := file.ACHFile.Batches[i].GetEntries()
 		for j := range entries {
-			if !isCreditEntry(entries[j]) {
-				pc.recordSkippingEntry(entries[j])
-				continue
-			}
-
 			pc.logger.With(log.Fields{
 				"traceNumber": log.String(entries[j].TraceNumber),
 			}).Log("odfi: received reconciliation entry")
@@ -125,29 +119,4 @@ func (pc *creditReconciliation) sendEvent(event interface{}) {
 			pc.logger.Logf("error sending reconciliations event: %v", err)
 		}
 	}
-}
-
-func isCreditEntry(ed *ach.EntryDetail) bool {
-	switch ed.TransactionCode {
-	case ach.CheckingCredit, ach.SavingsCredit:
-		return true
-	}
-	return false
-}
-
-func (pc *creditReconciliation) recordSkippingEntry(ed *ach.EntryDetail) {
-	var changeCode string
-	if ed.Addenda98 != nil {
-		changeCode = ed.Addenda98.ChangeCode
-	}
-	var returnCode string
-	if ed.Addenda99 != nil {
-		returnCode = ed.Addenda99.ReturnCode
-	}
-	pc.logger.With(log.Fields{
-		"changeCode":      log.String(changeCode),
-		"returnCode":      log.String(returnCode),
-		"traceNumber":     log.String(ed.TraceNumber),
-		"transactionCode": log.Int(ed.TransactionCode),
-	}).Log("skipping entry")
 }
