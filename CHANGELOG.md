@@ -1,3 +1,9 @@
+## v0.7.1 (Released 2021-09-04)
+
+BUG FIXES
+
+- reconciliation: The ReconciliationFile event updated to include debit entries
+
 ## v0.7.0 (Released 2021-09-02)
 
 ADDITIONS
