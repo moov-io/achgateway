@@ -1,3 +1,19 @@
+## v0.8.0 (Unreleased)
+
+ADDITIONS
+
+- incoming/odfi: optionally store files in audit trail config
+
+IMPROVEMENTS
+
+- audittrail: don't overwrite files if they exist
+- docs: update config section for inbound / outbound aduittrail storage
+- pipeline: save uploaded files under "outbound/" root path
+
+BUILD
+
+- upload: fix build constraints for Go 1.17
+
 ## v0.7.1 (Released 2021-09-04)
 
 BUG FIXES
