@@ -21,6 +21,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+
+	"github.com/moov-io/achgateway/internal/audittrail"
 )
 
 func TestProcessor__process(t *testing.T) {
@@ -30,11 +32,15 @@ func TestProcessor__process(t *testing.T) {
 	}
 
 	processors := SetupProcessors(&MockProcessor{})
+	auditSaver := &AuditSaver{
+		storage:  &audittrail.MockStorage{},
+		hostname: "ftp.foo.com",
+	}
 
 	// By reading a file without ACH FileHeaders we still want to try and process
 	// Batches inside of it if any are found, so reading this kind of file shouldn't
 	// return an error from reading the file.
-	if err := process(dir, processors); err != nil {
+	if err := process(dir, auditSaver, processors); err != nil {
 		t.Error(err)
 	}
 }

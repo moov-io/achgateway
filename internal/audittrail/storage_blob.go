@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"time"
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/gpgx"
@@ -29,6 +28,7 @@ import (
 // blobStorage implements Storage with gocloud.dev/blob which allows
 // clients to use AWS S3, GCP Storage, and Azure Storage.
 type blobStorage struct {
+	id              string
 	bucket          *blob.Bucket
 	outputFormatter *output.NACHA
 	pubKey          openpgp.EntityList
@@ -36,6 +36,7 @@ type blobStorage struct {
 
 func newBlobStorage(cfg *service.AuditTrail) (*blobStorage, error) {
 	storage := &blobStorage{
+		id:              cfg.ID,
 		outputFormatter: &output.NACHA{},
 	}
 
@@ -54,8 +55,8 @@ func newBlobStorage(cfg *service.AuditTrail) (*blobStorage, error) {
 	}
 
 	// set default values for metrics
-	uploadFilesErrors.With("type", "blob").Add(0)
-	uploadedFilesCounter.With("type", "blob").Add(0)
+	uploadFilesErrors.With("type", "blob", "id", cfg.ID).Add(0)
+	uploadedFilesCounter.With("type", "blob", "id", cfg.ID).Add(0)
 
 	return storage, nil
 }
@@ -67,26 +68,33 @@ func (bs *blobStorage) Close() error {
 	return bs.bucket.Close()
 }
 
-func (bs *blobStorage) SaveFile(hostname, filename string, file *ach.File) error {
+func (bs *blobStorage) SaveFile(filepath string, file *ach.File) error {
 	result := &transform.Result{File: file}
 
 	var buf bytes.Buffer
 	if err := bs.outputFormatter.Format(&buf, result); err != nil {
-		uploadFilesErrors.With("type", "blob").Add(1)
+		uploadFilesErrors.With("type", "blob", "id", bs.id).Add(1)
 		return err
 	}
 
 	encrypted, err := gpgx.Encrypt(buf.Bytes(), bs.pubKey)
 	if err != nil {
-		uploadFilesErrors.With("type", "blob").Add(1)
+		uploadFilesErrors.With("type", "blob", "id", bs.id).Add(1)
 		return err
 	}
 
-	// write the file in a sub-path of the yyy-mm-dd
-	path := fmt.Sprintf("files/%s/%s/%s", hostname, time.Now().Format("2006-01-02"), filename)
-	w, err := bs.bucket.NewWriter(context.Background(), path, nil)
+	exists, err := bs.bucket.Exists(context.Background(), filepath)
+	if exists {
+		return nil
+	}
 	if err != nil {
-		uploadFilesErrors.With("type", "blob").Add(1)
+		uploadFilesErrors.With("type", "blob", "id", bs.id).Add(1)
+		return err
+	}
+
+	w, err := bs.bucket.NewWriter(context.Background(), filepath, nil)
+	if err != nil {
+		uploadFilesErrors.With("type", "blob", "id", bs.id).Add(1)
 		return err
 	}
 
@@ -94,12 +102,12 @@ func (bs *blobStorage) SaveFile(hostname, filename string, file *ach.File) error
 	closeErr := w.Close()
 
 	if copyErr != nil || closeErr != nil {
-		uploadFilesErrors.With("type", "blob").Add(1)
+		uploadFilesErrors.With("type", "blob", "id", bs.id).Add(1)
 		return fmt.Errorf("copyErr=%v closeErr=%v", copyErr, closeErr)
 	}
 
 	// increment our metrics counter
-	uploadedFilesCounter.With("type", "blob").Add(1)
+	uploadedFilesCounter.With("type", "blob", "id", bs.id).Add(1)
 
 	return nil
 }

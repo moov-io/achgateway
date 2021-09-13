@@ -134,27 +134,30 @@ func (s *PeriodicScheduler) tick(shard *service.Shard) error {
 		return fmt.Errorf("ERROR: problem moving files: %v", err)
 	}
 
-	if s.odfi.Storage.CleanupLocalDirectory {
-		defer dl.deleteFiles()
-	} else {
-		defer dl.deleteEmptyDirs(agent)
+	// Setup presistor files into our configured audit trail
+	auditSaver, err := SaveFilesIntoAuditTrail(agent.Hostname(), s.odfi.Audit)
+	if err != nil {
+		return fmt.Errorf("ERROR: %v", err)
 	}
 
-	if err := ProcessFiles(dl, s.processors); err != nil {
+	// Run each processor over the files
+	if err := ProcessFiles(dl, auditSaver, s.processors); err != nil {
 		return fmt.Errorf("ERROR: processing files: %v", err)
 	}
 
+	// Start our cleanup routines
 	if !s.odfi.Storage.KeepRemoteFiles {
 		if err := Cleanup(s.logger, agent, dl); err != nil {
 			return fmt.Errorf("ERROR: deleting remote files: %v", err)
 		}
 	}
-
 	if s.odfi.Storage.RemoveZeroByteFiles {
 		if err := CleanupEmptyFiles(s.logger, agent, dl); err != nil {
 			return fmt.Errorf("ERROR: deleting zero byte files: %v", err)
 		}
 	}
-
-	return nil
+	if s.odfi.Storage.CleanupLocalDirectory {
+		return dl.deleteFiles()
+	}
+	return dl.deleteEmptyDirs(agent)
 }

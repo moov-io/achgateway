@@ -64,6 +64,14 @@ ACHGateway:
       TLS: <boolean>
       AutoCommit: <boolean>
     ODFI:
+      Audit:
+        ID: <string>
+        BucketURI: <string>
+        GPG:
+          KeyFile: <string>
+          Signer:
+            KeyFile: <string>
+            KeyPassword: <string>
       Processors:
         Corrections:
           Enabled: <boolean>
@@ -128,6 +136,14 @@ ACHGateway:
               KeyPassword: <string>
         UploadAgent: <string>
         OutboundFilenameTemplate: <string>
+        Audit:
+          ID: <string>
+          BucketURI: <string>
+          GPG:
+            KeyFile: <string>
+            Signer:
+              KeyFile: <string>
+              KeyPassword: <string>
         Output:
           Format: <string>
         Notifications:
@@ -150,14 +166,6 @@ ACHGateway:
           Retry:
             Interval: <duration>
             MaxRetries: <integer>
-        Audit:
-          - ID: <string>
-            BucketURI: <string>
-            GPG:
-              KeyFile: <string>
-              Signer:
-                KeyFile: <string>
-                KeyPassword: <string>
 ```
 
 ### Upload Agents
@@ -215,18 +223,6 @@ ACHGateway:
 ```yaml
   Notifications:
     # TODO(adam)
-```
-
-### Audit Trail
-```yaml
-  AuditTrail:
-    - ID: <string>
-      BucketURI: <string>
-      GPG:
-        KeyFile: <string>
-        Signer:
-          KeyFile: <string>
-          KeyPassword: <string>
 ```
 
 ### Error Alerting

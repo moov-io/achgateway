@@ -30,6 +30,7 @@ type Inbound struct {
 	InMem *InMemory
 	Kafka *KafkaConfig
 	ODFI  *ODFIFiles
+	Audit *AuditTrail
 }
 
 func (cfg Inbound) Validate() error {
@@ -98,6 +99,7 @@ type ODFIFiles struct {
 	Interval   time.Duration
 	ShardNames []string
 	Storage    ODFIStorage
+	Audit      *AuditTrail
 }
 
 func (cfg *ODFIFiles) Validate() error {

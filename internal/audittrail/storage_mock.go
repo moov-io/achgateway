@@ -19,8 +19,8 @@ type MockStorage struct {
 
 func newMockStorage() *MockStorage {
 	// default values for metrics
-	uploadFilesErrors.With("type", "mock").Add(0)
-	uploadedFilesCounter.With("type", "mock").Add(0)
+	uploadFilesErrors.With("type", "mock", "id", "mock").Add(0)
+	uploadedFilesCounter.With("type", "mock", "id", "mock").Add(0)
 
 	return &MockStorage{}
 }
@@ -29,11 +29,11 @@ func (s *MockStorage) Close() error {
 	return s.Err
 }
 
-func (s *MockStorage) SaveFile(hostname, filename string, file *ach.File) error {
+func (s *MockStorage) SaveFile(filepath string, file *ach.File) error {
 	if s.Err != nil {
-		uploadFilesErrors.With("type", "mock").Add(1)
+		uploadFilesErrors.With("type", "mock", "id", "mock").Add(1)
 	} else {
-		uploadedFilesCounter.With("type", "mock").Add(1)
+		uploadedFilesCounter.With("type", "mock", "id", "mock").Add(1)
 	}
 	return s.Err
 }

@@ -19,12 +19,12 @@ var (
 	uploadedFilesCounter = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Name: "audittrail_uploaded_files",
 		Help: "Counter of ACH files uploaded to audit trail storage",
-	}, []string{"type"})
+	}, []string{"type", "id"})
 
 	uploadFilesErrors = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Name: "audittrail_upload_errors",
 		Help: "Counter of errors encountered when attempting ACH files upload",
-	}, []string{"type"})
+	}, []string{"type", "id"})
 )
 
 // Storage is an interface for saving and encrypting ACH files for
@@ -33,7 +33,7 @@ var (
 // File retention after upload is not part of this storage.
 type Storage interface {
 	// SaveFile will encrypt and copy the ACH file to the configured file storage.
-	SaveFile(hostname, filename string, file *ach.File) error
+	SaveFile(filepath string, file *ach.File) error
 
 	GetFile(filepath string) (io.ReadCloser, error)
 
