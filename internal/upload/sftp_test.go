@@ -2,8 +2,8 @@
 // Use of this source code is governed by an Apache License
 // license that can be found in the LICENSE file.
 
-//go:build unix
-// +build unix
+//go:build linux || darwin
+// +build linux darwin
 
 package upload
 
