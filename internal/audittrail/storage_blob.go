@@ -83,6 +83,15 @@ func (bs *blobStorage) SaveFile(filepath string, file *ach.File) error {
 		return err
 	}
 
+	exists, err := bs.bucket.Exists(context.Background(), filepath)
+	if exists {
+		return nil
+	}
+	if err != nil {
+		uploadFilesErrors.With("type", "blob", "id", bs.id).Add(1)
+		return err
+	}
+
 	w, err := bs.bucket.NewWriter(context.Background(), filepath, nil)
 	if err != nil {
 		uploadFilesErrors.With("type", "blob", "id", bs.id).Add(1)
