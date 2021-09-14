@@ -18,39 +18,15 @@
 package odfi
 
 import (
-	"fmt"
+	"testing"
 
-	"github.com/moov-io/achgateway/internal/audittrail"
-	"github.com/moov-io/achgateway/internal/service"
+	"github.com/stretchr/testify/require"
 )
 
-type AuditSaver struct {
-	storage  audittrail.Storage
-	hostname string
-}
+func TestAuditSaver(t *testing.T) {
+	var saver *AuditSaver = nil
+	require.NoError(t, saver.save("foo.ach", nil))
 
-func (as *AuditSaver) save(filepath string, data []byte) error {
-	if as == nil {
-		return nil
-	}
-	if len(data) == 0 {
-		return nil
-	}
-	return as.storage.SaveFile(filepath, data)
-}
-
-func newAuditSaver(hostname string, cfg *service.AuditTrail) (*AuditSaver, error) {
-	if cfg == nil {
-		return nil, nil
-	}
-
-	storage, err := audittrail.NewStorage(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("odfi: audit: %v", err)
-	}
-
-	return &AuditSaver{
-		storage:  storage,
-		hostname: hostname,
-	}, nil
+	saver = &AuditSaver{}
+	require.NoError(t, saver.save("foo.ach", nil))
 }
