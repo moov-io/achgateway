@@ -116,7 +116,8 @@ func process(dir string, auditSaver *AuditSaver, fileProcessors Processors) erro
 
 		// Persist the file if needed
 		if auditSaver != nil {
-			path := fmt.Sprintf("odfi/%s/%s/%s/%s", auditSaver.hostname, dir, time.Now().Format("2006-01-02"), infos[i].Name())
+			currentDir := filepath.Base(dir)
+			path := fmt.Sprintf("odfi/%s/%s/%s/%s", auditSaver.hostname, currentDir, time.Now().Format("2006-01-02"), infos[i].Name())
 			err = auditSaver.save(path, file)
 			if err != nil {
 				el.Add(fmt.Errorf("audittrail %s error: %v", infos[i].Name(), err))
