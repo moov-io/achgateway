@@ -14,6 +14,7 @@ import (
 
 type Result struct {
 	File      *ach.File
+	Original  []byte
 	Encrypted []byte
 }
 

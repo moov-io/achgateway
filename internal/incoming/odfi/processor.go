@@ -18,6 +18,7 @@
 package odfi
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -104,12 +105,20 @@ func process(dir string, auditSaver *AuditSaver, fileProcessors Processors) erro
 
 	var el base.ErrorList
 	for i := range infos {
-		file, err := ach.ReadFile(filepath.Join(dir, infos[i].Name()))
+		// Read the file's contents
+		bs, err := ioutil.ReadFile(filepath.Join(dir, infos[i].Name()))
+		if err != nil {
+			el.Add(fmt.Errorf("problem opening %s: %v", infos[i].Name(), err))
+			continue
+		}
+
+		// Parse the ACH file
+		file, err := ach.NewReader(bytes.NewReader(bs)).Read()
 		if err != nil {
 			// Some return files don't contain FileHeader info, but can be processed as there
 			// are batches with entries. Let's continue to process those, but skip other errors.
 			if !base.Has(err, ach.ErrFileHeader) {
-				el.Add(fmt.Errorf("problem opening %s: %v", infos[i].Name(), err))
+				el.Add(fmt.Errorf("problem parsing %s: %v", infos[i].Name(), err))
 				continue
 			}
 		}
@@ -118,7 +127,7 @@ func process(dir string, auditSaver *AuditSaver, fileProcessors Processors) erro
 		if auditSaver != nil {
 			currentDir := filepath.Base(dir)
 			path := fmt.Sprintf("odfi/%s/%s/%s/%s", auditSaver.hostname, currentDir, time.Now().Format("2006-01-02"), infos[i].Name())
-			err = auditSaver.save(path, file)
+			err = auditSaver.save(path, bs)
 			if err != nil {
 				el.Add(fmt.Errorf("audittrail %s error: %v", infos[i].Name(), err))
 				continue
@@ -128,7 +137,7 @@ func process(dir string, auditSaver *AuditSaver, fileProcessors Processors) erro
 		// Pass the file off to our handler
 		err = fileProcessors.HandleAll(File{
 			Filepath: filepath.Join(dir, infos[i].Name()),
-			ACHFile:  file,
+			ACHFile:  &file,
 		})
 		if err != nil {
 			el.Add(fmt.Errorf("processing %s error: %v", infos[i].Name(), err))

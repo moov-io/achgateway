@@ -8,8 +8,6 @@ import (
 	"io"
 	"io/ioutil"
 	"strings"
-
-	"github.com/moov-io/ach"
 )
 
 type MockStorage struct {
@@ -29,7 +27,7 @@ func (s *MockStorage) Close() error {
 	return s.Err
 }
 
-func (s *MockStorage) SaveFile(filepath string, file *ach.File) error {
+func (s *MockStorage) SaveFile(_ string, _ []byte) error {
 	if s.Err != nil {
 		uploadFilesErrors.With("type", "mock", "id", "mock").Add(1)
 	} else {
@@ -38,7 +36,7 @@ func (s *MockStorage) SaveFile(filepath string, file *ach.File) error {
 	return s.Err
 }
 
-func (s *MockStorage) GetFile(filepath string) (io.ReadCloser, error) {
+func (s *MockStorage) GetFile(_ string) (io.ReadCloser, error) {
 	if s.Err != nil {
 		return nil, s.Err
 	}

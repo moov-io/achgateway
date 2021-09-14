@@ -5,16 +5,12 @@
 package audittrail
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
 
-	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/gpgx"
-	"github.com/moov-io/achgateway/internal/output"
 	"github.com/moov-io/achgateway/internal/service"
-	"github.com/moov-io/achgateway/internal/transform"
 	"golang.org/x/crypto/openpgp"
 
 	"gocloud.dev/blob"
@@ -28,17 +24,13 @@ import (
 // blobStorage implements Storage with gocloud.dev/blob which allows
 // clients to use AWS S3, GCP Storage, and Azure Storage.
 type blobStorage struct {
-	id              string
-	bucket          *blob.Bucket
-	outputFormatter *output.NACHA
-	pubKey          openpgp.EntityList
+	id     string
+	bucket *blob.Bucket
+	pubKey openpgp.EntityList
 }
 
 func newBlobStorage(cfg *service.AuditTrail) (*blobStorage, error) {
-	storage := &blobStorage{
-		id:              cfg.ID,
-		outputFormatter: &output.NACHA{},
-	}
+	storage := &blobStorage{id: cfg.ID}
 
 	bucket, err := blob.OpenBucket(context.Background(), cfg.BucketURI)
 	if err != nil {
@@ -68,16 +60,8 @@ func (bs *blobStorage) Close() error {
 	return bs.bucket.Close()
 }
 
-func (bs *blobStorage) SaveFile(filepath string, file *ach.File) error {
-	result := &transform.Result{File: file}
-
-	var buf bytes.Buffer
-	if err := bs.outputFormatter.Format(&buf, result); err != nil {
-		uploadFilesErrors.With("type", "blob", "id", bs.id).Add(1)
-		return err
-	}
-
-	encrypted, err := gpgx.Encrypt(buf.Bytes(), bs.pubKey)
+func (bs *blobStorage) SaveFile(filepath string, data []byte) error {
+	encrypted, err := gpgx.Encrypt(data, bs.pubKey)
 	if err != nil {
 		uploadFilesErrors.With("type", "blob", "id", bs.id).Add(1)
 		return err
