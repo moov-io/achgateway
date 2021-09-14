@@ -1,3 +1,9 @@
+## v0.8.2 (Released 2021-09-14)
+
+IMPROVEMENTS
+
+- incoming/odfi: skip saving zero-byte files
+
 ## v0.8.1 (Released 2021-09-14)
 
 IMPROVEMENTS
