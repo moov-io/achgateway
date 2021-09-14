@@ -10,14 +10,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/stretchr/testify/require"
 )
 
 var (
 	keyPath = filepath.Join("..", "..", "internal", "gpgx", "testdata", "moov.pub")
-	ppdPath = filepath.Join("..", "..", "testdata", "ppd-debit.ach")
 )
 
 func TestBlobStorage(t *testing.T) {
@@ -31,10 +29,8 @@ func TestBlobStorage(t *testing.T) {
 	require.NoError(t, err)
 	defer store.Close()
 
-	file, err := ach.ReadFile(ppdPath)
-	require.NoError(t, err)
-
-	if err := store.SaveFile("ftp.dev.com/saved.ach", file); err != nil {
+	data := []byte("nacha formatted data")
+	if err := store.SaveFile("ftp.dev.com/saved.ach", data); err != nil {
 		t.Fatal(err)
 	}
 

@@ -135,7 +135,7 @@ func (s *PeriodicScheduler) tick(shard *service.Shard) error {
 	}
 
 	// Setup presistor files into our configured audit trail
-	auditSaver, err := SaveFilesIntoAuditTrail(agent.Hostname(), s.odfi.Audit)
+	auditSaver, err := newAuditSaver(agent.Hostname(), s.odfi.Audit)
 	if err != nil {
 		return fmt.Errorf("ERROR: %v", err)
 	}

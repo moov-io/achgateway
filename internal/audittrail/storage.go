@@ -8,7 +8,6 @@ import (
 	"errors"
 	"io"
 
-	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/service"
 
 	"github.com/go-kit/kit/metrics/prometheus"
@@ -33,7 +32,7 @@ var (
 // File retention after upload is not part of this storage.
 type Storage interface {
 	// SaveFile will encrypt and copy the ACH file to the configured file storage.
-	SaveFile(filepath string, file *ach.File) error
+	SaveFile(filepath string, data []byte) error
 
 	GetFile(filepath string) (io.ReadCloser, error)
 

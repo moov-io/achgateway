@@ -20,7 +20,6 @@ package odfi
 import (
 	"fmt"
 
-	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/audittrail"
 	"github.com/moov-io/achgateway/internal/service"
 )
@@ -30,14 +29,14 @@ type AuditSaver struct {
 	hostname string
 }
 
-func (as *AuditSaver) save(filepath string, file *ach.File) error {
+func (as *AuditSaver) save(filepath string, data []byte) error {
 	if as == nil {
 		return nil
 	}
-	return as.storage.SaveFile(filepath, file)
+	return as.storage.SaveFile(filepath, data)
 }
 
-func SaveFilesIntoAuditTrail(hostname string, cfg *service.AuditTrail) (*AuditSaver, error) {
+func newAuditSaver(hostname string, cfg *service.AuditTrail) (*AuditSaver, error) {
 	if cfg == nil {
 		return nil, nil
 	}
