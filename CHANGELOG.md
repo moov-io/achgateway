@@ -1,3 +1,9 @@
+## v0.8.1 (Released 2021-09-14)
+
+IMPROVEMENTS
+
+- incoming/odfi: save the ODFI files exactly are they are downloaded
+
 ## v0.8.0 (Released 2021-09-14)
 
 ADDITIONS
