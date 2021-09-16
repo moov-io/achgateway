@@ -64,7 +64,7 @@ require (
 	github.com/ory/mail/v3 v3.0.0
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
-	github.com/pkg/sftp v1.13.3
+	github.com/pkg/sftp v1.13.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/common v0.30.0 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
