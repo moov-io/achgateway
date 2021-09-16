@@ -30,11 +30,17 @@ ACHGateway:
     Webhook:
       Endpoint: "http://localhost:9999"
   Consul:
-    Address: "127.0.0.1:8500"
-    Scheme: "http"
+    Address: "https://127.0.0.1:8501"
     SessionPath: "achgateway/test/"
     Tags: []
-    HealthCheckInterval: "10s"
+    Agent:
+      ServiceCheckInterval: "10s"
+      ServiceCheckAddress: "http://localhost:8500/v1/status/leader"
+    TLS:
+      CAFile: "dev/consul/certs/consul-agent-ca.pem"
+      CertFile: "dev/consul/certs/dc1-server-consul-0.pem"
+      KeyFile: "dev/consul/certs/dc1-server-consul-0-key.pem"
+      # InsecureSkipVerify: false
   Sharding:
     Shards:
       - name: "testing"

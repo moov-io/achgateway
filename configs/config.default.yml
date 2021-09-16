@@ -13,8 +13,7 @@ ACHGateway:
   #     User: "achgateway"
   #     Password: "achgateway"
   # Consul:
-  #   Address: "127.0.0.1:8500"
-  #   Scheme: "http"
+  #   Address: "http://127.0.0.1:8500"
   #   Tags: []
   #   SessionPath: "achgateway/shards/"
   #   HealthCheckInterval: "10s"

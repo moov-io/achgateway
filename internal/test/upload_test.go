@@ -61,10 +61,8 @@ var (
 			},
 		},
 		Consul: &consul.Config{
-			Address:             "127.0.0.1:8500",
-			Scheme:              "http",
-			SessionPath:         "achgateway/upload-test/",
-			HealthCheckInterval: 10 * time.Second,
+			Address:     "http://127.0.0.1:8500",
+			SessionPath: "achgateway/upload-test/",
 		},
 		Inbound: service.Inbound{
 			InMem: &service.InMemory{},
