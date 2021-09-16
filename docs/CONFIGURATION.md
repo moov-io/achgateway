@@ -42,9 +42,27 @@ ACHGateway:
     Address: <string>
     Scheme: <string>
     SessionPath: <string>
+
     Tags:
       - <string>
-    HealthCheckInterval: <duration>
+
+    Token: <string>
+    TokenFile: <string>
+
+    Datacenter: <string>
+    Namespace: <string>
+
+    Agent:
+      ServiceCheckAddress: <string>
+      ServiceCheckInterval: <duration>
+
+    Session:
+      CheckInterval: <duration>
+
+    TLS:
+      CAFile: <string>
+      CertFile: <string>
+      KeyFile: <string>
 ```
 
 ### Inbound
