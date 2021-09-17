@@ -33,7 +33,11 @@ type Session struct {
 }
 
 func NewSession(logger log.Logger, consulClient *Client, shardName string) (*Session, error) {
-	ttl := fmt.Sprintf("%.2fs", consulClient.cfg.HealthCheckInterval.Seconds())
+	seconds := 10.0
+	if consulClient.cfg.Session != nil {
+		seconds = consulClient.cfg.Session.CheckInterval.Seconds()
+	}
+	ttl := fmt.Sprintf("%.2fs", seconds)
 
 	sessionName := consulClient.cfg.SessionPath + shardName
 	sessionID, _, err := consulClient.ConsulClient.Session().Create(&consul.SessionEntry{

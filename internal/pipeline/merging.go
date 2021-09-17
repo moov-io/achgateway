@@ -249,12 +249,18 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 				files[i] = file
 			}
 		}
+
 		// Write our file to the mergable directory
 		if err := saveMergedFile(dir, files[i]); err != nil {
 			el.Add(fmt.Errorf("problem writing merged file: %v", err))
 		}
+
 		// Perform the file upload if we are the shard leader
-		if isLeader, err := m.consul.Acquire(m.shard.Name); isLeader && err == nil {
+		leaderKey := fmt.Sprintf("achgateway/outbound/%s", m.shard.Name)
+		logger.Logf("attempting to acquire outbound leadership for %s", leaderKey)
+
+		// Acquire leadership for this shard
+		if isLeader, err := m.consul.Acquire(leaderKey); isLeader && err == nil {
 			if err := f(i, agent, files[i]); err != nil {
 				el.Add(fmt.Errorf("problem from callback: %v", err))
 			} else {

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/moov-io/achgateway/internal/consul"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/upload"
 	"github.com/moov-io/base/admin"
@@ -46,11 +47,12 @@ type PeriodicScheduler struct {
 	shutdown       context.Context
 	shutdownFunc   context.CancelFunc
 
+	consul     *consul.Wrapper
 	downloader Downloader
 	processors Processors
 }
 
-func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, processors Processors) (Scheduler, error) {
+func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, consul *consul.Wrapper, processors Processors) (Scheduler, error) {
 	if cfg.Inbound.ODFI == nil {
 		return nil, errors.New("missing Inbound ODFI config")
 	}
@@ -69,6 +71,7 @@ func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, processors Pro
 		uploadAgents:   cfg.Upload,
 		ticker:         time.NewTicker(cfg.Inbound.ODFI.Interval),
 		inboundTrigger: make(chan manuallyTriggeredInbound, 1),
+		consul:         consul,
 		downloader:     dl,
 		processors:     processors,
 		shutdown:       ctx,
@@ -110,12 +113,21 @@ func (s *PeriodicScheduler) tickAll() error {
 			continue
 		}
 
-		s.logger.Info().Logf("starting odfi periodic processing for %s", shard.Name)
-		err := s.tick(shard)
-		if err != nil {
-			s.logger.Warn().Logf("error with odfi periodic processing: %v", err)
+		// Attempt to acquire leadership prior to processing
+		leaderKey := fmt.Sprintf("achgateway/odfi/%s", shardName)
+		s.logger.Logf("attempting to acquire ODFI leadership for %s", leaderKey)
+
+		// Acquire leadership for this shard
+		if isLeader, err := s.consul.Acquire(leaderKey); isLeader && err == nil {
+			s.logger.Info().Logf("starting odfi periodic processing for %s", shard.Name)
+			err := s.tick(shard)
+			if err != nil {
+				s.logger.Warn().Logf("error with odfi periodic processing: %v", err)
+			} else {
+				s.logger.Info().Logf("finished odfi periodic processing for %s", shard.Name)
+			}
 		} else {
-			s.logger.Info().Logf("finished odfi periodic processing for %s", shard.Name)
+			s.logger.Info().Logf("skipping ODFI processing for %s", shardName)
 		}
 	}
 	return nil

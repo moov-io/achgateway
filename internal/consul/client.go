@@ -30,11 +30,30 @@ import (
 )
 
 type Config struct {
-	Address             string
-	Scheme              string
-	SessionPath         string
-	Tags                []string
-	HealthCheckInterval time.Duration
+	Address     string
+	Scheme      string
+	SessionPath string
+	Tags        []string
+
+	Token     string
+	TokenFile string
+
+	Datacenter string
+	Namespace  string
+
+	Agent   *AgentConfig
+	Session *SessionConfig
+
+	TLS consul.TLSConfig
+}
+
+type AgentConfig struct {
+	ServiceCheckAddress  string
+	ServiceCheckInterval time.Duration
+}
+
+type SessionConfig struct {
+	CheckInterval time.Duration
 }
 
 type Client struct {
@@ -48,6 +67,14 @@ func NewConsulClient(logger log.Logger, config *Config) (*Client, error) {
 	consulClient, err := consul.NewClient(&consul.Config{
 		Address: config.Address,
 		Scheme:  config.Scheme,
+
+		Token:     config.Token,
+		TokenFile: config.TokenFile,
+
+		Datacenter: config.Datacenter,
+		Namespace:  config.Namespace,
+
+		TLSConfig: config.TLS,
 	})
 
 	if err != nil {
@@ -59,19 +86,25 @@ func NewConsulClient(logger log.Logger, config *Config) (*Client, error) {
 		return nil, logger.Fatal().LogErrorf("host name could not be determined").Err()
 	}
 
-	err = consulClient.Agent().ServiceRegister(&consul.AgentServiceRegistration{
-		Address: config.Address,
-		ID:      hostName,
-		Name:    "achgateway-" + hostName,
-		Tags:    config.Tags,
-		Check: &consul.AgentServiceCheck{
-			HTTP:     fmt.Sprintf("%s/_health", config.Address),
-			Interval: fmt.Sprintf("%.0fs", config.HealthCheckInterval.Seconds()),
-		},
-	})
+	if config.Agent != nil {
+		checkAddress := fmt.Sprintf("%s/v1/status/leader", config.Address)
+		if config.Agent.ServiceCheckAddress != "" {
+			checkAddress = config.Agent.ServiceCheckAddress
+		}
 
-	if err != nil {
-		return nil, logger.Fatal().LogErrorf("Error registering Node (%s) as a service on Consul: %v", hostName, err).Err()
+		err = consulClient.Agent().ServiceRegister(&consul.AgentServiceRegistration{
+			Address: config.Address,
+			ID:      hostName,
+			Name:    "achgateway-" + hostName,
+			Tags:    config.Tags,
+			Check: &consul.AgentServiceCheck{
+				HTTP:     checkAddress,
+				Interval: fmt.Sprintf("%.0fs", config.Agent.ServiceCheckInterval.Seconds()),
+			},
+		})
+		if err != nil {
+			return nil, logger.Fatal().LogErrorf("Error registering Node (%s) as a service on Consul: %v", hostName, err).Err()
+		}
 	}
 
 	return &Client{

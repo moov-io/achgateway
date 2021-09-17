@@ -5,8 +5,7 @@ ACHGateway:
     HTTP:
       BindAddress: ":8888"
   Consul:
-    Address: "127.0.0.1:8500"
-    Scheme: "http"
+    Address: "http://127.0.0.1:8500"
     SessionPath: "achgateway/test/"
     Tags: []
     HealthCheckInterval: "10s"

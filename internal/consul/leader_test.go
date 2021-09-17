@@ -19,7 +19,6 @@ package consul
 
 import (
 	"testing"
-	"time"
 
 	"github.com/moov-io/base/log"
 	"github.com/stretchr/testify/assert"
@@ -30,11 +29,9 @@ func TestAcquireLock(t *testing.T) {
 	logger := log.NewDefaultLogger()
 
 	consulClient, err := NewConsulClient(logger, &Config{
-		Address:             "127.0.0.1:8500",
-		Scheme:              "http",
-		SessionPath:         "achgateway/test/",
-		Tags:                []string{"test1"},
-		HealthCheckInterval: 10 * time.Second,
+		Address:     "http://127.0.0.1:8500",
+		SessionPath: "achgateway/test/",
+		Tags:        []string{"test1"},
 	})
 	a.Nil(err)
 
@@ -55,11 +52,9 @@ func TestAcquireLockSessionExists(t *testing.T) {
 	logger := log.NewDefaultLogger()
 
 	consulClient, err := NewConsulClient(logger, &Config{
-		Address:             "127.0.0.1:8500",
-		Scheme:              "http",
-		SessionPath:         "achgateway/test/",
-		Tags:                []string{"test1"},
-		HealthCheckInterval: 10 * time.Second,
+		Address:     "http://127.0.0.1:8500",
+		SessionPath: "achgateway/test/",
+		Tags:        []string{"test1"},
 	})
 	a.Nil(err)
 
