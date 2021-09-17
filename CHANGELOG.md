@@ -1,3 +1,11 @@
+## v0.9.0 (Released 2021-09-17)
+
+IMPROVEMENTS
+
+- consul: upgrade to 1.10 and support TLS connections
+- incoming/odfi: acquire leadership prior to ODFI processing
+- pipeline: better logging for ACH file handling
+
 ## v0.8.2 (Released 2021-09-14)
 
 IMPROVEMENTS
