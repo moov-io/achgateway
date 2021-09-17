@@ -148,7 +148,12 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 				cleanup()
 				return
 			}
-			fr.logger.Logf("begin handle received ACHFile=%s of %d bytes on shard=%s", file.FileID, len(msg.Body), shardName)
+			fr.logger.With(log.Fields{
+				"fileID":    log.String(file.FileID),
+				"bytes":     log.Int(len(msg.Body)),
+				"shardName": log.String(shardName),
+				"shardKey":  log.String(file.ShardKey),
+			}).Log("begin handling of received ACHFile")
 
 			agg, exists := fr.shardAggregators[shardName]
 			if !exists {
@@ -170,7 +175,9 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 				fr.logger.Error().LogErrorf("problem accepting file under shardName=%s", shardName)
 				out <- err
 			} else {
-				fr.logger.Logf("finished handling ACHFile=%s", file.FileID)
+				fr.logger.With(log.Fields{
+					"fileID": log.String(file.FileID),
+				}).Log("finished handling ACHFile")
 				cleanup()
 			}
 		} else {
