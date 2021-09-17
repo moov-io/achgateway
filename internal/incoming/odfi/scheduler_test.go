@@ -56,7 +56,7 @@ func TestScheduler(t *testing.T) {
 	}
 
 	processors := SetupProcessors(&MockProcessor{})
-	schd, err := NewPeriodicScheduler(cfg.Logger, cfg, processors)
+	schd, err := NewPeriodicScheduler(cfg.Logger, cfg, nil, processors)
 	require.NoError(t, err)
 	require.NotNil(t, schd)
 

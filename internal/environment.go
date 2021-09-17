@@ -194,7 +194,7 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 			odfi.CreditReconciliationEmitter(env.Logger, cfg.Processors.Reconciliation, env.Events),
 			odfi.ReturnEmitter(env.Logger, cfg.Processors.Returns, env.Events),
 		)
-		odfiFiles, err := odfi.NewPeriodicScheduler(env.Logger, env.Config, processors)
+		odfiFiles, err := odfi.NewPeriodicScheduler(env.Logger, env.Config, env.Consul, processors)
 		if err != nil {
 			return nil, fmt.Errorf("problem creating odfi periodic scheduler: %v", err)
 		}
