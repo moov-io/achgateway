@@ -47,12 +47,12 @@ type PeriodicScheduler struct {
 	shutdown       context.Context
 	shutdownFunc   context.CancelFunc
 
-	consul     *consul.Wrapper
+	consul     *consul.Client
 	downloader Downloader
 	processors Processors
 }
 
-func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, consul *consul.Wrapper, processors Processors) (Scheduler, error) {
+func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, consul *consul.Client, processors Processors) (Scheduler, error) {
 	if cfg.Inbound.ODFI == nil {
 		return nil, errors.New("missing Inbound ODFI config")
 	}
@@ -118,7 +118,11 @@ func (s *PeriodicScheduler) tickAll() error {
 		s.logger.Logf("attempting to acquire ODFI leadership for %s", leaderKey)
 
 		// Acquire leadership for this shard
-		if isLeader, err := s.consul.Acquire(leaderKey); isLeader && err == nil {
+		if err := s.consul.AcquireLock(leaderKey); err != nil {
+			s.logger.Info().With(log.Fields{
+				"shard": log.String(shardName),
+			}).Logf("skipping ODFI processing: %v", err)
+		} else {
 			s.logger.Info().Logf("starting odfi periodic processing for %s", shard.Name)
 			err := s.tick(shard)
 			if err != nil {
@@ -126,8 +130,6 @@ func (s *PeriodicScheduler) tickAll() error {
 			} else {
 				s.logger.Info().Logf("finished odfi periodic processing for %s", shard.Name)
 			}
-		} else {
-			s.logger.Info().Logf("skipping ODFI processing for %s", shardName)
 		}
 	}
 	return nil

@@ -52,7 +52,7 @@ type Environment struct {
 	TimeService    stime.TimeService
 	DB             *sql.DB
 	InternalClient *http.Client
-	Consul         *consul.Wrapper
+	Consul         *consul.Client
 	Events         events.Emitter
 
 	PublicRouter *mux.Router
@@ -149,7 +149,7 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		if err != nil {
 			return nil, err
 		}
-		env.Consul = consul.NewWrapper(env.Logger, consulClient)
+		env.Consul = consulClient
 		env.Logger.Info().Logf("created consul client for %s", env.Config.Consul.Address)
 
 		prev := env.Shutdown

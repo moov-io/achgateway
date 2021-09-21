@@ -133,7 +133,6 @@ func TestUploads(t *testing.T) {
 
 	consulClient, err := consul.NewConsulClient(logger, cfg.Consul)
 	require.NoError(t, err)
-	wrapper := consul.NewWrapper(logger, consulClient)
 
 	shardRepo := shards.NewMockRepository()
 	shardKeys := setupShards(t, shardRepo)
@@ -146,7 +145,7 @@ func TestUploads(t *testing.T) {
 	fileController.AppendRoutes(r)
 
 	outboundPath := setupTestDirectory(t, cfg)
-	fileReceiver, err := pipeline.Start(ctx, logger, cfg, wrapper, shardRepo, httpSub, streamSub)
+	fileReceiver, err := pipeline.Start(ctx, logger, cfg, consulClient, shardRepo, httpSub, streamSub)
 	require.NoError(t, err)
 	t.Cleanup(func() { fileReceiver.Shutdown() })
 

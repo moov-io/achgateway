@@ -23,8 +23,6 @@ import (
 	"fmt"
 
 	consul "github.com/hashicorp/consul/api"
-
-	"github.com/moov-io/base/log"
 )
 
 type Session struct {
@@ -32,32 +30,31 @@ type Session struct {
 	Name string
 }
 
-func NewSession(logger log.Logger, consulClient *Client, shardName string) (*Session, error) {
+func (c *Client) newSession() (*Session, error) {
 	seconds := 10.0
-	if consulClient.cfg.Session != nil {
-		seconds = consulClient.cfg.Session.CheckInterval.Seconds()
+	if c.cfg.Session != nil {
+		seconds = c.cfg.Session.CheckInterval.Seconds()
 	}
 	ttl := fmt.Sprintf("%.2fs", seconds)
 
-	sessionName := consulClient.cfg.SessionPath + shardName
-	sessionID, _, err := consulClient.underlying.Session().Create(&consul.SessionEntry{
-		Name:     sessionName,
+	sessionID, _, err := c.underlying.Session().Create(&consul.SessionEntry{
+		Name:     c.hostname,
 		Behavior: "delete",
 		TTL:      ttl,
 	}, nil)
 
 	if err != nil {
-		return nil, logger.Fatal().LogErrorf("Error creating Consul Session for %s: %v", sessionName, err).Err()
+		return nil, c.logger.Fatal().LogErrorf("Error creating Consul Session for %s: %v", c.hostname, err).Err()
 	}
 
 	// make sure we renew the session
 	go func() {
 		doneChan := make(chan struct{})
-		consulClient.underlying.Session().RenewPeriodic(ttl, sessionID, nil, doneChan)
+		c.underlying.Session().RenewPeriodic(ttl, sessionID, nil, doneChan)
 	}()
 
 	return &Session{
 		ID:   sessionID,
-		Name: sessionName,
+		Name: c.hostname,
 	}, nil
 }

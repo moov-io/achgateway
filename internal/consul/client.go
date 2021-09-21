@@ -20,9 +20,11 @@
 package consul
 
 import (
+	"fmt"
+	"os"
 	"time"
 
-	consul "github.com/hashicorp/consul/api"
+	"github.com/hashicorp/consul/api"
 
 	"github.com/moov-io/base/log"
 )
@@ -41,7 +43,7 @@ type Config struct {
 
 	Session *SessionConfig
 
-	TLS consul.TLSConfig
+	TLS api.TLSConfig
 }
 
 type SessionConfig struct {
@@ -49,13 +51,17 @@ type SessionConfig struct {
 }
 
 type Client struct {
-	cfg        *Config
-	underlying *consul.Client
+	cfg      *Config
+	logger   log.Logger
+	hostname string
+
+	underlying *api.Client
+	session    *Session
 }
 
 func NewConsulClient(logger log.Logger, config *Config) (*Client, error) {
 	// Default settings we approve of
-	consulClient, err := consul.NewClient(&consul.Config{
+	consulClient, err := api.NewClient(&api.Config{
 		Address: config.Address,
 		Scheme:  config.Scheme,
 
@@ -70,8 +76,28 @@ func NewConsulClient(logger log.Logger, config *Config) (*Client, error) {
 	if err != nil {
 		return nil, logger.Fatal().LogErrorf("Error connecting to Consul (config: %v): %v", config, err).Err()
 	}
-	return &Client{
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, fmt.Errorf("unable to create consul client: %v", err)
+	}
+
+	client := &Client{
 		cfg:        config,
+		logger:     logger,
 		underlying: consulClient,
-	}, nil
+		hostname:   hostname,
+	}
+	client.session, err = client.newSession()
+	if err != nil {
+		return nil, fmt.Errorf("unable to create session: %v", err)
+	}
+
+	return client, nil
+}
+
+func (c *Client) Shutdown() {
+	if c != nil && c.session != nil {
+		c.underlying.Session().Destroy(c.session.ID, nil)
+	}
 }

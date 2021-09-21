@@ -35,7 +35,7 @@ func Start(
 	ctx context.Context,
 	logger log.Logger,
 	cfg *service.Config,
-	consul *consul.Wrapper,
+	consul *consul.Client,
 	shardRepository shards.Repository,
 	httpFiles, streamFiles *pubsub.Subscription) (*FileReceiver, error) {
 
