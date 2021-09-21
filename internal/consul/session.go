@@ -40,7 +40,7 @@ func NewSession(logger log.Logger, consulClient *Client, shardName string) (*Ses
 	ttl := fmt.Sprintf("%.2fs", seconds)
 
 	sessionName := consulClient.cfg.SessionPath + shardName
-	sessionID, _, err := consulClient.ConsulClient.Session().Create(&consul.SessionEntry{
+	sessionID, _, err := consulClient.underlying.Session().Create(&consul.SessionEntry{
 		Name:     sessionName,
 		Behavior: "delete",
 		TTL:      ttl,
@@ -53,7 +53,7 @@ func NewSession(logger log.Logger, consulClient *Client, shardName string) (*Ses
 	// make sure we renew the session
 	go func() {
 		doneChan := make(chan struct{})
-		consulClient.ConsulClient.Session().RenewPeriodic(ttl, sessionID, nil, doneChan)
+		consulClient.underlying.Session().RenewPeriodic(ttl, sessionID, nil, doneChan)
 	}()
 
 	return &Session{

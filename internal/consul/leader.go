@@ -18,13 +18,19 @@
 package consul
 
 import (
+	"errors"
+
 	"github.com/moov-io/base/log"
 
 	"github.com/hashicorp/consul/api"
 )
 
 func AcquireLock(logger log.Logger, client *Client, consulSession *Session) error {
-	isLeader, _, err := client.ConsulClient.KV().Acquire(&api.KVPair{
+	if client == nil || client.underlying == nil {
+		return errors.New("nil consul client")
+	}
+
+	isLeader, _, err := client.underlying.KV().Acquire(&api.KVPair{
 		Key:     consulSession.Name,
 		Value:   []byte(consulSession.ID),
 		Session: consulSession.ID,
@@ -35,5 +41,7 @@ func AcquireLock(logger log.Logger, client *Client, consulSession *Session) erro
 	if isLeader {
 		return nil
 	}
-	return logger.Info().LogErrorf("%s is not the leader", client.NodeId).Err()
+	return logger.Error().With(log.Fields{
+		"sessionID": log.String(consulSession.ID),
+	}).LogErrorf("we are not the leader of %s", consulSession.Name).Err()
 }

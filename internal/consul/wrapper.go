@@ -82,6 +82,6 @@ func (w *Wrapper) Shutdown() {
 	defer w.mu.Unlock()
 
 	for _, sesh := range w.sessions {
-		w.client.ConsulClient.Session().Destroy(sesh.ID, nil)
+		w.client.underlying.Session().Destroy(sesh.ID, nil)
 	}
 }
