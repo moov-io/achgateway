@@ -17,58 +17,40 @@
 
 package consul
 
-// import (
-// 	"testing"
+import (
+	"testing"
 
-// 	"github.com/moov-io/base/log"
-// 	"github.com/stretchr/testify/assert"
-// )
+	"github.com/moov-io/base/log"
+	"github.com/stretchr/testify/assert"
+)
 
-// func TestAcquireLock(t *testing.T) {
-// 	a := assert.New(t)
-// 	logger := log.NewDefaultLogger()
+func TestAcquireLock(t *testing.T) {
+	a := assert.New(t)
+	logger := log.NewDefaultLogger()
 
-// 	consulClient, err := NewConsulClient(logger, &Config{
-// 		Address:     "http://127.0.0.1:8500",
-// 		SessionPath: "achgateway/test/",
-// 		Tags:        []string{"test1"},
-// 	})
-// 	a.Nil(err)
+	cc1, err := NewConsulClient(logger, &Config{
+		Address:     "http://127.0.0.1:8500",
+		SessionPath: "/",
+	})
+	t.Cleanup(func() {
+		cc1.Shutdown()
+	})
+	a.Nil(err)
 
-// 	testShard := "test"
-// 	consulSessions := make(map[string]*Session)
+	err = cc1.AcquireLock("achgateway/odfi/testing")
+	a.Nil(err)
 
-// 	newSession, err := NewSession(logger, consulClient, testShard)
-// 	a.Nil(err)
-// 	consulSessions[testShard] = newSession
-// 	a.IsType(&Session{}, consulSessions[testShard])
+	// Initialize another client and attempt leader election
+	cc2, err := NewConsulClient(logger, &Config{
+		Address:     "http://127.0.0.1:8500",
+		SessionPath: "/",
+	})
+	t.Cleanup(func() {
+		cc2.Shutdown()
+	})
+	a.Nil(err)
 
-// 	err = AcquireLock(logger, consulClient, consulSessions[testShard])
-// 	a.Nil(err)
-// }
-
-// func TestAcquireLockSessionExists(t *testing.T) {
-// 	a := assert.New(t)
-// 	logger := log.NewDefaultLogger()
-
-// 	consulClient, err := NewConsulClient(logger, &Config{
-// 		Address:     "http://127.0.0.1:8500",
-// 		SessionPath: "achgateway/test/",
-// 		Tags:        []string{"test1"},
-// 	})
-// 	a.Nil(err)
-
-// 	testShard := "test2"
-// 	consulSessions := make(map[string]*Session)
-
-// 	newSession, err := NewSession(logger, consulClient, testShard)
-// 	a.Nil(err)
-// 	consulSessions[testShard] = newSession
-
-// 	if _, exists := consulSessions[testShard]; exists {
-// 		a.IsType(&Session{}, consulSessions[testShard])
-// 	}
-
-// 	err = AcquireLock(logger, consulClient, consulSessions[testShard])
-// 	a.Nil(err)
-// }
+	err = cc2.AcquireLock("achgateway/odfi/testing")
+	a.NotNil(err)
+	a.Contains(err.Error(), `we are not the leader of achgateway/odfi/testing`)
+}
