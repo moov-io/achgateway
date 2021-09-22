@@ -1,3 +1,11 @@
+## v0.9.1 (Released 2021-09-22)
+
+BUG FIXES
+
+- consul: remove agent setup, simplify leader election process
+- fix: include missing sprintf formatter
+- notify/slack: properly format decimal amounts
+
 ## v0.9.0 (Released 2021-09-17)
 
 IMPROVEMENTS
