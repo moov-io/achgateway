@@ -249,7 +249,7 @@ func initializeDatabase(logger log.Logger, config database.DatabaseConfig) (*sql
 		logger.Info().Log("Shutting down the db")
 		cancelFunc()
 		if err := db.Close(); err != nil {
-			logger.Fatal().LogErrorf("Error closing DB", err)
+			logger.Fatal().LogErrorf("Error closing DB: %w", err)
 		}
 	}
 
