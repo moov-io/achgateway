@@ -23,11 +23,11 @@ import (
 	"github.com/hashicorp/consul/api"
 )
 
-func AcquireLock(logger log.Logger, client *Client, consulSession *Session) error {
-	isLeader, _, err := client.ConsulClient.KV().Acquire(&api.KVPair{
-		Key:     consulSession.Name,
-		Value:   []byte(consulSession.ID),
-		Session: consulSession.ID,
+func (c *Client) AcquireLock(key string) error {
+	isLeader, _, err := c.underlying.KV().Acquire(&api.KVPair{
+		Key:     key,
+		Value:   []byte(c.session.ID),
+		Session: c.session.ID,
 	}, nil)
 	if err != nil {
 		return err
@@ -35,5 +35,8 @@ func AcquireLock(logger log.Logger, client *Client, consulSession *Session) erro
 	if isLeader {
 		return nil
 	}
-	return logger.Info().LogErrorf("%s is not the leader", client.NodeId).Err()
+	return c.logger.Info().With(log.Fields{
+		"hostname":  log.String(c.hostname),
+		"sessionID": log.String(c.session.ID),
+	}).LogErrorf("we are not the leader of %s", key).Err()
 }

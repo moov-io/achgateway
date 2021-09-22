@@ -24,7 +24,7 @@ import (
 	"os"
 	"time"
 
-	consul "github.com/hashicorp/consul/api"
+	"github.com/hashicorp/consul/api"
 
 	"github.com/moov-io/base/log"
 )
@@ -41,15 +41,9 @@ type Config struct {
 	Datacenter string
 	Namespace  string
 
-	Agent   *AgentConfig
 	Session *SessionConfig
 
-	TLS consul.TLSConfig
-}
-
-type AgentConfig struct {
-	ServiceCheckAddress  string
-	ServiceCheckInterval time.Duration
+	TLS api.TLSConfig
 }
 
 type SessionConfig struct {
@@ -57,14 +51,17 @@ type SessionConfig struct {
 }
 
 type Client struct {
-	cfg          *Config
-	ConsulClient *consul.Client
-	NodeId       string
+	cfg      *Config
+	logger   log.Logger
+	hostname string
+
+	underlying *api.Client
+	session    *Session
 }
 
 func NewConsulClient(logger log.Logger, config *Config) (*Client, error) {
 	// Default settings we approve of
-	consulClient, err := consul.NewClient(&consul.Config{
+	consulClient, err := api.NewClient(&api.Config{
 		Address: config.Address,
 		Scheme:  config.Scheme,
 
@@ -76,40 +73,31 @@ func NewConsulClient(logger log.Logger, config *Config) (*Client, error) {
 
 		TLSConfig: config.TLS,
 	})
-
 	if err != nil {
 		return nil, logger.Fatal().LogErrorf("Error connecting to Consul (config: %v): %v", config, err).Err()
 	}
 
-	var hostName string
-	if hostName, err = os.Hostname(); err != nil {
-		return nil, logger.Fatal().LogErrorf("host name could not be determined").Err()
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, fmt.Errorf("unable to create consul client: %v", err)
 	}
 
-	if config.Agent != nil {
-		checkAddress := fmt.Sprintf("%s/v1/status/leader", config.Address)
-		if config.Agent.ServiceCheckAddress != "" {
-			checkAddress = config.Agent.ServiceCheckAddress
-		}
-
-		err = consulClient.Agent().ServiceRegister(&consul.AgentServiceRegistration{
-			Address: config.Address,
-			ID:      hostName,
-			Name:    "achgateway-" + hostName,
-			Tags:    config.Tags,
-			Check: &consul.AgentServiceCheck{
-				HTTP:     checkAddress,
-				Interval: fmt.Sprintf("%.0fs", config.Agent.ServiceCheckInterval.Seconds()),
-			},
-		})
-		if err != nil {
-			return nil, logger.Fatal().LogErrorf("Error registering Node (%s) as a service on Consul: %v", hostName, err).Err()
-		}
+	client := &Client{
+		cfg:        config,
+		logger:     logger,
+		underlying: consulClient,
+		hostname:   hostname,
+	}
+	client.session, err = client.newSession()
+	if err != nil {
+		return nil, fmt.Errorf("unable to create session: %v", err)
 	}
 
-	return &Client{
-		cfg:          config,
-		ConsulClient: consulClient,
-		NodeId:       hostName,
-	}, nil
+	return client, nil
+}
+
+func (c *Client) Shutdown() {
+	if c != nil && c.session != nil {
+		c.underlying.Session().Destroy(c.session.ID, nil)
+	}
 }

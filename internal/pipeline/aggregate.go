@@ -61,7 +61,7 @@ type aggregator struct {
 
 func newAggregator(
 	logger log.Logger,
-	consul *consul.Wrapper,
+	consul *consul.Client,
 	eventEmitter events.Emitter,
 	shard service.Shard,
 	uploadAgents service.UploadAgents,

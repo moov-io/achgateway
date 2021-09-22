@@ -51,7 +51,7 @@ type XferMerging interface {
 	WithEachMerged(f func(int, upload.Agent, *ach.File) error) (*processedFiles, error)
 }
 
-func NewMerging(logger log.Logger, consul *consul.Wrapper, shard service.Shard, cfg service.UploadAgents) (XferMerging, error) {
+func NewMerging(logger log.Logger, consul *consul.Client, shard service.Shard, cfg service.UploadAgents) (XferMerging, error) {
 	dir := filepath.Join("storage", "mergable") // default directory
 	if cfg.Merging.Directory != "" {
 		dir = filepath.Join(cfg.Merging.Directory, "mergable")
@@ -77,7 +77,7 @@ type filesystemMerging struct {
 	baseDir string
 	cfg     service.UploadAgents
 	shard   service.Shard
-	consul  *consul.Wrapper
+	consul  *consul.Client
 }
 
 func (m *filesystemMerging) HandleXfer(xfer incoming.ACHFile) error {
@@ -260,14 +260,16 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 		logger.Logf("attempting to acquire outbound leadership for %s", leaderKey)
 
 		// Acquire leadership for this shard
-		if isLeader, err := m.consul.Acquire(leaderKey); isLeader && err == nil {
+		if err := m.consul.AcquireLock(leaderKey); err != nil {
+			logger.Info().With(log.Fields{
+				"shard": log.String(m.shard.Name),
+			}).Logf("skipping file upload: %v", err)
+		} else {
 			if err := f(i, agent, files[i]); err != nil {
 				el.Add(fmt.Errorf("problem from callback: %v", err))
 			} else {
 				successfulRemoteWrites++
 			}
-		} else {
-			logger.Logf("skipping file upload for shard=%s", m.shard.Name)
 		}
 	}
 
