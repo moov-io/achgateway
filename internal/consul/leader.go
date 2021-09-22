@@ -35,7 +35,7 @@ func (c *Client) AcquireLock(key string) error {
 	if isLeader {
 		return nil
 	}
-	return c.logger.Error().With(log.Fields{
+	return c.logger.Info().With(log.Fields{
 		"hostname":  log.String(c.hostname),
 		"sessionID": log.String(c.session.ID),
 	}).LogErrorf("we are not the leader of %s", key).Err()
