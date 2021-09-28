@@ -16,8 +16,8 @@ import (
 	"github.com/moov-io/achgateway/internal/gpgx"
 	"github.com/moov-io/achgateway/internal/service"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/moov-io/base/log"
-	"golang.org/x/crypto/openpgp"
 )
 
 type GPGEncryption struct {
