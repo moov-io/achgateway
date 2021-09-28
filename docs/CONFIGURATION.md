@@ -30,6 +30,10 @@ ACHGateway:
         MaxIdle: <integer>
         MaxLifetime: <duration>
         MaxIdleTime: <duration>
+      UseTLS: <boolean>
+      TLSCAFile: <string>
+      InsecureSkipVerify: <boolean>
+      VerifyCAFile: <boolean>
     SQLite:
       Path: <string>
     DatabaseName: <string>
