@@ -53,7 +53,7 @@ jobs:
     - name: Docker Push
       if: runner.os == 'Linux'
       run: |+
-          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+          echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
           make dev-push
       env:
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
