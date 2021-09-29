@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/moov-io/achgateway/internal/gpgx"
 	"github.com/moov-io/achgateway/internal/service"
-	"golang.org/x/crypto/openpgp"
 
 	"gocloud.dev/blob"
 	_ "gocloud.dev/blob/azureblob"
