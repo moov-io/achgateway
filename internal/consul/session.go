@@ -58,3 +58,33 @@ func (c *Client) newSession() (*Session, error) {
 		Name: c.hostname,
 	}, nil
 }
+
+func (c *Client) shutdownSession() {
+	if c != nil && c.session != nil {
+		c.underlying.Session().Destroy(c.session.ID, nil)
+	}
+}
+
+func (c *Client) SessionID() string {
+	if c != nil && c.session != nil {
+		return c.session.ID
+	}
+	return ""
+}
+
+// ClearSession will attempt to wipe the existing session and create a new one.
+// Often this is done as an attempt to resolve consul or network errors.
+func (c *Client) ClearSession() error {
+	if c == nil {
+		return nil
+	}
+	c.shutdownSession()
+
+	// Attempt a new session
+	var err error
+	c.session, err = c.newSession()
+	if err != nil {
+		return fmt.Errorf("unable to create session: %v", err)
+	}
+	return nil
+}
