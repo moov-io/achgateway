@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAcquireLock(t *testing.T) {
+func TestSession(t *testing.T) {
 	a := assert.New(t)
 	logger := log.NewDefaultLogger()
 
@@ -36,22 +36,9 @@ func TestAcquireLock(t *testing.T) {
 		cc1.Shutdown()
 	})
 	a.Nil(err)
-	a.NotEmpty(cc1.SessionID())
 
-	err = cc1.AcquireLock("achgateway/odfi/testing")
-	a.Nil(err)
-
-	// Initialize another client and attempt leader election
-	cc2, err := NewConsulClient(logger, &Config{
-		Address:     "http://127.0.0.1:8500",
-		SessionPath: "/",
-	})
-	t.Cleanup(func() {
-		cc2.Shutdown()
-	})
-	a.Nil(err)
-
-	err = cc2.AcquireLock("achgateway/odfi/testing")
-	a.NotNil(err)
-	a.Contains(err.Error(), `we are not the leader of achgateway/odfi/testing`)
+	firstSession := cc1.SessionID()
+	a.NoError(cc1.ClearSession())
+	secondSession := cc1.SessionID()
+	a.NotEqual(firstSession, secondSession)
 }

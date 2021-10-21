@@ -66,7 +66,7 @@ func (c *Client) shutdownSession() {
 }
 
 func (c *Client) SessionID() string {
-	if c == nil || c.session == nil {
+	if c != nil && c.session != nil {
 		return c.session.ID
 	}
 	return ""
