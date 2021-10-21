@@ -50,6 +50,8 @@ type SessionConfig struct {
 	CheckInterval time.Duration
 }
 
+// Client is a helpful wrapper around consul operations needed by achgateway.
+// This client is not goroutine safe, so concurrnet calls are not supported.
 type Client struct {
 	cfg      *Config
 	logger   log.Logger
@@ -97,7 +99,7 @@ func NewConsulClient(logger log.Logger, config *Config) (*Client, error) {
 }
 
 func (c *Client) Shutdown() {
-	if c != nil && c.session != nil {
-		c.underlying.Session().Destroy(c.session.ID, nil)
+	if c != nil {
+		c.shutdownSession()
 	}
 }
