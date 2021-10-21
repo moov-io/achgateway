@@ -1,9 +1,15 @@
+## v0.9.3 (Released 2021-10-21)
+
+IMPROVEMENTS
+
+- pipeline: attempt to start a new session on consul errors, always alert
+
 ## v0.9.2 (Released 2021-10-13)
 
 IMPROVEMENTS
 
 - add TLS support for MySQL connections
-- replace deprecated x/crypto/openpgp package with ProtonMail/go-crypto/openpgp 
+- replace deprecated x/crypto/openpgp package with ProtonMail/go-crypto/openpgp
 
 ## v0.9.1 (Released 2021-09-22)
 
