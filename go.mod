@@ -52,6 +52,7 @@ require (
 	gocloud.dev/pubsub/kafkapubsub v0.23.0
 	goftp.io/server v0.4.1
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
+	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/api v0.57.0 // indirect
 	google.golang.org/genproto v0.0.0-20210916144049-3192f974c780 // indirect
 )
