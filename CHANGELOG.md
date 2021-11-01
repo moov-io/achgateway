@@ -1,3 +1,9 @@
+## v0.9.4 (Released 2021-11-01)
+
+IMPROVEMENTS
+
+- notify: improve formatting of values in emails and slack
+
 ## v0.9.3 (Released 2021-10-21)
 
 IMPROVEMENTS
