@@ -33,8 +33,8 @@ type EmailTemplateData struct {
 	Filename    string // e.g. 20200529-131400.ach
 	Hostname    string
 
-	DebitTotal  float64
-	CreditTotal float64
+	DebitTotal  string
+	CreditTotal string
 
 	BatchCount int
 	EntryCount int
@@ -130,10 +130,6 @@ func marshalEmail(cfg *service.Email, msg *Message) (string, error) {
 		return "", err
 	}
 	return buf.String(), nil
-}
-
-func convertDollar(in int) float64 {
-	return float64(in) / 100.0
 }
 
 func sendEmail(cfg *service.Email, dialer *gomail.Dialer, filename, body string) error {
