@@ -1,3 +1,13 @@
+## v0.10.0 (Released 2021-11-08)
+
+BREAKING CHANGES
+
+moov-io/base introduces errors when unexpected configuration attributes are found in the files parsed on startup.
+
+BUILD
+
+- build: update github.com/moov-io/base to v0.12.0
+
 ## v0.9.4 (Released 2021-11-01)
 
 IMPROVEMENTS
