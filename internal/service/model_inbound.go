@@ -134,8 +134,8 @@ type ODFICorrections struct {
 }
 
 type ODFIReconciliation struct {
-	Enabled      bool
-	PatchMatcher string
+	Enabled     bool
+	PathMatcher string
 }
 
 type ODFIPrenotes struct {

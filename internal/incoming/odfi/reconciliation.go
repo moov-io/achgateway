@@ -69,7 +69,7 @@ func (pc *creditReconciliation) Handle(file File) error {
 	// for when we should treat the file as a recon file.
 	//
 	// Example: /reconciliation/fileMoovTester_TRANACTIONSFAKE.TXT
-	if !strings.Contains(strings.ToLower(file.Filepath), pc.cfg.PatchMatcher) {
+	if !strings.Contains(strings.ToLower(file.Filepath), pc.cfg.PathMatcher) {
 		return nil // skip the file
 	}
 
