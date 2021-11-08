@@ -1,3 +1,9 @@
+## v0.10.1 (Released 2021-11-08)
+
+BUG FIXES
+
+- ODFI.Reconciliation accidently was reading `PatchMatcher` instead of `PathMatcher` in the YAML config.
+
 ## v0.10.0 (Released 2021-11-08)
 
 BREAKING CHANGES
