@@ -75,19 +75,25 @@ func newAggregator(
 	if err != nil {
 		return nil, err
 	}
-	logger.Logf("setup %T audit storage", auditStorage)
+	logger.Info().With(log.Fields{
+		"shard": log.String(shard.Name),
+	}).Logf("setup %T audit storage", auditStorage)
 
 	preuploadTransformers, err := transform.Multi(logger, shard.PreUpload)
 	if err != nil {
 		return nil, err
 	}
-	logger.Logf("setup %#v pre-upload transformers", preuploadTransformers)
+	logger.Info().With(log.Fields{
+		"shard": log.String(shard.Name),
+	}).Logf("setup %#v pre-upload transformers", preuploadTransformers)
 
 	outputFormatter, err := output.NewFormatter(shard.Output)
 	if err != nil {
 		return nil, err
 	}
-	logger.Logf("setup %T output formatter", outputFormatter)
+	logger.Info().With(log.Fields{
+		"shard": log.String(shard.Name),
+	}).Logf("setup %T output formatter", outputFormatter)
 
 	cutoffs, err := schedule.ForCutoffTimes(shard.Cutoffs.Timezone, shard.Cutoffs.Windows)
 	if err != nil {
@@ -136,7 +142,9 @@ func (xfagg *aggregator) Start(ctx context.Context) {
 }
 
 func (xfagg *aggregator) Shutdown() {
-	xfagg.logger.Log("shutting down xfer aggregation")
+	xfagg.logger.Info().With(log.Fields{
+		"shard": log.String(xfagg.shard.Name),
+	}).Log("shutting down xfer aggregation")
 
 	if xfagg.auditStorage != nil {
 		xfagg.auditStorage.Close()
@@ -150,8 +158,13 @@ func (xfagg *aggregator) acceptFile(msg incoming.ACHFile) error {
 func (xfagg *aggregator) withEachFile(when time.Time) error {
 	window := when.Format("15:04")
 	tzname, _ := when.Zone()
-	xfagg.logger.Logf("starting %s %s cutoff window processing", window, tzname)
-	defer xfagg.logger.Logf("ended %s %s cutoff window processing", window, tzname)
+	xfagg.logger.Info().With(log.Fields{
+		"shard": log.String(xfagg.shard.Name),
+	}).Logf("starting %s %s cutoff window processing", window, tzname)
+
+	defer xfagg.logger.Info().With(log.Fields{
+		"shard": log.String(xfagg.shard.Name),
+	}).Logf("ended %s %s cutoff window processing", window, tzname)
 
 	processed, err := xfagg.merger.WithEachMerged(xfagg.runTransformers)
 	if err != nil {
@@ -167,7 +180,9 @@ func (xfagg *aggregator) withEachFile(when time.Time) error {
 }
 
 func (xfagg *aggregator) manualCutoff(waiter manuallyTriggeredCutoff) {
-	xfagg.logger.Log("starting manual cutoff window processing")
+	xfagg.logger.Info().With(log.Fields{
+		"shard": log.String(xfagg.shard.Name),
+	}).Log("starting manual cutoff window processing")
 
 	if processed, err := xfagg.merger.WithEachMerged(xfagg.runTransformers); err != nil {
 		xfagg.logger.LogErrorf("ERROR inside manual WithEachMerged: %v", err)
@@ -180,7 +195,9 @@ func (xfagg *aggregator) manualCutoff(waiter manuallyTriggeredCutoff) {
 		waiter.C <- err
 	}
 
-	xfagg.logger.Log("ended manual cutoff window processing")
+	xfagg.logger.Info().With(log.Fields{
+		"shard": log.String(xfagg.shard.Name),
+	}).Log("ended manual cutoff window processing")
 }
 
 func (xfagg *aggregator) emitFilesUploaded(proc *processedFiles) error {
@@ -280,7 +297,11 @@ func (xfagg *aggregator) notifyAfterUpload(filename string, file *ach.File, agen
 		return fmt.Errorf("no uploadAgent found for id=%s", agent.ID())
 	}
 
-	notifier, err := notify.NewMultiSender(xfagg.logger, xfagg.shard.Notifications, uploadAgent.Notifications)
+	logger := xfagg.logger.With(log.Fields{
+		"shard": log.String(xfagg.shard.Name),
+	})
+
+	notifier, err := notify.NewMultiSender(logger, xfagg.shard.Notifications, uploadAgent.Notifications)
 	if err != nil {
 		return fmt.Errorf("notify: unable to create multi-sender: %v", err)
 	}

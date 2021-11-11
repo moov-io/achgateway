@@ -5,6 +5,7 @@ module github.com/moov-io/achgateway
 go 1.16
 
 require (
+	cloud.google.com/go v0.94.1 // indirect
 	cloud.google.com/go/pubsub v1.16.0 // indirect
 	cloud.google.com/go/storage v1.16.1 // indirect
 	github.com/Azure/azure-storage-blob-go v0.14.0 // indirect
@@ -30,6 +31,7 @@ require (
 	github.com/hashicorp/go-hclog v0.16.2 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.0
+	github.com/jcmturner/gokrb5/v8 v8.4.2 // indirect
 	github.com/jlaffaye/ftp v0.0.0-20210307004419-5d4190119067
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/lib/pq v1.10.2 // indirect
@@ -52,6 +54,7 @@ require (
 	gocloud.dev/pubsub/kafkapubsub v0.23.0
 	goftp.io/server v0.4.1
 	golang.org/x/crypto v0.0.0-20210915214749-c084706c2272
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/text v0.3.7
 	google.golang.org/api v0.57.0 // indirect
+	google.golang.org/grpc v1.40.0 // indirect
 )
