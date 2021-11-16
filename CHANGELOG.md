@@ -1,3 +1,10 @@
+## v0.10.2 (Released 2021-11-16)
+
+IMPROVEMENTS
+
+- pipeline: attempt retries of consul leadership
+- pipeline: include shard as key in log messages
+
 ## v0.10.1 (Released 2021-11-08)
 
 BUG FIXES
