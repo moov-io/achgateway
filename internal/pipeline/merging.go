@@ -262,26 +262,11 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 		logger.Logf("attempting to acquire outbound leadership for %s", leaderKey)
 
 		// Acquire leadership for this shard
-		err := m.consul.AcquireLock(leaderKey)
+		err := m.acquireLock(leaderKey)
 		if err != nil {
 			logger.Warn().With(log.Fields{
 				"shard": log.String(m.shard.Name),
 			}).Logf("skipping file upload: %v", err)
-
-			// IsRetryableError returns true for 500 errors from the Consul servers, and network connection errors.
-			// These errors are not retryable for writes (which is what AcquireLock performs).
-			if consulapi.IsRetryableError(err) || strings.Contains(err.Error(), "invalid session") {
-				// If we're able to create a new session and see if achgateway can continue on.
-				// This error will be bubbled up to our Alterer to notify humans.
-				if innerErr := m.consul.ClearSession(); innerErr != nil {
-					return nil, fmt.Errorf("really bad consul error: %v and unable to restart session %v", err, innerErr)
-				} else {
-					logger.Info().With(log.Fields{
-						"shard":     log.String(m.shard.Name),
-						"sessionID": log.String(m.consul.SessionID()),
-					}).Logf("started new session")
-				}
-			}
 		} else {
 			if err := f(i, agent, files[i]); err != nil {
 				el.Add(fmt.Errorf("problem from callback: %v", err))
@@ -298,6 +283,45 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 	}
 
 	return newProcessedFiles(m.shard.Name, matches), nil
+}
+
+func (m *filesystemMerging) acquireLock(leaderKey string) error {
+	var lockErr error
+
+	var try func(attempts int, leaderKey string) error
+	try = func(attempts int, leaderKey string) error {
+		if attempts >= 3 {
+			return fmt.Errorf("too many retries: %v", lockErr)
+		}
+		attempts++
+
+		// Attempt writing to the KV path
+		lockErr := m.consul.AcquireLock(leaderKey)
+
+		if lockErr != nil {
+			// IsRetryableError returns true for 500 errors from the Consul servers, and network connection errors.
+			// These errors are not retryable for writes (which is what AcquireLock performs).
+			if consulapi.IsRetryableError(lockErr) || strings.Contains(lockErr.Error(), "invalid session") {
+				// If we're able to create a new session and see if achgateway can continue on.
+				// This error will be bubbled up to our Alterer to notify humans.
+				if innerErr := m.consul.ClearSession(); innerErr != nil {
+					return fmt.Errorf("really bad consul error: %v and unable to restart session %v", lockErr, innerErr)
+				} else {
+					m.logger.Info().With(log.Fields{
+						"shard":     log.String(m.shard.Name),
+						"sessionID": log.String(m.consul.SessionID()),
+					}).Logf("started new session")
+				}
+			}
+
+			// Retry leadership attempt
+			return try(attempts, leaderKey)
+		}
+		// We've got an active session and leadership of the shard
+		return nil
+	}
+
+	return try(0, leaderKey)
 }
 
 func saveMergedFile(dir string, file *ach.File) error {
