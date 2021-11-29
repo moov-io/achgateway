@@ -19,6 +19,7 @@ package shards
 
 import (
 	"database/sql"
+	"fmt"
 )
 
 type Repository interface {
@@ -37,29 +38,48 @@ type sqlRepository struct {
 }
 
 func (r *sqlRepository) Lookup(shardKey string) (string, error) {
-	query := `SELECT shard_name FROM shard_mappings
-WHERE shard_key = ?
-LIMIT 1;`
-	stmt, err := r.db.Prepare(query)
+	query := `
+		SELECT
+		    shard_name
+		FROM
+		     shard_mappings
+		WHERE
+		      shard_key = ? LIMIT 1;
+  		`
+	rows, err := r.db.Query(query, shardKey)
 	if err != nil {
 		return "", err
 	}
+	if rows.Err() != nil {
+		return "", rows.Err()
+	}
+	defer rows.Close()
+
 	var shardName string
-	if err := stmt.QueryRow(shardKey).Scan(&shardName); err != nil {
-		if err == sql.ErrNoRows {
-			return "", nil
+	for rows.Next() {
+		err := rows.Scan(&shardName)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return "", nil
+			}
+			return "", err
 		}
-		return "", err
 	}
 	return shardName, nil
 }
 
 func (r *sqlRepository) write(shardKey, shardName string) error {
 	query := `INSERT INTO shard_mappings (shard_key, shard_name) VALUES (?, ?);`
-	stmt, err := r.db.Prepare(query)
+	result, err := r.db.Exec(query, shardKey, shardName)
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(shardKey, shardName)
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected < 1 {
+		return fmt.Errorf("db failed to write shard mapping for shard %s-%s", shardKey, shardName)
+	}
 	return err
 }
