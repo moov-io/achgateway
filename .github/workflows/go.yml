@@ -42,6 +42,15 @@ jobs:
       if: runner.os == 'Linux'
       run: make check
 
+    - uses: actions/upload-artifact@v2
+      if: ${{ always() }}
+      with:
+        name: "go-tooling-reports.zip"
+        path: |
+          ./coverage.txt
+          ./**/mem.out
+          ./**/cpu.out
+
     - name: Upload Code Coverage
       if: runner.os == 'Linux'
       run: bash <(curl -s https://codecov.io/bash)
