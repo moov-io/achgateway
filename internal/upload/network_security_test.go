@@ -17,7 +17,15 @@ func TestRejectOutboundIPRange(t *testing.T) {
 	addrs, err := net.LookupIP("moov.io")
 	require.NoError(t, err)
 
-	cfg := &service.UploadAgent{AllowedIPs: addrs[0].String()}
+	var addr net.IP
+	for i := range addrs {
+		if a := addrs[i].To4(); a != nil {
+			addr = a
+			break
+		}
+	}
+
+	cfg := &service.UploadAgent{AllowedIPs: addr.String()}
 
 	// exact IP match
 	if err := rejectOutboundIPRange(cfg.SplitAllowedIPs(), "moov.io"); err != nil {
@@ -25,13 +33,13 @@ func TestRejectOutboundIPRange(t *testing.T) {
 	}
 
 	// multiple whitelisted, but exact IP match
-	cfg.AllowedIPs = fmt.Sprintf("127.0.0.1/24,%s", addrs[0].String())
+	cfg.AllowedIPs = fmt.Sprintf("127.0.0.1/24,%s", addr.String())
 	if err := rejectOutboundIPRange(cfg.SplitAllowedIPs(), "moov.io"); err != nil {
 		t.Error(err)
 	}
 
 	// multiple whitelisted, match range (convert IP to /24)
-	cfg.AllowedIPs = fmt.Sprintf("%s/24", addrs[0].Mask(net.IPv4Mask(0xFF, 0xFF, 0xFF, 0x0)).String())
+	cfg.AllowedIPs = fmt.Sprintf("%s/24", addr.Mask(net.IPv4Mask(0xFF, 0xFF, 0xFF, 0x0)).String())
 	if err := rejectOutboundIPRange(cfg.SplitAllowedIPs(), "moov.io"); err != nil {
 		t.Error(err)
 	}
