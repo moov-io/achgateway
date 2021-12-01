@@ -47,7 +47,7 @@ jobs:
       with:
         name: "go-tooling-reports.zip"
         path: |
-          ./coverage.txt
+          ./**/coverage.txt
           ./**/mem.out
           ./**/cpu.out
 
