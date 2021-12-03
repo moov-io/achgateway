@@ -268,6 +268,10 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 				"shard": log.String(m.shard.Name),
 			}).Logf("skipping file upload: %v", err)
 		} else {
+			logger.Info().With(log.Fields{
+				"shard": log.String(m.shard.Name),
+			}).Log("we are the leader")
+
 			if err := f(i, agent, files[i]); err != nil {
 				el.Add(fmt.Errorf("problem from callback: %v", err))
 			} else {
