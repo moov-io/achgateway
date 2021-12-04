@@ -1,3 +1,22 @@
+## v0.10.3 (Released 2021-12-03)
+
+BUG FIXES
+
+- upload: check that one resolved IP is whitelisted
+
+IMPROVEMENTS
+
+- pipeline: log affirmatively when we are the leader
+
+BUILD
+
+- build: profile Go cpu/mem usage and upload the reports
+- build: update github.com/PagerDuty/go-pagerduty to v1.4.3
+- build: update github.com/ProtonMail/go-crypto
+- build: update github.com/Shopify/sarama to v1.30.0
+- build: update github.com/moov-io/ach to v1.12.2
+- fix: update code from new linter upgrades
+
 ## v0.10.2 (Released 2021-11-16)
 
 IMPROVEMENTS
