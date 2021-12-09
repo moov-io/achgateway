@@ -159,7 +159,7 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 			if !exists {
 				agg, exists = fr.shardAggregators[fr.defaultShardName]
 				if !exists {
-					filesMissingShardAggregators.With().Add(1)
+					filesMissingShardAggregators.With("shard", shardName).Add(1)
 					fr.logger.Error().LogErrorf("missing shardAggregator for shardKey=%s shardName=%s", file.ShardKey, shardName)
 					cleanup()
 					return
@@ -175,9 +175,12 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 				fr.logger.Error().LogErrorf("problem accepting file under shardName=%s", shardName)
 				out <- err
 			} else {
+				pendingFiles.With("shard", shardName).Add(1)
+
 				fr.logger.With(log.Fields{
 					"fileID": log.String(file.FileID),
 				}).Log("finished handling ACHFile")
+
 				cleanup()
 			}
 		} else {

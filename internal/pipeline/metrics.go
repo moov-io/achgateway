@@ -41,19 +41,23 @@ var (
 		Help: "Counter of stream submitted ACH files that failed processing",
 	}, nil)
 
+	pendingFiles = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Name: "pending_files",
+		Help: "Counter of ACH files waiting to be uploaded",
+	}, []string{"shard"})
 	filesMissingShardAggregators = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Name: "files_missing_shard_aggregators",
 		Help: "Counter of ACH files unable to be matched with a shard aggregator",
-	}, nil)
+	}, []string{"shard"})
 
 	uploadedFilesCounter = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Name: "ach_uploaded_files",
 		Help: "Counter of ACH files uploaded through the pipeline to the ODFI",
-	}, nil)
+	}, []string{"shard"})
 	uploadFilesErrors = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Name: "ach_upload_errors",
 		Help: "Counter of errors encountered when attempting ACH files upload",
-	}, nil)
+	}, []string{"shard"})
 )
 
 func init() {
@@ -62,9 +66,4 @@ func init() {
 
 	httpFileProcessingErrors.With().Add(0)
 	streamFileProcessingErrors.With().Add(0)
-
-	filesMissingShardAggregators.With().Add(0)
-
-	uploadedFilesCounter.With().Add(0)
-	uploadFilesErrors.With().Add(0)
 }

@@ -271,9 +271,9 @@ func (xfagg *aggregator) uploadFile(index int, agent upload.Agent, res *transfor
 
 	// record our upload metrics
 	if err != nil {
-		uploadFilesErrors.With().Add(1)
+		uploadFilesErrors.With("shard", xfagg.shard.Name).Add(1)
 	} else {
-		uploadedFilesCounter.With().Add(1)
+		uploadedFilesCounter.With("shard", xfagg.shard.Name).Add(1)
 	}
 
 	return err
