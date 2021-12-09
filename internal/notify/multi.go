@@ -26,7 +26,8 @@ type MultiSender struct {
 
 func NewMultiSender(logger log.Logger, cfg *service.Notifications, notifiers *service.UploadNotifiers) (*MultiSender, error) {
 	ms := &MultiSender{logger: logger}
-	if cfg == nil {
+	if cfg == nil || notifiers == nil {
+		ms.logger.Log("multi-sender: created empty sender")
 		return ms, nil
 	}
 	if cfg.Retry != nil {
