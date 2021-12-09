@@ -175,9 +175,12 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 				fr.logger.Error().LogErrorf("problem accepting file under shardName=%s", shardName)
 				out <- err
 			} else {
+				pendingFiles.With("shard", shardName).Add(1)
+
 				fr.logger.With(log.Fields{
 					"fileID": log.String(file.FileID),
 				}).Log("finished handling ACHFile")
+
 				cleanup()
 			}
 		} else {

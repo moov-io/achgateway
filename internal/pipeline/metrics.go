@@ -41,6 +41,10 @@ var (
 		Help: "Counter of stream submitted ACH files that failed processing",
 	}, nil)
 
+	pendingFiles = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Name: "pending_files",
+		Help: "Counter of ACH files waiting to be uploaded",
+	}, []string{"shard"})
 	filesMissingShardAggregators = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Name: "files_missing_shard_aggregators",
 		Help: "Counter of ACH files unable to be matched with a shard aggregator",
