@@ -1,3 +1,9 @@
+## v0.10.4 (Released 2021-12-08)
+
+BUG FIXES
+
+- notify: nil guard around upload Notifications
+
 ## v0.10.3 (Released 2021-12-03)
 
 BUG FIXES
