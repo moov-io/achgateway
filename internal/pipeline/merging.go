@@ -22,8 +22,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -32,6 +30,7 @@ import (
 	"github.com/moov-io/achgateway/internal/consul"
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/internal/storage"
 	"github.com/moov-io/achgateway/internal/upload"
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/log"
@@ -54,21 +53,18 @@ type XferMerging interface {
 }
 
 func NewMerging(logger log.Logger, consul *consul.Client, shard service.Shard, cfg service.UploadAgents) (XferMerging, error) {
-	dir := filepath.Join("storage", "mergable") // default directory
+	dir := "storage" // default directory
 	if cfg.Merging.Directory != "" {
-		dir = filepath.Join(cfg.Merging.Directory, "mergable")
+		dir = cfg.Merging.Directory
 	}
-	dir, err := filepath.Abs(dir)
+	storage, err := storage.NewFilesystem(dir)
 	if err != nil {
-		return nil, fmt.Errorf("unable to expand %s: %v", dir, err)
-	}
-	if err := os.MkdirAll(dir, 0777); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("problem creating %s: %w", dir, err)
 	}
 	return &filesystemMerging{
-		baseDir: dir,
 		logger:  logger,
 		cfg:     cfg,
+		storage: storage,
 		shard:   shard,
 		consul:  consul,
 	}, nil
@@ -76,8 +72,8 @@ func NewMerging(logger log.Logger, consul *consul.Client, shard service.Shard, c
 
 type filesystemMerging struct {
 	logger  log.Logger
-	baseDir string
 	cfg     service.UploadAgents
+	storage storage.Chest
 	shard   service.Shard
 	consul  *consul.Client
 }
@@ -95,54 +91,34 @@ func (m *filesystemMerging) writeACHFile(xfer incoming.ACHFile) error {
 		return err
 	}
 
-	path := filepath.Join(m.baseDir, m.shard.Name)
-	os.MkdirAll(path, 0777)
-
-	path = filepath.Join(path, fmt.Sprintf("%s.ach", xfer.FileID))
-
-	if err := ioutil.WriteFile(path, buf.Bytes(), 0600); err != nil {
+	path := filepath.Join("mergable", m.shard.Name, fmt.Sprintf("%s.ach", xfer.FileID))
+	if err := m.storage.WriteFile(path, buf.Bytes()); err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func (m *filesystemMerging) HandleCancel(cancel incoming.CancelACHFile) error {
-	path := filepath.Join(m.baseDir, m.shard.Name)
-	os.MkdirAll(path, 0777)
+	path := filepath.Join("mergable", m.shard.Name, fmt.Sprintf("%s.ach", cancel.FileID))
 
-	path = filepath.Join(path, fmt.Sprintf("%s.ach", cancel.FileID))
-
-	// Write the canceled file
-	if _, err := os.Stat(path); err != nil && os.IsNotExist(err) {
-		// file doesn't exist, so write one
-		return ioutil.WriteFile(path+".canceled", nil, 0600)
-	} else {
-		// move the existing file
-		return os.Rename(path, path+".canceled")
-	}
+	// Write the canceled File
+	return m.storage.ReplaceFile(path, path+".canceled")
 }
 
 func (m *filesystemMerging) isolateMergableDir() (string, error) {
-	// rename the shard directory so we're the only accessor for it, then recreate it
-	olddir := filepath.Join(m.baseDir, m.shard.Name)
-
-	newdir := filepath.Join(filepath.Dir(m.baseDir), fmt.Sprintf("%s-%v", m.shard.Name, time.Now().Format("20060102-150405")))
-
-	if _, err := os.Stat(olddir); err != nil && os.IsNotExist(err) {
-		// If our old directory does not exist, just create it
-		return newdir, os.MkdirAll(newdir, 0777)
-	}
+	newdir := filepath.Join(fmt.Sprintf("%s-%v", m.shard.Name, time.Now().Format("20060102-150405")))
 
 	// Otherwise attempt to isolate the directory
-	return newdir, os.Rename(olddir, newdir)
+	return newdir, m.storage.ReplaceDir(filepath.Join("mergable", m.shard.Name), newdir)
 }
 
-func getNonCanceledMatches(path string) ([]string, error) {
-	positiveMatches, err := filepath.Glob(path)
+func (m *filesystemMerging) getNonCanceledMatches(path string) ([]string, error) {
+	positiveMatches, err := m.storage.Glob(path + "/*.ach")
 	if err != nil {
 		return nil, err
 	}
-	negativeMatches, err := filepath.Glob(path + "*.canceled")
+	negativeMatches, err := m.storage.Glob(path + "/*.canceled")
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +167,7 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 		return nil, fmt.Errorf("problem isolating newdir=%s error=%v", dir, err)
 	}
 
-	matches, err := getNonCanceledMatches(filepath.Join(dir, "*.ach"))
+	matches, err := m.getNonCanceledMatches(dir)
 	if err != nil {
 		return nil, fmt.Errorf("problem with %s glob: %v", dir, err)
 	}
@@ -225,12 +201,12 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 	// Remove the directory if there are no files, otherwise setup an inner dir for the uploaded file.
 	if len(files) == 0 {
 		// delete the new directory as there's nothing to merge
-		if err := os.RemoveAll(dir); err != nil {
+		if err := m.storage.RmdirAll(dir); err != nil {
 			el.Add(err)
 		}
 	} else {
 		dir = filepath.Join(dir, "uploaded")
-		os.MkdirAll(dir, 0777)
+		m.storage.MkdirAll(dir)
 	}
 
 	// Grab our upload Agent
@@ -253,7 +229,7 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 		}
 
 		// Write our file to the mergable directory
-		if err := saveMergedFile(dir, files[i]); err != nil {
+		if err := m.saveMergedFile(dir, files[i]); err != nil {
 			el.Add(fmt.Errorf("problem writing merged file: %v", err))
 		}
 
@@ -328,13 +304,15 @@ func (m *filesystemMerging) acquireLock(leaderKey string) error {
 	return try(0, leaderKey)
 }
 
-func saveMergedFile(dir string, file *ach.File) error {
+func (m *filesystemMerging) saveMergedFile(dir string, file *ach.File) error {
 	var buf bytes.Buffer
 	if err := ach.NewWriter(&buf).Write(file); err != nil {
 		return fmt.Errorf("unable to buffer ACH file: %v", err)
 	}
-	filename := filepath.Join(dir, fmt.Sprintf("%s.ach", hash(buf.Bytes())))
-	return ioutil.WriteFile(filename, buf.Bytes(), 0600)
+
+	path := filepath.Join(dir, fmt.Sprintf("%s.ach", hash(buf.Bytes())))
+
+	return m.storage.WriteFile(path, buf.Bytes())
 }
 
 func hash(data []byte) string {
