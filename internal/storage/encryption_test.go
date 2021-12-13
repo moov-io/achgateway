@@ -22,4 +22,11 @@ func TestEncrypted(t *testing.T) {
 	crypt.SetCoder(cryptfs.Base64())
 
 	testStorage(t, NewEncrypted(chest, crypt))
+
+	finalContents := readFinalContents(t, chest)
+	require.NotEqual(t, "nacha", finalContents)
+
+	decrypted, err := crypt.Reveal([]byte(finalContents))
+	require.NoError(t, err)
+	require.Equal(t, []byte("nacha"), decrypted)
 }

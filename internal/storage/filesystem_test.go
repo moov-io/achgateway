@@ -12,4 +12,7 @@ func TestFilesystem(t *testing.T) {
 	require.NoError(t, err)
 
 	testStorage(t, chest)
+
+	finalContents := readFinalContents(t, chest)
+	require.Equal(t, "nacha", finalContents)
 }

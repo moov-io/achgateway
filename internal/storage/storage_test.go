@@ -35,6 +35,19 @@ func testStorage(t *testing.T, chest Chest) {
 
 	// replace dir
 	err = chest.ReplaceDir("after/", "final/")
+	require.NoError(t, err)
 	_, err = chest.Open("final/foo.ach.canceled")
 	require.NoError(t, err)
+}
+
+func readFinalContents(t *testing.T, chest Chest) string {
+	t.Helper()
+
+	file, err := chest.Open("final/foo.ach.canceled")
+	require.NoError(t, err)
+
+	bs, err := ioutil.ReadAll(file)
+	require.NoError(t, err)
+
+	return string(bs)
 }

@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/moov-io/achgateway/internal/mask"
+	"github.com/moov-io/achgateway/internal/storage"
 )
 
 type UploadAgents struct {
@@ -218,7 +219,9 @@ type UploadNotifiers struct {
 }
 
 type Merging struct {
-	Directory      string
+	Storage   storage.Config
+	Directory string // fallback config for Storage.Filesystem.Directory
+
 	FlattenBatches *FlattenBatches
 }
 
