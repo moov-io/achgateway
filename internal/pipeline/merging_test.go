@@ -20,10 +20,12 @@ package pipeline
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/moov-io/achgateway/internal/storage"
 	"github.com/moov-io/base"
 
 	"github.com/stretchr/testify/require"
@@ -31,9 +33,10 @@ import (
 
 func TestMerging__getNonCanceledMatches(t *testing.T) {
 	dir := t.TempDir()
+	require.NoError(t, os.Mkdir(filepath.Join(dir, "test-2021"), 0777))
 
 	write := func(filename string) string {
-		err := ioutil.WriteFile(filepath.Join(dir, filename), nil, 0600)
+		err := ioutil.WriteFile(filepath.Join(dir, "test-2021", filename), nil, 0600)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -44,11 +47,18 @@ func TestMerging__getNonCanceledMatches(t *testing.T) {
 	canceled := write(fmt.Sprintf("%s.ach", base.ID()))
 	canceled = write(fmt.Sprintf("%s.canceled", canceled))
 
-	matches, err := getNonCanceledMatches(filepath.Join(dir, "*.ach"))
+	fs, err := storage.NewFilesystem(dir)
+	require.NoError(t, err)
+
+	m := &filesystemMerging{
+		storage: fs,
+	}
+
+	matches, err := m.getNonCanceledMatches("test-2021")
 	require.NoError(t, err)
 
 	if len(matches) != 1 {
-		t.Errorf("got %d matches: %v", len(matches), matches)
+		t.Fatalf("got %d matches: %v", len(matches), matches)
 	}
 	if !strings.HasSuffix(matches[0], transfer) {
 		t.Errorf("unexpected match: %v", matches[0])
