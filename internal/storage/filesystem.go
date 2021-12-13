@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type filesystem struct {
@@ -24,7 +25,9 @@ func NewFilesystem(root string) (Chest, error) {
 }
 
 func (fs *filesystem) Open(path string) (File, error) {
-	fd, err := os.Open(filepath.Join(fs.root, path))
+	path = filepath.Join(fs.root, path)
+
+	fd, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
@@ -32,25 +35,40 @@ func (fs *filesystem) Open(path string) (File, error) {
 	_, name := filepath.Split(path)
 
 	return &file{
+		File:     fd,
 		filename: name,
 		fullpath: fd.Name(),
 	}, nil
 }
 
 func (fs *filesystem) Glob(pattern string) ([]string, error) {
-	return filepath.Glob(filepath.Join(fs.root, pattern))
+	matches, err := filepath.Glob(filepath.Join(fs.root, pattern))
+	if err != nil {
+		return nil, err
+	}
+	for i := range matches {
+		matches[i] = strings.TrimPrefix(matches[i], fs.root+"/")
+	}
+	return matches, nil
 }
 
 func (fs *filesystem) ReplaceFile(oldpath, newpath string) error {
-	path := filepath.Join(fs.root, oldpath)
+	oldpath = filepath.Join(fs.root, oldpath)
+	newpath = filepath.Join(fs.root, newpath+".canceled")
 
-	if _, err := os.Stat(path); err != nil && os.IsNotExist(err) {
-		// file doesn't exist, so write newpath
+	// Create the new dir(s)
+	dir, _ := filepath.Split(newpath)
+	if err := os.MkdirAll(dir, 0777); err != nil {
+		return err
+	}
+
+	// file doesn't exist, so write newpath
+	if _, err := os.Stat(oldpath); err != nil && os.IsNotExist(err) {
 		return ioutil.WriteFile(filepath.Join(fs.root, newpath), nil, 0600)
 	}
 
 	// move the existing file
-	return os.Rename(path, path+".canceled")
+	return os.Rename(oldpath, newpath)
 }
 
 func (fs *filesystem) ReplaceDir(oldpath, newpath string) error {
