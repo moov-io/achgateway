@@ -43,6 +43,7 @@ require (
 	github.com/minio/sha256-simd v1.0.0 // indirect
 	github.com/moov-io/ach v1.12.2
 	github.com/moov-io/base v0.27.0
+	github.com/moov-io/cryptfs v0.1.0 // indirect
 	github.com/ory/dockertest/v3 v3.8.0
 	github.com/ory/mail/v3 v3.0.0
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect

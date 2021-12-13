@@ -158,6 +158,18 @@ func newProcessedFiles(shardKey string, matches []string) *processedFiles {
 	return processed
 }
 
+func (m *filesystemMerging) readFile(path string) (*ach.File, error) {
+	file, err := m.storage.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	f, err := ach.NewReader(file).Read()
+	if err != nil {
+		return nil, err
+	}
+	return &f, nil
+}
+
 func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) error) (*processedFiles, error) {
 	processed := &processedFiles{}
 
@@ -178,7 +190,7 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 	var files []*ach.File
 	var el base.ErrorList
 	for i := range matches {
-		file, err := ach.ReadFile(matches[i])
+		file, err := m.readFile(matches[i])
 		if err != nil {
 			el.Add(fmt.Errorf("problem reading %s: %v", matches[i], err))
 			continue

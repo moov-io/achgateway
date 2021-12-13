@@ -18,3 +18,5 @@ func (f *file) Filename() string {
 func (f *file) FullPath() string {
 	return f.fullpath
 }
+
+var _ File = (&file{})
