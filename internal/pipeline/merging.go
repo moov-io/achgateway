@@ -34,6 +34,7 @@ import (
 	"github.com/moov-io/achgateway/internal/upload"
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/log"
+	"github.com/moov-io/base/strx"
 
 	consulapi "github.com/hashicorp/consul/api"
 )
@@ -53,14 +54,18 @@ type XferMerging interface {
 }
 
 func NewMerging(logger log.Logger, consul *consul.Client, shard service.Shard, cfg service.UploadAgents) (XferMerging, error) {
-	dir := "storage" // default directory
-	if cfg.Merging.Directory != "" {
-		dir = cfg.Merging.Directory
-	}
-	storage, err := storage.NewFilesystem(dir)
+	dir := strx.Or(
+		cfg.Merging.Storage.Filesystem.Directory,
+		cfg.Merging.Directory,
+		"storage", // default directory
+	)
+	cfg.Merging.Storage.Filesystem.Directory = dir
+
+	storage, err := storage.New(cfg.Merging.Storage)
 	if err != nil {
 		return nil, fmt.Errorf("problem creating %s: %w", dir, err)
 	}
+
 	return &filesystemMerging{
 		logger:  logger,
 		cfg:     cfg,
@@ -158,6 +163,18 @@ func newProcessedFiles(shardKey string, matches []string) *processedFiles {
 	return processed
 }
 
+func (m *filesystemMerging) readFile(path string) (*ach.File, error) {
+	file, err := m.storage.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	f, err := ach.NewReader(file).Read()
+	if err != nil {
+		return nil, err
+	}
+	return &f, nil
+}
+
 func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) error) (*processedFiles, error) {
 	processed := &processedFiles{}
 
@@ -178,7 +195,7 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 	var files []*ach.File
 	var el base.ErrorList
 	for i := range matches {
-		file, err := ach.ReadFile(matches[i])
+		file, err := m.readFile(matches[i])
 		if err != nil {
 			el.Add(fmt.Errorf("problem reading %s: %v", matches[i], err))
 			continue
