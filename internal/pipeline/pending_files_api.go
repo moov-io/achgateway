@@ -18,13 +18,16 @@
 package pipeline
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/storage"
 )
 
@@ -66,26 +69,31 @@ func (fr *FileReceiver) listShardFiles() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		agg := fr.lookupAggregator(r)
 		if agg == nil {
+			fr.logger.Warn().Log("shard not found")
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
 		chest := fr.getStorage(agg)
 		if chest == nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			fr.logger.Warn().Logf("storage not found for shard %s", agg.shard.Name)
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		matches, err := chest.Glob("*")
+		matches, err := chest.Glob(fmt.Sprintf("mergable/%s/*", agg.shard.Name))
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			fr.logger.Error().LogErrorf("unable to list %s files: %w", agg.shard.Name, err)
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		var wrapper []listFileResponse
 		for i := range matches {
 			_, filename := filepath.Split(matches[i].RelativePath)
-
+			if filename == "" {
+				continue
+			}
 			wrapper = append(wrapper, listFileResponse{
 				Filename: filename,
 				Path:     matches[i].RelativePath,
@@ -99,40 +107,68 @@ func (fr *FileReceiver) listShardFiles() http.HandlerFunc {
 }
 
 type getFileResponse struct {
-	Filename string
-	Contents string
-	Valid    error
-	ModTime  time.Time
+	Filename       string
+	ContentsBase64 string
+	Valid          error
+	ModTime        time.Time
 }
 
 func (fr *FileReceiver) getShardFile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		agg := fr.lookupAggregator(r)
 		if agg == nil {
+			fr.logger.Warn().Log("shard not found")
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
 		chest := fr.getStorage(agg)
 		if chest == nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			fr.logger.Warn().Logf("storage not found for shard %s", agg.shard.Name)
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		path := mux.Vars(r)["filepath"] // TODO(adam): need to trim off r.URL
+		path := mux.Vars(r)["filepath"]
+		fr.logger.Info().Logf("attempting to load %s", path)
+
 		file, err := chest.Open(path)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			fr.logger.Error().LogErrorf("error reading %s: %w", path, err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		if file == nil {
+			fr.logger.Error().Logf("%s not found", path)
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
+		contents, err := marshalFile(file)
+
 		json.NewEncoder(w).Encode(getFileResponse{
-			Filename: file.Filename(),
-			Contents: "TODO",
-			Valid:    errors.New("TODO - .Validate()"),
-			ModTime:  time.Now(),
+			Filename:       file.Filename(),
+			ContentsBase64: contents,
+			Valid:          err,
+			ModTime:        time.Now(),
 		})
 	}
+}
+
+func marshalFile(contents storage.File) (string, error) {
+	file, err := ach.NewReader(contents).Read()
+
+	var buf bytes.Buffer
+	if err == nil {
+		if writeErr := ach.NewWriter(&buf).Write(&file); writeErr != nil {
+			err = fmt.Errorf("error parsing file: %v -- error writing file: %v", err, writeErr)
+		}
+	}
+	if err == nil {
+		err = file.Validate()
+	}
+
+	return base64.StdEncoding.EncodeToString(buf.Bytes()), err
 }
 
 func (fr *FileReceiver) lookupAggregator(r *http.Request) *aggregator {
