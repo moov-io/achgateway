@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -25,6 +26,10 @@ func NewFilesystem(root string) (Chest, error) {
 }
 
 func (fs *filesystem) Open(path string) (File, error) {
+	if strings.Contains(path, "..") || strings.HasPrefix(path, "/") {
+		return nil, errors.New("invalid path")
+	}
+
 	path = filepath.Join(fs.root, path)
 
 	fd, err := os.Open(path)
