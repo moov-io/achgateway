@@ -7,7 +7,7 @@
 ## Goals
 
 achgateway is an automated ACH gateway for uploading and downloading Nacha formatted files to FTP/SFTP servers.
-This is a typical usecae with an Originating Depository Financial Institution (ODFI) to make ACH payments.
+This is a typical use case with an Originating Depository Financial Institution (ODFI) to make ACH payments.
 The gateway accepts valid Nacha files across multiple interfaces and will optimize them to upload.
 
 Several other features of achgateway include:
@@ -35,7 +35,7 @@ across multiple uploaders.
 
 Validating accounts is often done with small credits submitted to an account. The experience can be improved
 by originating same-day batches so the amounts are ready quickly. To implement this submission of ACH files with a
-shard key of `micro-deposit` could be used and configured to upload the end of every day. This will attempt to
+shard key of `micro-deposit` could be used and configured to upload at the end of every day. This will attempt to
 minimize the files submitted along with their cost and performance.
 
 ## Usage
@@ -67,7 +67,7 @@ as a "read replica" of all ACH files and allows them to take over in the event o
 The ACH specification describes "cutoff times" as fixed timestamps for when files must be uploaded by. This allows our
 systems to work ahead of time and act as a real-time system for outside processes.
 
-When a cutoff time is tirggered there are several steps to be performed for each shard key.
+When a cutoff time is triggered there are several steps to be performed for each shard key.
 
 1. If self-elected leader
    1. Merge pending files (inside `storage/merging/:key/*.ach`) that do not contain a `*.canceled` file.
@@ -82,7 +82,7 @@ When a cutoff time is tirggered there are several steps to be performed for each
 
 ## File Merging
 
-ACH transfers are merged (grouped) according their file header values using [`ach.MergeFiles`](https://godoc.org/github.com/moov-io/ach#MergeFiles).
+ACH transfers are merged (grouped) according to their file header values using [`ach.MergeFiles`](https://godoc.org/github.com/moov-io/ach#MergeFiles).
 EntryDetail records are not modified as part of the merging process. Merging is done primarily to reduce the fees charged by your ODFI or The Federal Reserve.
 
 ### Uploads of Merged ACH Files
@@ -106,7 +106,7 @@ The following fields are passed to templates giving them data to build a filenam
 
 - `ShardName`: string of the shard performing an upload
 - `GPG`: boolean
-- `Index`: intger
+- `Index`: integer
 
 Also, several functions are available (in addition to Go's standard template functions)
 
@@ -115,8 +115,8 @@ Also, several functions are available (in addition to Go's standard template fun
 - `lower` and `upper` convert a string into lowercase or uppercase
 
 Note: By default filenames have sequence numbers which are incremented by achgateway and are assumed to be in a specific format.
-It is currently (as of 2019-10-14) undefined behavior what happens to incremented sequence numbers when filenames are in a different format.
-Please open issue if you run into problems here.
+It is currently (as of 2019-10-14) undefined behavior that happens to incremented sequence numbers when filenames are in a different format.
+Please open an issue if you run into problems here.
 
 ### Notifications
 
@@ -206,7 +206,7 @@ Note: Public and Private keys can be encoded with base64 from the following form
 ## AuditTrail
 
 Part of Nacha's guidelines and operational best practices is to save ACH files we send off for a period of time. This allows us to
-investigate customer issues and calculate analytics on those files. achgateway stores these files in an S3 compatiable bucket
+investigate customer issues and calculate analytics on those files. achgateway stores these files in an S3 compatible bucket
 and encrypts the files with a GPG key.
 
 Example GCS storage location: `gcs://achgateway-audittrail/files/2021-05-12/:shard-key:/*.ach`
@@ -277,7 +277,7 @@ $ curl -XPUT http://localhost:9092/trigger-inbound
 
 ## Prometheus Metrics
 
-PayGate emits Prometheus metrics on the admin HTTP server at `/metrics`. Typically [Alertmanager](https://github.com/prometheus/alertmanager) is setup to aggregate the metrics and alert teams.
+PayGate emits Prometheus metrics on the admin HTTP server at `/metrics`. Typically [Alertmanager](https://github.com/prometheus/alertmanager) is set up to aggregate the metrics and alert teams.
 
 ### HTTP Server
 
@@ -292,7 +292,7 @@ PayGate emits Prometheus metrics on the admin HTTP server at `/metrics`. Typical
 
 - `correction_codes_processed`: Counter of correction (COR/NOC) files processed
 - `files_downloaded`: Counter of files downloaded from a remote server
-- `missing_return_transfers`: Counter of return EntryDetail records handled without a found transfer
+- `missing_return_transfers`: Counter of return EntryDetail records handled without a fund transfer
 - `prenote_entries_processed`: Counter of prenote EntryDetail records processed
 - `return_entries_processed`: Counter of return EntryDetail records processed
 
@@ -320,7 +320,7 @@ PayGate emits Prometheus metrics on the admin HTTP server at `/metrics`. Typical
 
  channel | info
  ------- | -------
-[Project Documentation](https://github.com/moov-io/achgateway/tree/master/docs/) | Our project documentation available online.
+[Project Documentation](https://github.com/moov-io/achgateway/tree/master/docs/) | Our project documentation is available online.
 Twitter [@moov](https://twitter.com/moov)	| You can follow Moov.io's Twitter feed to get updates on our project(s). You can also tweet us questions or just share blogs or stories.
 [GitHub Issue](https://github.com/moov-io/achgateway/issues) | If you are able to reproduce a problem please open a GitHub Issue under the specific project that caused the error.
 [Moov Slack](https://slack.moov.io/) | Join our slack channel (`#ach`) to have an interactive discussion about the development of the project.
