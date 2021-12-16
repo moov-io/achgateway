@@ -24,6 +24,7 @@ import (
 	"github.com/moov-io/achgateway/internal/shards"
 	"github.com/moov-io/achgateway/pkg/compliance"
 	"github.com/moov-io/achgateway/pkg/models"
+	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/log"
 
 	"gocloud.dev/pubsub"
@@ -101,6 +102,16 @@ func (fr *FileReceiver) Shutdown() {
 			fr.logger.LogErrorf("problem shutting down stream file subscription: %v", err)
 		}
 	}
+}
+
+func (fr *FileReceiver) RegisterAdminRoutes(r *admin.Server) {
+	r.AddHandler("/trigger-cutoff", fr.triggerManualCutoff())
+
+	r.AddHandler("/shards", fr.listShards())
+
+	sub := r.Subrouter("/shards/{shardName}")
+	sub.HandleFunc("/files", fr.listShardFiles())
+	sub.PathPrefix("/files/{filepath}").Handler(fr.getShardFile())
 }
 
 // handleMessage will listen for an incoming.ACHFile to pass off to an aggregator for the shard
