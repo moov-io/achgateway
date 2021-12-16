@@ -41,7 +41,7 @@ func (e *encrypted) Open(path string) (File, error) {
 	}, nil
 }
 
-func (e *encrypted) Glob(pattern string) ([]string, error) {
+func (e *encrypted) Glob(pattern string) ([]FileStat, error) {
 	return e.underlying.Glob(pattern)
 }
 

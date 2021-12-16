@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -57,7 +58,7 @@ type listShardFilesResponse struct {
 
 type listFileResponse struct {
 	Filename string
-	Fullpath string
+	Path     string
 	ModTime  time.Time
 }
 
@@ -80,7 +81,20 @@ func (fr *FileReceiver) listShardFiles() http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		json.NewEncoder(w).Encode(matches)
+
+		var wrapper []listFileResponse
+		for i := range matches {
+			_, filename := filepath.Split(matches[i].RelativePath)
+
+			wrapper = append(wrapper, listFileResponse{
+				Filename: filename,
+				Path:     matches[i].RelativePath,
+				ModTime:  matches[i].ModTime,
+			})
+		}
+		json.NewEncoder(w).Encode(&listShardFilesResponse{
+			Files: wrapper,
+		})
 	}
 }
 

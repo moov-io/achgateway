@@ -2,7 +2,16 @@ package storage
 
 import (
 	"os"
+	"time"
 )
+
+type File interface {
+	Filename() string
+	FullPath() string
+
+	Read([]byte) (int, error)
+	Close() error
+}
 
 type file struct {
 	*os.File
@@ -20,3 +29,8 @@ func (f *file) FullPath() string {
 }
 
 var _ File = (&file{})
+
+type FileStat struct {
+	RelativePath string
+	ModTime      time.Time
+}
