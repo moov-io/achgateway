@@ -287,9 +287,9 @@ func setupShards(t *testing.T, repo *shards.MockRepository) []string {
 	for i := 0; i < 10; i++ {
 		shardKey := base.ID()
 		if i%2 == 0 {
-			repo.Shards[shardKey] = "prod"
+			repo.Shards[shardKey] = service.ShardMapping{ShardKey: shardKey, ShardName: "prod"}
 		} else {
-			repo.Shards[shardKey] = "beta"
+			repo.Shards[shardKey] = service.ShardMapping{ShardKey: shardKey, ShardName: "beta"}
 		}
 		out = append(out, shardKey)
 	}

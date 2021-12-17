@@ -20,13 +20,18 @@ package shards
 import (
 	"database/sql"
 	"fmt"
+	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/base/database"
+	"github.com/pkg/errors"
 )
 
 type Repository interface {
 	Lookup(shardKey string) (string, error)
+	List() ([]service.ShardMapping, error)
+	Add(create service.ShardMapping, run database.RunInTx) error
 }
 
-func NewRepository(db *sql.DB, static map[string]string) Repository {
+func NewRepository(db *sql.DB, static map[string]service.ShardMapping) Repository {
 	if db == nil {
 		return &MockRepository{Shards: static}
 	}
@@ -66,6 +71,87 @@ func (r *sqlRepository) Lookup(shardKey string) (string, error) {
 		}
 	}
 	return shardName, nil
+}
+
+func (r *sqlRepository) List() ([]service.ShardMapping, error) {
+	// TODO (brandon,12/16/21): implement some kind of pagination and limit the number of records returned
+	qry := fmt.Sprintf(`
+			SELECT %s
+			FROM shard_mappings
+		`, queryScanShardMappingSelect)
+
+	return r.queryScanShardMappings(qry)
+}
+
+func (r *sqlRepository) Add(create service.ShardMapping, run database.RunInTx) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return errors.Wrap(err, "start adding shard mapping")
+	}
+	//nolint:errcheck
+	defer tx.Rollback()
+
+	qry := `INSERT INTO shard_mappings(shard_key, shard_name) VALUES (?,?)`
+
+	res, err := tx.Exec(qry,
+		create.ShardKey,
+		create.ShardName,
+	)
+	if err != nil {
+		return errors.Wrap(err, "executing add")
+	}
+
+	cnt, err := res.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "getting rows affected")
+	}
+	if cnt != 1 {
+		return errors.Wrap(err, "affecting no rows")
+	}
+
+	// Run the passed in function in the transaction
+	if err = run(); err != nil {
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+var queryScanShardMappingSelect = `
+	shard_mappings.shard_key,
+	shard_mappings.shard_name
+`
+
+func (r *sqlRepository) queryScanShardMappings(query string, args ...interface{}) ([]service.ShardMapping, error) {
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, errors.Wrap(err, "querying")
+	}
+	defer rows.Close()
+
+	var items []service.ShardMapping
+	for rows.Next() {
+		item := service.ShardMapping{}
+		if err := rows.Scan(
+			&item.ShardKey,
+			&item.ShardName,
+		); err != nil {
+			return nil, err
+		}
+
+		items = append(items, item)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return items, nil
 }
 
 func (r *sqlRepository) write(shardKey, shardName string) error {

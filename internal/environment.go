@@ -135,14 +135,6 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		return nil, fmt.Errorf("unable to create http files: %v", err)
 	}
 
-	// router
-	if env.PublicRouter == nil {
-		env.PublicRouter = mux.NewRouter()
-
-		// append HTTP routes
-		web.NewFilesController(env.Config.Logger, env.Config.Inbound.HTTP, httpFiles).AppendRoutes(env.PublicRouter)
-	}
-
 	// Setup our Consul client (if configured)
 	if env.Consul == nil && env.Config.Consul != nil {
 		consulClient, err := consul.NewConsulClient(env.Logger, env.Config.Consul)
@@ -184,6 +176,21 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		return nil, fmt.Errorf("unable to create file pipeline: %v", err)
 	}
 	env.FileReceiver = fileReceiver
+
+	// router
+	if env.PublicRouter == nil {
+		env.PublicRouter = mux.NewRouter()
+
+		// append HTTP routes
+		web.NewFilesController(env.Config.Logger, env.Config.Inbound.HTTP, httpFiles).AppendRoutes(env.PublicRouter)
+
+		// shard mapping HTTP routes
+		shardMappingService, err := shards.NewShardMappingService(stime.NewStaticTimeService(), env.Config.Logger, shardRepository)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create shard mapping service: %v", err)
+		}
+		shards.NewShardMappingController(env.Config.Logger, shardMappingService).AppendRoutes(env.PublicRouter)
+	}
 
 	// Start our ODFI PeriodicScheduler
 	if env.ODFIFiles == nil && env.Config.Inbound.ODFI != nil {
