@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -25,6 +26,10 @@ func NewFilesystem(root string) (Chest, error) {
 }
 
 func (fs *filesystem) Open(path string) (File, error) {
+	if strings.Contains(path, "..") || strings.HasPrefix(path, "/") {
+		return nil, errors.New("invalid path")
+	}
+
 	path = filepath.Join(fs.root, path)
 
 	fd, err := os.Open(path)
@@ -41,15 +46,23 @@ func (fs *filesystem) Open(path string) (File, error) {
 	}, nil
 }
 
-func (fs *filesystem) Glob(pattern string) ([]string, error) {
+func (fs *filesystem) Glob(pattern string) ([]FileStat, error) {
 	matches, err := filepath.Glob(filepath.Join(fs.root, pattern))
 	if err != nil {
 		return nil, err
 	}
+	var out []FileStat
 	for i := range matches {
-		matches[i] = strings.TrimPrefix(matches[i], fs.root+"/")
+		stat, _ := os.Stat(matches[i])
+		if stat == nil {
+			continue
+		}
+		out = append(out, FileStat{
+			RelativePath: strings.TrimPrefix(matches[i], fs.root+"/"),
+			ModTime:      stat.ModTime(),
+		})
 	}
-	return matches, nil
+	return out, nil
 }
 
 func (fs *filesystem) ReplaceFile(oldpath, newpath string) error {

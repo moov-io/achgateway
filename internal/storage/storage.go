@@ -10,7 +10,7 @@ import (
 
 type Chest interface {
 	Open(path string) (File, error)
-	Glob(pattern string) ([]string, error)
+	Glob(pattern string) ([]FileStat, error)
 
 	ReplaceFile(oldpath, newpath string) error
 	ReplaceDir(oldpath, newpath string) error
@@ -57,12 +57,4 @@ func createBase64AESCryptor(key string) (*cryptfs.AESCryptor, error) {
 		return nil, err
 	}
 	return cryptfs.NewAESCryptor(decoded)
-}
-
-type File interface {
-	Filename() string
-	FullPath() string
-
-	Read([]byte) (int, error)
-	Close() error
 }

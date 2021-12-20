@@ -134,13 +134,13 @@ func (m *filesystemMerging) getNonCanceledMatches(path string) ([]string, error)
 		for j := range negativeMatches {
 			// We match when a "XXX.ach.canceled" filepath exists and so we can't
 			// include "XXX.ach" has a filepath from this function.
-			if strings.HasPrefix(negativeMatches[j], positiveMatches[i]) {
+			if strings.HasPrefix(negativeMatches[j].RelativePath, positiveMatches[i].RelativePath) {
 				exclude = true
 				break
 			}
 		}
 		if !exclude {
-			out = append(out, positiveMatches[i])
+			out = append(out, positiveMatches[i].RelativePath)
 		}
 	}
 	return out, nil

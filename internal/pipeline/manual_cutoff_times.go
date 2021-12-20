@@ -23,12 +23,7 @@ import (
 	"net/http"
 
 	"github.com/moov-io/achgateway/internal/service"
-	"github.com/moov-io/base/admin"
 )
-
-func (fr *FileReceiver) RegisterAdminRoutes(r *admin.Server) {
-	r.AddHandler("/trigger-cutoff", fr.triggerManualCutoff())
-}
 
 type manuallyTriggeredCutoff struct {
 	C chan error
