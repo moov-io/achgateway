@@ -132,7 +132,7 @@ func (fr *FileReceiver) getShardFile() http.HandlerFunc {
 		path := mux.Vars(r)["filepath"]
 		fr.logger.Info().Logf("attempting to load %s", path)
 
-		file, err := chest.Open(path)
+		file, err := chest.Open(fmt.Sprintf("mergable/%s/%s", agg.shard.Name, path))
 		if err != nil {
 			fr.logger.Error().LogErrorf("error reading %s: %w", path, err)
 			w.WriteHeader(http.StatusBadRequest)
