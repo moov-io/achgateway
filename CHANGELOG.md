@@ -1,3 +1,16 @@
+## v0.11.0 (Unreleased)
+
+ADDITIONS
+
+- pipeline: add endpoints for listing pending files prior to upload
+- pipeline: add pending_files metric
+- storage: wire up an encrypted middle layer
+
+IMPROVEMENTS
+
+- pipeline: include shard name on outbound metrics
+- pipeline: pass filesystem operations through storage abstraction layer
+
 ## v0.10.4 (Released 2021-12-08)
 
 BUG FIXES
