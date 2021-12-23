@@ -29,6 +29,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/storage"
+	"github.com/moov-io/base/log"
 )
 
 type listShardsResponse struct {
@@ -69,7 +70,6 @@ func (fr *FileReceiver) listShardFiles() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		agg := fr.lookupAggregator(r)
 		if agg == nil {
-			fr.logger.Warn().Log("shard not found")
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -117,7 +117,6 @@ func (fr *FileReceiver) getShardFile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		agg := fr.lookupAggregator(r)
 		if agg == nil {
-			fr.logger.Warn().Log("shard not found")
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -174,10 +173,17 @@ func marshalFile(contents storage.File) (string, error) {
 func (fr *FileReceiver) lookupAggregator(r *http.Request) *aggregator {
 	shardName := mux.Vars(r)["shardName"]
 	if shardName == "" {
+		fr.logger.Warn().With(log.Fields{
+			"shard": log.String(shardName),
+		}).Log("shard not found")
+
 		return nil
 	}
 	agg, exists := fr.shardAggregators[shardName]
 	if !exists {
+		fr.logger.Warn().With(log.Fields{
+			"shard": log.String(shardName),
+		}).Log("shard not configured")
 		return nil
 	}
 	return agg
