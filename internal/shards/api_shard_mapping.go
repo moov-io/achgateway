@@ -79,14 +79,18 @@ func (c *ShardMappingController) Get(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	shardKey := params["shardKey"]
 
-	shard, err := c.service.Lookup(shardKey)
+	shardName, err := c.service.Lookup(shardKey)
+	shardMapping := service.ShardMapping{
+		ShardKey:  shardKey,
+		ShardName: shardName,
+	}
 	if err != nil {
 		c.logger.LogErrorf("shard mapping not found by shard mapping %s: %v", shardKey, err)
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	jsonResponseStatus(w, http.StatusOK, shard)
+	jsonResponseStatus(w, http.StatusOK, shardMapping)
 }
 
 func (c *ShardMappingController) List(w http.ResponseWriter, r *http.Request) {
