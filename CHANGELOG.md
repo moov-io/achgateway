@@ -8,6 +8,7 @@ ADDITIONS
 
 IMPROVEMENTS
 
+- pipeline: include shard name in pending file logs
 - pipeline: include shard name on outbound metrics
 - pipeline: pass filesystem operations through storage abstraction layer
 
