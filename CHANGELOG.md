@@ -1,10 +1,11 @@
-## v0.11.0 (Unreleased)
+## v0.11.0 (Released 2021-12-27)
 
 ADDITIONS
 
 - pipeline: add endpoints for listing pending files prior to upload
 - pipeline: add pending_files metric
 - storage: wire up an encrypted middle layer
+- shard mappings: add endpoints for creating, listing, and getting shard mappings
 
 IMPROVEMENTS
 
