@@ -19,22 +19,36 @@ package shards
 
 import (
 	"fmt"
+	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/base/database"
 )
 
 type MockRepository struct {
-	Shards map[string]string
+	Shards map[string]service.ShardMapping
 }
 
 func NewMockRepository() *MockRepository {
 	return &MockRepository{
-		Shards: make(map[string]string),
+		Shards: make(map[string]service.ShardMapping),
 	}
 }
 
 func (r *MockRepository) Lookup(shardKey string) (string, error) {
-	shardName, exists := r.Shards[shardKey]
-	if exists {
-		return shardName, nil
+	if shard, exists := r.Shards[shardKey]; exists {
+		return shard.ShardName, nil
 	}
 	return "", fmt.Errorf("unknown shardKey=%s", shardKey)
+}
+
+func (r *MockRepository) List() ([]service.ShardMapping, error) {
+	list := make([]service.ShardMapping, 0, len(r.Shards))
+	for _, shard := range r.Shards {
+		list = append(list, shard)
+	}
+	return list, nil
+}
+
+func (r *MockRepository) Add(create service.ShardMapping, run database.RunInTx) error {
+	r.Shards[create.ShardKey] = create
+	return nil
 }

@@ -38,8 +38,13 @@ var (
 
 type Sharding struct {
 	Shards   []Shard
-	Mappings map[string]string
+	Mappings map[string]ShardMapping
 	Default  string
+}
+
+type ShardMapping struct {
+	ShardKey  string
+	ShardName string
 }
 
 func (cfg Sharding) Find(name string) *Shard {
@@ -146,4 +151,17 @@ func (cfg *Shard) FilenameTemplate() string {
 		return strings.TrimSpace(DefaultFilenameTemplate)
 	}
 	return strings.TrimSpace(cfg.OutboundFilenameTemplate)
+}
+
+func (m *ShardMapping) Validate() error {
+	if m == nil {
+		return nil
+	}
+	if m.ShardKey == "" {
+		return errors.New("missing shard key")
+	}
+	if m.ShardName == "" {
+		return errors.New("missing shard name")
+	}
+	return nil
 }
