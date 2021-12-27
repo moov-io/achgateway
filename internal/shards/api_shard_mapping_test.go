@@ -17,8 +17,8 @@ func Test_ShardMapping_CreateAPI(t *testing.T) {
 	}
 
 	_, resp := clientShardMappingCreate(s, create)
-	s.Assert.NotNil(resp)
 	defer resp.Body.Close()
+	s.Assert.NotNil(resp)
 	s.Assert.Equal(201, resp.StatusCode)
 }
 
@@ -30,8 +30,8 @@ func Test_ShardMapping_GetAPI(t *testing.T) {
 	}
 
 	_, resp := clientShardMappingCreate(s, create)
-	s.Assert.NotNil(resp)
 	defer resp.Body.Close()
+	s.Assert.NotNil(resp)
 	s.Assert.Equal(201, resp.StatusCode)
 
 	shardMapping, resp1 := clientShardMappingGet(s, create.ShardKey)
@@ -53,8 +53,10 @@ func Test_ShardMapping_ListAPI(t *testing.T) {
 	}
 
 	_, resp1 := clientShardMappingCreate(s, create1)
+	defer resp1.Body.Close()
 	s.Assert.NotNil(resp1)
 	_, resp2 := clientShardMappingCreate(s, create2)
+	defer resp2.Body.Close()
 	s.Assert.NotNil(resp2)
 
 	shardMappings, resp := clientShardMappingList(s)
