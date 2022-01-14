@@ -22,15 +22,26 @@ func NewFormatter(cfg *service.Output) (Formatter, error) {
 	if cfg == nil || cfg.Format == "" {
 		return &NACHA{}, nil
 	}
-	switch {
-	case strings.EqualFold(cfg.Format, "base64"):
-		return &Base64{}, nil
 
-	case strings.EqualFold(cfg.Format, "encrypted-bytes"):
+	format := strings.ToLower(cfg.Format)
+	lineEnding := "\n"
+	if strings.HasSuffix(format, "-crlf") {
+		lineEnding = "\r\n"
+	}
+
+	switch {
+	case strings.EqualFold(format, "encrypted-bytes"):
 		return &Encrypted{}, nil
 
-	case strings.EqualFold(cfg.Format, "nacha"):
-		return &NACHA{}, nil
+	case strings.HasPrefix(format, "base64"):
+		return &Base64{
+			lineEnding: lineEnding,
+		}, nil
+
+	case strings.HasPrefix(format, "nacha"):
+		return &NACHA{
+			lineEnding: lineEnding,
+		}, nil
 	}
 	return nil, errors.New("unknown output format")
 }

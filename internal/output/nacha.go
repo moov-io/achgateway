@@ -12,10 +12,16 @@ import (
 	"github.com/moov-io/achgateway/internal/transform"
 )
 
-type NACHA struct{}
+type NACHA struct {
+	lineEnding string
+}
 
-func (*NACHA) Format(buf *bytes.Buffer, res *transform.Result) error {
-	if err := ach.NewWriter(buf).Write(res.File); err != nil {
+func (n *NACHA) Format(buf *bytes.Buffer, res *transform.Result) error {
+	w := ach.NewWriter(buf)
+	if n.lineEnding != "" {
+		w.LineEnding = n.lineEnding
+	}
+	if err := w.Write(res.File); err != nil {
 		return fmt.Errorf("unable to buffer ACH file: %v", err)
 	}
 	return nil

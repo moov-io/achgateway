@@ -11,17 +11,21 @@ import (
 	"github.com/moov-io/achgateway/internal/transform"
 )
 
-type Base64 struct{}
+type Base64 struct {
+	lineEnding string
+}
 
 // Format converts any encrypted bytes into standard Base64 encoding. If no encrypted
 // bytes are passed then the file is encoded with NACHA formatting and then Base64 encoded.
-func (*Base64) Format(buf *bytes.Buffer, res *transform.Result) error {
+func (b *Base64) Format(buf *bytes.Buffer, res *transform.Result) error {
 	if len(res.Encrypted) > 0 {
 		buf.WriteString(base64.StdEncoding.EncodeToString(res.Encrypted))
 	} else {
 		var buf2 bytes.Buffer
 
-		nacha := &NACHA{}
+		nacha := &NACHA{
+			lineEnding: b.lineEnding,
+		}
 		if err := nacha.Format(&buf2, res); err != nil {
 			return err
 		}
