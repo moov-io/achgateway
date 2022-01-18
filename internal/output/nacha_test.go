@@ -43,3 +43,20 @@ func TestNACHA(t *testing.T) {
 		t.Errorf("unexpected output:\n%v", s)
 	}
 }
+
+func TestNacha__CRLF(t *testing.T) {
+	enc := &NACHA{
+		lineEnding: "\r\n",
+	}
+
+	var buf bytes.Buffer
+	res := testResult(t)
+
+	if err := enc.Format(&buf, res); err != nil {
+		t.Fatal(err)
+	}
+
+	if s := buf.String(); !strings.Contains(s, "\r\n") {
+		t.Errorf("unexpected output:\n%v", s)
+	}
+}
