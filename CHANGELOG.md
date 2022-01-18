@@ -1,3 +1,9 @@
+## v0.11.1 (Released 2022-01-18)
+
+IMPROVEMENTS
+
+- output: support CR+LF line endings
+
 ## v0.11.0 (Released 2021-12-27)
 
 ADDITIONS
