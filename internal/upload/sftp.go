@@ -59,6 +59,9 @@ func newSFTPTransferAgent(logger log.Logger, cfg *service.UploadAgent) (*SFTPTra
 	}
 
 	_, err := agent.connection()
+	if agent != nil {
+		agent.record(err)
+	}
 
 	return agent, err
 }
