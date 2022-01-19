@@ -32,6 +32,11 @@ var (
 		Name: "sftp_agent_up",
 		Help: "Status of SFTP agent connection",
 	}, []string{"hostname"})
+
+	sftpConnectionRetries = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Name: "sftp_connection_retries",
+		Help: "Counter of SFTP connection retry attempts",
+	}, []string{"hostname"})
 )
 
 type SFTPTransferAgent struct {
@@ -54,6 +59,9 @@ func newSFTPTransferAgent(logger log.Logger, cfg *service.UploadAgent) (*SFTPTra
 	}
 
 	_, err := agent.connection()
+	if agent != nil {
+		agent.record(err)
+	}
 
 	return agent, err
 }
@@ -152,6 +160,9 @@ func sftpConnect(logger log.Logger, cfg service.UploadAgent) (*ssh.Client, io.Wr
 	var err error
 	for i := 0; i < 3; i++ {
 		if client == nil {
+			if i > 0 {
+				sftpConnectionRetries.With("hostname", cfg.SFTP.Hostname).Add(1)
+			}
 			client, err = ssh.Dial("tcp", cfg.SFTP.Hostname, conf) // retry connection
 			time.Sleep(250 * time.Millisecond)
 		}
