@@ -19,10 +19,10 @@ package pipeline
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/base/log"
 )
 
 type manuallyTriggeredCutoff struct {
@@ -48,16 +48,27 @@ func (fr *FileReceiver) triggerManualCutoff() http.HandlerFunc {
 		}
 
 		for _, xfagg := range fr.shardAggregators {
-			waiter, err := processManualCutoff(body.ShardNames, xfagg.shard, xfagg)
+			logger := fr.logger.With(log.Fields{
+				"shard": log.String(xfagg.shard.Name),
+			})
+
+			waiter, err := processManualCutoff(logger, body.ShardNames, xfagg.shard, xfagg)
 			if err != nil {
 				errs.Errors = append(errs.Errors, err.Error())
 				continue
 			}
+			if waiter == nil {
+				logger.Info().Log("skipping manual trigger")
+				continue
+			}
 			if err := <-waiter.C; err != nil {
+				logger.Error().LogErrorf("ERROR when triggering shard: %v", err)
 				if xfagg.alerter != nil {
 					xfagg.alerter.AlertError(err)
 				}
 				errs.Errors = append(errs.Errors, err.Error())
+			} else {
+				logger.Info().Log("successful manual trigger")
 			}
 		}
 
@@ -70,10 +81,12 @@ func (fr *FileReceiver) triggerManualCutoff() http.HandlerFunc {
 	}
 }
 
-func processManualCutoff(shardNames []string, shard service.Shard, xfagg *aggregator) (*manuallyTriggeredCutoff, error) {
+func processManualCutoff(logger log.Logger, shardNames []string, shard service.Shard, xfagg *aggregator) (*manuallyTriggeredCutoff, error) {
 	if !exists(shardNames, shard.Name) {
-		return nil, fmt.Errorf("unexpected shard to process")
+		return nil, nil
 	}
+
+	logger.Info().Log("found shard to manually trigger")
 
 	waiter := manuallyTriggeredCutoff{
 		C: make(chan error, 1),
