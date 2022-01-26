@@ -117,6 +117,7 @@ func TestMerging__writeACHFile(t *testing.T) {
 	// Read the pending file
 	pendingFile, err := m.readFile(filepath.Join("mergable", "testing", fmt.Sprintf("%s.ach", xfer.FileID)))
 	require.NoError(t, err)
+	require.NotNil(t, pendingFile.GetValidation())
 
 	var buf bytes.Buffer
 	err = ach.NewWriter(&buf).Write(pendingFile)
@@ -129,6 +130,8 @@ func TestMerging__writeACHFile(t *testing.T) {
 
 	merged, err := ach.MergeFiles([]*ach.File{pendingFile})
 	require.NoError(t, err)
+	require.Len(t, merged, 1)
+	require.NotNil(t, merged[0].GetValidation())
 
 	buf.Reset() // zero out
 	err = ach.NewWriter(&buf).Write(merged[0])

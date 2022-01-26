@@ -30,7 +30,7 @@ require (
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/minio-go/v6 v6.0.57 // indirect
 	github.com/minio/sha256-simd v1.0.0 // indirect
-	github.com/moov-io/ach v1.12.3-0.20220126000859-61cf353244f7
+	github.com/moov-io/ach v1.12.3-0.20220126194407-fce257ec8b26
 	github.com/moov-io/base v0.27.1
 	github.com/moov-io/cryptfs v0.1.0
 	github.com/ory/dockertest/v3 v3.8.0
