@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	// DefaultFilenameTemplate is paygate's standard filename format for ACH files which are uploaded to an ODFI
+	// DefaultFilenameTemplate is achgateway's standard filename format for ACH files which are uploaded to an ODFI
 	//
 	// The format consists of a few parts: "year month day" timestamp, "hour minute" timestamp, and routing number
 	//

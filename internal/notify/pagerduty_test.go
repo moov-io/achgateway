@@ -20,7 +20,7 @@ func testPagerDutyClient(t *testing.T) *PagerDuty {
 		ID:         "testing",
 		ApiKey:     os.Getenv("PAGERDUTY_API_KEY"),
 		From:       "adam@moov.io",
-		ServiceKey: "PM8YUZY", // paygate
+		ServiceKey: "PM8YUZY", // testing
 	}
 	if cfg.ApiKey == "" {
 		t.Skip("missing PagerDuty api key")

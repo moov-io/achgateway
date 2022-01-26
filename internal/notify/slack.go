@@ -87,7 +87,7 @@ func (s *Slack) send(msg string) error {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", fmt.Sprintf("moov/paygate %v slack notifier", achgateway.Version))
+	req.Header.Set("User-Agent", fmt.Sprintf("moov/achgateway %v slack notifier", achgateway.Version))
 
 	resp, err := s.client.Do(req)
 	if err != nil {

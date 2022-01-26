@@ -344,7 +344,7 @@ $ curl -XPUT http://localhost:9092/trigger-inbound
 
 ## Prometheus Metrics
 
-PayGate emits Prometheus metrics on the admin HTTP server at `/metrics`. Typically [Alertmanager](https://github.com/prometheus/alertmanager) is set up to aggregate the metrics and alert teams.
+ACHGateway emits Prometheus metrics on the admin HTTP server at `/metrics`. Typically [Alertmanager](https://github.com/prometheus/alertmanager) is set up to aggregate the metrics and alert teams.
 
 ### HTTP Server
 
