@@ -85,14 +85,6 @@ func TestMerging__writeACHFile(t *testing.T) {
 			Name: "testing",
 		},
 		storage: fs,
-		cfg: service.UploadAgents{
-			Merging: service.Merging{
-				ValidateOpts: &ach.ValidateOpts{
-					BypassOriginValidation:      true,
-					BypassDestinationValidation: true,
-				},
-			},
-		},
 	}
 
 	file, err := ach.ReadFile(filepath.Join("..", "..", "testdata", "ppd-debit.ach"))

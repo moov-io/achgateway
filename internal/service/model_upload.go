@@ -24,7 +24,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/mask"
 	"github.com/moov-io/achgateway/internal/storage"
 )
@@ -224,7 +223,6 @@ type Merging struct {
 	Directory string // fallback config for Storage.Filesystem.Directory
 
 	FlattenBatches *FlattenBatches
-	ValidateOpts   *ach.ValidateOpts
 }
 
 type FlattenBatches struct{}
