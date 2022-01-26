@@ -168,7 +168,13 @@ func (m *filesystemMerging) readFile(path string) (*ach.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	f, err := ach.NewReader(file).Read()
+
+	r := ach.NewReader(file)
+	if m.cfg.Merging.ValidateOpts != nil {
+		r.SetValidation(m.cfg.Merging.ValidateOpts)
+	}
+
+	f, err := r.Read()
 	if err != nil {
 		return nil, err
 	}
