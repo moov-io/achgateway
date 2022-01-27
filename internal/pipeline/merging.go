@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -91,14 +92,32 @@ func (m *filesystemMerging) HandleXfer(xfer incoming.ACHFile) error {
 }
 
 func (m *filesystemMerging) writeACHFile(xfer incoming.ACHFile) error {
+	// First, write the Nacha formatted file to disk
 	var buf bytes.Buffer
 	if err := ach.NewWriter(&buf).Write(xfer.File); err != nil {
 		return err
 	}
-
 	path := filepath.Join("mergable", m.shard.Name, fmt.Sprintf("%s.ach", xfer.FileID))
 	if err := m.storage.WriteFile(path, buf.Bytes()); err != nil {
 		return err
+	}
+
+	// Second, write ValidateOpts to disk as well
+	if opts := xfer.File.GetValidation(); opts != nil {
+		buf.Reset()
+		if err := json.NewEncoder(&buf).Encode(opts); err != nil {
+			m.logger.Warn().With(log.Fields{
+				"fileID":   log.String(xfer.FileID),
+				"shardKey": log.String(xfer.ShardKey),
+			}).Logf("ERROR encoding ValidateOpts: %v", err)
+		}
+		path := filepath.Join("mergable", m.shard.Name, fmt.Sprintf("%s.json", xfer.FileID))
+		if err := m.storage.WriteFile(path, buf.Bytes()); err != nil {
+			m.logger.Warn().With(log.Fields{
+				"fileID":   log.String(xfer.FileID),
+				"shardKey": log.String(xfer.ShardKey),
+			}).Logf("ERROR writing ValidateOpts: %v", err)
+		}
 	}
 
 	return nil
@@ -168,10 +187,29 @@ func (m *filesystemMerging) readFile(path string) (*ach.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	f, err := ach.NewReader(file).Read()
+	if file != nil {
+		defer file.Close()
+	}
+
+	r := ach.NewReader(file)
+
+	// Attempt to read ValidateOpts
+	optsFile, _ := m.storage.Open(strings.Replace(path, ".ach", ".json", -1))
+	if optsFile != nil {
+		defer optsFile.Close()
+
+		var opts ach.ValidateOpts
+		json.NewDecoder(optsFile).Decode(&opts)
+
+		r.SetValidation(&opts)
+	}
+
+	// Parse the Nacha formatted file
+	f, err := r.Read()
 	if err != nil {
 		return nil, err
 	}
+
 	return &f, nil
 }
 

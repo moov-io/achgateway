@@ -18,6 +18,7 @@
 package pipeline
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -25,8 +26,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/moov-io/ach"
+	"github.com/moov-io/achgateway/internal/incoming"
+	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/storage"
+	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base"
+	"github.com/moov-io/base/log"
 
 	"github.com/stretchr/testify/require"
 )
@@ -66,4 +72,64 @@ func TestMerging__getNonCanceledMatches(t *testing.T) {
 	if strings.Contains(matches[0], canceled) {
 		t.Errorf("unexpected match: %v", matches[0])
 	}
+}
+
+func TestMerging__writeACHFile(t *testing.T) {
+	dir := t.TempDir()
+	fs, err := storage.NewFilesystem(dir)
+	require.NoError(t, err)
+
+	m := &filesystemMerging{
+		logger: log.NewNopLogger(),
+		shard: service.Shard{
+			Name: "testing",
+		},
+		storage: fs,
+	}
+
+	file, err := ach.ReadFile(filepath.Join("..", "..", "testdata", "ppd-debit.ach"))
+	require.NoError(t, err)
+
+	file.Header.ImmediateOrigin = "ABCDEFGHIJ"
+	file.Header.ImmediateDestination = "123456780"
+
+	xfer := models.QueueACHFile{
+		FileID:   base.ID(),
+		ShardKey: "testing",
+		File:     file,
+	}
+	xfer.SetValidation(&ach.ValidateOpts{
+		BypassOriginValidation:      true,
+		BypassDestinationValidation: true,
+	})
+
+	err = m.HandleXfer(incoming.ACHFile(xfer))
+	require.NoError(t, err)
+
+	// Read the pending file
+	pendingFile, err := m.readFile(filepath.Join("mergable", "testing", fmt.Sprintf("%s.ach", xfer.FileID)))
+	require.NoError(t, err)
+	require.NotNil(t, pendingFile.GetValidation())
+
+	var buf bytes.Buffer
+	err = ach.NewWriter(&buf).Write(pendingFile)
+	require.NoError(t, err)
+
+	// Verify the file pending contents
+	require.True(t, bytes.HasPrefix(buf.Bytes(), []byte("101 123456780ABCDEFGHIJ")))
+	require.Equal(t, "ABCDEFGHIJ", pendingFile.Header.ImmediateOrigin)
+	require.Equal(t, "123456780", pendingFile.Header.ImmediateDestination)
+
+	merged, err := ach.MergeFiles([]*ach.File{pendingFile})
+	require.NoError(t, err)
+	require.Len(t, merged, 1)
+	require.NotNil(t, merged[0].GetValidation())
+
+	buf.Reset() // zero out
+	err = ach.NewWriter(&buf).Write(merged[0])
+	require.NoError(t, err)
+
+	require.True(t, bytes.HasPrefix(buf.Bytes(), []byte("101 123456780ABCDEFGHIJ")))
+	require.Equal(t, "ABCDEFGHIJ", merged[0].Header.ImmediateOrigin)
+	require.Equal(t, "123456780", merged[0].Header.ImmediateDestination)
 }
