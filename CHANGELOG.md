@@ -1,3 +1,18 @@
+## v0.12.0 (Released 2022-01-27)
+
+IMPROVEMENTS
+
+- pipeline: close files opened within merging
+- pipeline: save ValidateOpts alongside each file for later merging
+- pipeline: update moov-io/ach and verify ValidateOpts are persisted
+- pipeline: pass through ACH ValidateOpts when merging files
+- pipeline: add a test and logging for filtering manual cutoffs
+- upload: record SFTP retry attempts
+
+BUILD
+
+- build: update moov-io/ach to v1.13.0
+
 ## v0.11.1 (Released 2022-01-18)
 
 IMPROVEMENTS
