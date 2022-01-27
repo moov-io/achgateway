@@ -105,11 +105,18 @@ func (m *filesystemMerging) writeACHFile(xfer incoming.ACHFile) error {
 	// Second, write ValidateOpts to disk as well
 	if opts := xfer.File.GetValidation(); opts != nil {
 		buf.Reset()
-		json.NewEncoder(&buf).Encode(opts)
-
+		if err := json.NewEncoder(&buf).Encode(opts); err != nil {
+			m.logger.Warn().With(log.Fields{
+				"fileID":   log.String(xfer.FileID),
+				"shardKey": log.String(xfer.ShardKey),
+			}).Logf("ERROR encoding ValidateOpts: %v", err)
+		}
 		path := filepath.Join("mergable", m.shard.Name, fmt.Sprintf("%s.json", xfer.FileID))
 		if err := m.storage.WriteFile(path, buf.Bytes()); err != nil {
-			m.logger.Warn().Logf("ERROR writing ValidateOpts: %v", err)
+			m.logger.Warn().With(log.Fields{
+				"fileID":   log.String(xfer.FileID),
+				"shardKey": log.String(xfer.ShardKey),
+			}).Logf("ERROR writing ValidateOpts: %v", err)
 		}
 	}
 
