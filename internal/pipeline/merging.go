@@ -180,12 +180,17 @@ func (m *filesystemMerging) readFile(path string) (*ach.File, error) {
 	if err != nil {
 		return nil, err
 	}
+	if file != nil {
+		defer file.Close()
+	}
 
 	r := ach.NewReader(file)
 
 	// Attempt to read ValidateOpts
 	optsFile, _ := m.storage.Open(strings.Replace(path, ".ach", ".json", -1))
 	if optsFile != nil {
+		defer optsFile.Close()
+
 		var opts ach.ValidateOpts
 		json.NewDecoder(optsFile).Decode(&opts)
 
