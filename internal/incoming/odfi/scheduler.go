@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/moov-io/achgateway/internal/alerting"
 	"github.com/moov-io/achgateway/internal/consul"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/upload"
@@ -50,6 +51,8 @@ type PeriodicScheduler struct {
 	consul     *consul.Client
 	downloader Downloader
 	processors Processors
+
+	alerter alerting.Alerter
 }
 
 func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, consul *consul.Client, processors Processors) (Scheduler, error) {
@@ -60,6 +63,11 @@ func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, consul *consul
 	dl, err := NewDownloader(logger, cfg.Inbound.ODFI.Storage)
 	if err != nil {
 		return nil, err
+	}
+
+	alerter, err := alerting.NewAlerter(cfg.Errors)
+	if err != nil {
+		return nil, fmt.Errorf("ERROR creating alerter: %v", err)
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
@@ -76,6 +84,7 @@ func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, consul *consul
 		processors:     processors,
 		shutdown:       ctx,
 		shutdownFunc:   cancelFunc,
+		alerter:        alerter,
 	}, nil
 }
 
@@ -126,6 +135,8 @@ func (s *PeriodicScheduler) tickAll() error {
 			s.logger.Info().Logf("starting odfi periodic processing for %s", shard.Name)
 			err := s.tick(shard)
 			if err != nil {
+				// Push this alert outside achgateway
+				s.alertOnError(err)
 				s.logger.Warn().Logf("error with odfi periodic processing: %v", err)
 			} else {
 				s.logger.Info().Logf("finished odfi periodic processing for %s", shard.Name)
@@ -145,7 +156,7 @@ func (s *PeriodicScheduler) tick(shard *service.Shard) error {
 	// Download and process files
 	dl, err := s.downloader.CopyFilesFromRemote(agent)
 	if err != nil {
-		return fmt.Errorf("ERROR: problem moving files: %v", err)
+		return fmt.Errorf("ERROR: problem copying files: %v", err)
 	}
 
 	// Setup presistor files into our configured audit trail
@@ -174,4 +185,16 @@ func (s *PeriodicScheduler) tick(shard *service.Shard) error {
 		return dl.deleteFiles()
 	}
 	return dl.deleteEmptyDirs(agent)
+}
+
+func (s *PeriodicScheduler) alertOnError(err error) {
+	if s == nil || s.alerter == nil {
+		return
+	}
+	if err == nil {
+		return
+	}
+	if err := s.alerter.AlertError(err); err != nil {
+		s.logger.LogErrorf("ERROR sending alert: %v", err)
+	}
 }
