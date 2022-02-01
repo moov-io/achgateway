@@ -1,3 +1,9 @@
+## v0.12.1 (Released 2022-02-01)
+
+IMPROVEMENTS
+
+- pipeline: wire through error alerting struct
+
 ## v0.12.0 (Released 2022-01-27)
 
 IMPROVEMENTS
