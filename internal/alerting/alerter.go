@@ -16,20 +16,23 @@ type Alerter interface {
 	AlertError(err error) error
 }
 
-type PagerDuty struct {
-	client     *pagerduty.Client
-	routingKey string
+type MockAlerter struct{}
+
+func (mn *MockAlerter) AlertError(e error) error {
+	return nil
 }
 
 func NewAlerter(cfg service.ErrorAlerting) (Alerter, error) {
 	switch {
 	case cfg.PagerDuty != nil:
 		return NewPagerDutyAlerter(cfg.PagerDuty)
-	case cfg.Mock != nil && cfg.Mock.Enabled:
-		return &MockAlerter{}, nil
 	}
+	return &MockAlerter{}, nil
+}
 
-	return nil, errors.New("no configurations found to create alerter")
+type PagerDuty struct {
+	client     *pagerduty.Client
+	routingKey string
 }
 
 func NewPagerDutyAlerter(cfg *service.PagerDutyAlerting) (*PagerDuty, error) {
@@ -44,6 +47,10 @@ func NewPagerDutyAlerter(cfg *service.PagerDutyAlerting) (*PagerDuty, error) {
 }
 
 func (pd *PagerDuty) AlertError(e error) error {
+	if e == nil {
+		return nil
+	}
+
 	details := make(map[string]string)
 
 	hostName, err := os.Hostname()

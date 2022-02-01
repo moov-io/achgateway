@@ -24,25 +24,20 @@ import (
 
 type ErrorAlerting struct {
 	PagerDuty *PagerDutyAlerting
-	Mock      *MockAlerting
 }
 
 func (n ErrorAlerting) Validate() error {
-	if n.PagerDuty == nil && n.Mock == nil {
-		return errors.New("error alerting for at least one service should be configured")
-	}
-
 	if n.PagerDuty != nil {
 		if err := n.PagerDuty.Validate(); err != nil {
 			return fmt.Errorf("pager duty config: %v", err)
 		}
 	}
-
 	return nil
 }
 
 type PagerDutyAlerting struct {
 	ApiKey string
+
 	// To send an alert event we need to provide the value of
 	// the Integration Key (add API integration to service in PD to get it)
 	// as RoutingKey
@@ -57,8 +52,4 @@ func (cfg PagerDutyAlerting) Validate() error {
 		return errors.New("pagerduty error alerting: routingKey is missing")
 	}
 	return nil
-}
-
-type MockAlerting struct {
-	Enabled bool
 }

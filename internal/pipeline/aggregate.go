@@ -65,6 +65,7 @@ func newAggregator(
 	eventEmitter events.Emitter,
 	shard service.Shard,
 	uploadAgents service.UploadAgents,
+	errorAlerting service.ErrorAlerting,
 ) (*aggregator, error) {
 	merger, err := NewMerging(logger, consul, shard, uploadAgents)
 	if err != nil {
@@ -100,6 +101,11 @@ func newAggregator(
 		return nil, fmt.Errorf("error creating cutoffs: %v", err)
 	}
 
+	alerter, err := alerting.NewAlerter(errorAlerting)
+	if err != nil {
+		return nil, fmt.Errorf("error setting up alerter: %v", err)
+	}
+
 	return &aggregator{
 		logger:                logger,
 		eventEmitter:          eventEmitter,
@@ -111,6 +117,7 @@ func newAggregator(
 		auditStorage:          auditStorage,
 		preuploadTransformers: preuploadTransformers,
 		outputFormatter:       outputFormatter,
+		alerter:               alerter,
 	}, nil
 }
 
@@ -121,12 +128,7 @@ func (xfagg *aggregator) Start(ctx context.Context) {
 		case tt := <-xfagg.cutoffs.C:
 			if err := xfagg.withEachFile(tt); err != nil {
 				err = xfagg.logger.LogErrorf("merging files: %v", err).Err()
-
-				if xfagg.alerter != nil {
-					if err := xfagg.alerter.AlertError(err); err != nil {
-						xfagg.logger.LogErrorf("sending alert: %v", err)
-					}
-				}
+				xfagg.alertOnError(err)
 			}
 
 		// manually trigger cutoffs
@@ -317,4 +319,16 @@ func (xfagg *aggregator) notifyAfterUpload(filename string, file *ach.File, agen
 	}
 
 	return nil
+}
+
+func (xfagg *aggregator) alertOnError(err error) {
+	if xfagg == nil || xfagg.alerter == nil {
+		return
+	}
+	if err == nil {
+		return
+	}
+	if err := xfagg.alerter.AlertError(err); err != nil {
+		xfagg.logger.LogErrorf("ERROR sending alert: %v", err)
+	}
 }

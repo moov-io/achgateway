@@ -63,9 +63,7 @@ func (fr *FileReceiver) triggerManualCutoff() http.HandlerFunc {
 			}
 			if err := <-waiter.C; err != nil {
 				logger.Error().LogErrorf("ERROR when triggering shard: %v", err)
-				if xfagg.alerter != nil {
-					xfagg.alerter.AlertError(err)
-				}
+				xfagg.alertOnError(err)
 				errs.Errors = append(errs.Errors, err.Error())
 			} else {
 				logger.Info().Log("successful manual trigger")
