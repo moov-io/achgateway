@@ -318,7 +318,8 @@ func (agent *SFTPTransferAgent) UploadFile(f File) error {
 
 	// Take the base of f.Filename and our (out of band) OutboundPath to avoid accepting a write like '../../../../etc/passwd'.
 	pathToWrite := filepath.Join(agent.cfg.Paths.Outbound, filepath.Base(f.Filename))
-	fd, err := conn.Create(pathToWrite)
+
+	fd, err := conn.OpenFile(pathToWrite, os.O_WRONLY|os.O_CREATE|os.O_TRUNC)
 	if err != nil {
 		return fmt.Errorf("sftp: problem creating %s: %v", pathToWrite, err)
 	}
