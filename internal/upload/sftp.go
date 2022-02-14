@@ -306,11 +306,13 @@ func (agent *SFTPTransferAgent) UploadFile(f File) error {
 		return err
 	}
 
-	// Create OutboundPath if it doesn't exist
-	info, err := conn.Stat(agent.cfg.Paths.Outbound)
-	if info == nil || (err != nil && os.IsNotExist(err)) {
-		if err := conn.Mkdir(agent.cfg.Paths.Outbound); err != nil {
-			return fmt.Errorf("sftp: problem creating parent dir %s: %v", agent.cfg.Paths.Outbound, err)
+	// Create OutboundPath if it doesn't exist and we're told to create it
+	if agent.cfg.SFTP != nil && !agent.cfg.SFTP.SkipDirectoryCreation {
+		info, err := conn.Stat(agent.cfg.Paths.Outbound)
+		if info == nil || (err != nil && os.IsNotExist(err)) {
+			if err := conn.Mkdir(agent.cfg.Paths.Outbound); err != nil {
+				return fmt.Errorf("sftp: problem creating parent dir %s: %v", agent.cfg.Paths.Outbound, err)
+			}
 		}
 	}
 
