@@ -218,6 +218,7 @@ ACHGateway:
         # Sets the maximum size of the payload, measured in bytes.
         # Try lowering this on "failed to send packet header: EOF" errors.
         [ MaxPacketSize: <number> | default = 20480 ]
+        [ SkipDirectoryCreation: <boolean> | default = false ]
       Paths:
         # These paths point to directories on the remote FTP/SFTP server.
         Inbound: <filename>

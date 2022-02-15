@@ -1,3 +1,14 @@
+## v0.13.0 (Released 2022-02-15)
+
+ADDITIONS
+
+- upload: add a config (`SkipDirectoryCreation bool`) for ensuring directories prior to upload
+
+IMPROVEMENTS
+
+- upload: include full write path in error
+- upload: reduce permissions needed when creating files (request `os.O_WRONLY` instead of `os.O_RDWR`)
+
 ## v0.12.1 (Released 2022-02-01)
 
 IMPROVEMENTS
