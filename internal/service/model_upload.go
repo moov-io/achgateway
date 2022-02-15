@@ -143,6 +143,10 @@ type SFTP struct {
 	DialTimeout           time.Duration
 	MaxConnectionsPerFile int
 	MaxPacketSize         int
+
+	// SkipDirectoryCreation will configure achgateway to create
+	// directories on the remote server prior to uploading files.
+	SkipDirectoryCreation bool
 }
 
 func (cfg *SFTP) MarshalJSON() ([]byte, error) {
@@ -157,6 +161,8 @@ func (cfg *SFTP) MarshalJSON() ([]byte, error) {
 		DialTimeout           time.Duration
 		MaxConnectionsPerFile int
 		MaxPacketSize         int
+
+		SkipDirectoryCreation bool
 	}
 	return json.Marshal(Aux{
 		Hostname: cfg.Hostname,
@@ -169,6 +175,8 @@ func (cfg *SFTP) MarshalJSON() ([]byte, error) {
 		DialTimeout:           cfg.DialTimeout,
 		MaxConnectionsPerFile: cfg.MaxConnectionsPerFile,
 		MaxPacketSize:         cfg.MaxPacketSize,
+
+		SkipDirectoryCreation: cfg.SkipDirectoryCreation,
 	})
 }
 
