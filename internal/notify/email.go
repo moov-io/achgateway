@@ -139,10 +139,25 @@ func sendEmail(cfg *service.Email, dialer *gomail.Dialer, filename, body string)
 	m.SetHeader("Subject", fmt.Sprintf("%s uploaded by %s", filename, cfg.CompanyName))
 	m.SetBody("text/plain", body)
 
-	if err := dialer.DialAndSend(context.Background(), m); err != nil {
-		return err
+	maxRetries := 3
+	if cfg.MaxRetries > 0 {
+		maxRetries = cfg.MaxRetries
 	}
-	return nil
+
+	var outErr error
+	for tries := 1; tries <= maxRetries; tries++ {
+		outErr = dialer.DialAndSend(context.Background(), m)
+		if outErr != nil {
+			if strings.Contains(outErr.Error(), "i/o timeout") {
+				time.Sleep(250 * time.Millisecond)
+				continue
+			}
+			return outErr
+		} else {
+			return nil
+		}
+	}
+	return outErr
 }
 
 func countEntries(file *ach.File) int {
