@@ -117,6 +117,7 @@ type Email struct {
 	//
 	// Example: smtps://user:pass@localhost:1025/?insecure_skip_verify=true
 	ConnectionURI string
+	MaxRetries    int
 
 	Template    string
 	CompanyName string
