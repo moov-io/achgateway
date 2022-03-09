@@ -17,14 +17,22 @@ import (
 // CutoffTimes is a time.Ticker which fires on banking days to trigger processing
 // events (like end-of-day, or same-day ACH).
 type CutoffTimes struct {
-	C chan time.Time
+	C chan *Day
 
 	sched *cron.Cron
 }
 
+type Day struct {
+	Time time.Time
+
+	IsBankingDay bool
+	IsHoliday    bool
+	IsWeekend    bool
+}
+
 func ForCutoffTimes(tz string, timestamps []string) (*CutoffTimes, error) {
 	ct := &CutoffTimes{
-		C:     make(chan time.Time),
+		C:     make(chan *Day),
 		sched: cron.New(),
 	}
 	if err := ct.registerCutoffs(tz, timestamps); err != nil {
@@ -49,7 +57,12 @@ func (ct *CutoffTimes) Stop() {
 func (ct *CutoffTimes) maybeTick(location *time.Location) {
 	now := base.Now(location)
 	if !now.IsWeekend() && now.IsBankingDay() {
-		ct.C <- now.Time
+		ct.C <- &Day{
+			Time:         now.Time,
+			IsBankingDay: now.IsBankingDay(),
+			IsHoliday:    now.IsHoliday(),
+			IsWeekend:    now.IsWeekend(),
+		}
 	}
 }
 

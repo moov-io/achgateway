@@ -111,6 +111,10 @@ func (mailer *Email) Critical(msg *Message) error {
 }
 
 func marshalEmail(cfg *service.Email, msg *Message) (string, error) {
+	if msg.Contents != "" {
+		return msg.Contents, nil
+	}
+
 	data := EmailTemplateData{
 		CompanyName: cfg.CompanyName,
 		Verb:        string(msg.Direction),

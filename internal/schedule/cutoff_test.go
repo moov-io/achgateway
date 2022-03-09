@@ -26,9 +26,9 @@ func TestCutoffTimes(t *testing.T) {
 	require.NoError(t, err)
 	defer cutoffs.Stop()
 
-	tt := <-cutoffs.C // block on channel read
+	day := <-cutoffs.C // block on channel read
 
-	expected := tt.Format("15:04")
+	expected := day.Time.Format("15:04")
 	if next != expected {
 		t.Errorf("next=%q expected=%q", next, expected)
 	}

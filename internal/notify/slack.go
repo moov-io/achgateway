@@ -51,6 +51,10 @@ func (s *Slack) Critical(msg *Message) error {
 }
 
 func marshalSlackMessage(status uploadStatus, msg *Message) string {
+	if msg.Contents != "" {
+		return msg.Contents
+	}
+
 	slackMsg := fmt.Sprintf("%s %s of %s", status, msg.Direction, msg.Filename)
 	if msg.Hostname != "" {
 		if msg.Direction == Upload {
