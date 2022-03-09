@@ -1,3 +1,10 @@
+## v0.13.1 (Released 2022-03-09)
+
+IMPROVEMENTS
+
+- notify: retry temporary email send failures
+- pipeline: alert when we fail notifyAfterUpload
+
 ## v0.13.0 (Released 2022-02-15)
 
 ADDITIONS
