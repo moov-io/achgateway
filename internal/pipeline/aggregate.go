@@ -268,7 +268,7 @@ func (xfagg *aggregator) uploadFile(index int, agent upload.Agent, res *transfor
 
 	// Send Slack/PD or whatever notifications after the file is uploaded
 	if err := xfagg.notifyAfterUpload(filename, res.File, agent, err); err != nil {
-		xfagg.logger.LogError(err)
+		xfagg.alertOnError(xfagg.logger.LogError(err).Err())
 	}
 
 	// record our upload metrics
