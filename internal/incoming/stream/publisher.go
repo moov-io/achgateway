@@ -37,7 +37,7 @@ func Topic(logger log.Logger, cfg *service.Config) (*pubsub.Topic, error) {
 
 func createKafkaTopic(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Topic, error) {
 	config := kafkapubsub.MinimalConfig()
-	config.Version = sarama.V2_5_0_0
+	config.Version = minKafkaVersion
 	config.Net.TLS.Enable = cfg.TLS
 
 	config.Net.SASL.Enable = cfg.Key != ""

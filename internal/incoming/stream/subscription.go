@@ -51,7 +51,7 @@ func Subscription(logger log.Logger, cfg *service.Config) (*pubsub.Subscription,
 
 func createKafkaSubscription(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Subscription, error) {
 	config := kafkapubsub.MinimalConfig()
-	config.Version = sarama.V2_5_0_0
+	config.Version = minKafkaVersion
 	config.Net.TLS.Enable = cfg.TLS
 
 	config.Net.SASL.Enable = cfg.Key != ""
