@@ -90,7 +90,7 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	if env.Config == nil {
 		cfg, err := LoadConfig(env.Logger)
 		if err != nil {
-			return nil, err
+			return env, err
 		}
 		env.Config = cfg
 	}
@@ -101,7 +101,7 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		db, close, err := initializeDatabase(env.Logger, env.Config.Database)
 		if err != nil {
 			close()
-			return nil, err
+			return env, err
 		}
 		env.DB = db
 
@@ -132,14 +132,14 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	}
 	httpFiles, err := stream.Topic(env.Logger, inmemConfig)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create http files: %v", err)
+		return env, fmt.Errorf("unable to create http files: %v", err)
 	}
 
 	// Setup our Consul client (if configured)
 	if env.Consul == nil && env.Config.Consul != nil {
 		consulClient, err := consul.NewConsulClient(env.Logger, env.Config.Consul)
 		if err != nil {
-			return nil, err
+			return env, err
 		}
 		env.Consul = consulClient
 		env.Logger.Info().Logf("created consul client for %s", env.Config.Consul.Address)
@@ -155,7 +155,7 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	if env.Events == nil && env.Config.Events != nil {
 		emitter, err := events.NewEmitter(env.Logger, env.Config.Events)
 		if err != nil {
-			return nil, err
+			return env, err
 		}
 		env.Events = emitter
 	}
@@ -163,17 +163,17 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	// file pipeline
 	httpSub, err := stream.Subscription(env.Logger, inmemConfig)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create http files subscription: %v", err)
+		return env, fmt.Errorf("unable to create http files subscription: %v", err)
 	}
 	streamSub, err := stream.Subscription(env.Logger, env.Config)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create stream files subscription: %v", err)
+		return env, fmt.Errorf("unable to create stream files subscription: %v", err)
 	}
 
 	shardRepository := shards.NewRepository(env.DB, env.Config.Sharding.Mappings)
 	fileReceiver, err := pipeline.Start(ctx, env.Logger, env.Config, env.Consul, shardRepository, httpSub, streamSub)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create file pipeline: %v", err)
+		return env, fmt.Errorf("unable to create file pipeline: %v", err)
 	}
 	env.FileReceiver = fileReceiver
 
@@ -187,7 +187,7 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		// shard mapping HTTP routes
 		shardMappingService, err := shards.NewShardMappingService(stime.NewStaticTimeService(), env.Config.Logger, shardRepository)
 		if err != nil {
-			return nil, fmt.Errorf("unable to create shard mapping service: %v", err)
+			return env, fmt.Errorf("unable to create shard mapping service: %v", err)
 		}
 		shards.NewShardMappingController(env.Config.Logger, shardMappingService).AppendRoutes(env.PublicRouter)
 	}
@@ -203,7 +203,7 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		)
 		odfiFiles, err := odfi.NewPeriodicScheduler(env.Logger, env.Config, env.Consul, processors)
 		if err != nil {
-			return nil, fmt.Errorf("problem creating odfi periodic scheduler: %v", err)
+			return env, fmt.Errorf("problem creating odfi periodic scheduler: %v", err)
 		}
 		env.Logger.Info().Logf("starting ODFI periodic scheduler interval=%v", env.Config.Inbound.ODFI.Interval)
 		env.ODFIFiles = odfiFiles
