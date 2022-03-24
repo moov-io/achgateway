@@ -147,7 +147,9 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		prev := env.Shutdown
 		env.Shutdown = func() {
 			prev()
-			env.Consul.Shutdown()
+			if env.Consul != nil {
+				env.Consul.Shutdown()
+			}
 		}
 	}
 
@@ -218,7 +220,9 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		prev := env.Shutdown
 		env.Shutdown = func() {
 			prev()
-			env.ODFIFiles.Shutdown()
+			if env.ODFIFiles != nil {
+				env.ODFIFiles.Shutdown()
+			}
 		}
 	}
 
