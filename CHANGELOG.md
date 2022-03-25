@@ -1,3 +1,11 @@
+## v0.13.2 (Released 2022-03-25)
+
+IMPROVEMENTS
+
+- fix: nil check on some shutdown calls
+- fix: return Environment even with errors during startup
+- incoming/stream: bump min kafka version to v2.6.0
+
 ## v0.13.1 (Released 2022-03-09)
 
 IMPROVEMENTS
