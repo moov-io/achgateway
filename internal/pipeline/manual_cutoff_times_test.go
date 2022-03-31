@@ -18,8 +18,17 @@
 package pipeline
 
 import (
+	"encoding/json"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"sync"
 	"testing"
 
+	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/base/log"
+
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,4 +43,81 @@ func TestManualCutoffs_filter(t *testing.T) {
 
 	reqNames = append(reqNames, "testing")
 	require.True(t, exists(reqNames, cfgName))
+}
+
+func TestFileReceiver__ManualCutoff(t *testing.T) {
+	fr, wg := setupFileReceiver(t, nil) // waiter returns 'nil' error
+
+	router := mux.NewRouter()
+	router.Path("/trigger-cutoff").HandlerFunc(fr.triggerManualCutoff())
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("PUT", "/trigger-cutoff", nil)
+	router.ServeHTTP(w, req)
+
+	wg.Wait()
+	w.Flush()
+	require.Equal(t, http.StatusOK, w.Code)
+
+	var resp shardResponses
+	err := json.NewDecoder(w.Body).Decode(&resp)
+	require.NoError(t, err)
+
+	require.Len(t, resp.Shards, 1)
+	require.Nil(t, resp.Shards["testing"])
+}
+
+func TestFileReceiver__ManualCutoffErr(t *testing.T) {
+	bad := errors.New("bad thing")
+	fr, wg := setupFileReceiver(t, bad) // waiter returns error
+
+	router := mux.NewRouter()
+	router.Path("/trigger-cutoff").HandlerFunc(fr.triggerManualCutoff())
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("PUT", "/trigger-cutoff", nil)
+	router.ServeHTTP(w, req)
+
+	wg.Wait()
+	w.Flush()
+	require.Equal(t, http.StatusBadRequest, w.Code)
+
+	var resp shardResponses
+	err := json.NewDecoder(w.Body).Decode(&resp)
+	require.NoError(t, err)
+
+	require.Len(t, resp.Shards, 1)
+	require.Equal(t, *resp.Shards["testing"], "bad thing")
+}
+
+func setupFileReceiver(t *testing.T, waiterResponse error) (*FileReceiver, *sync.WaitGroup) {
+	t.Helper()
+
+	fr := &FileReceiver{
+		logger:           log.NewNopLogger(),
+		defaultShardName: "testing",
+		shardAggregators: make(map[string]*aggregator),
+	}
+
+	cutoffTrigger := make(chan manuallyTriggeredCutoff)
+	fr.shardAggregators["testing"] = &aggregator{
+		shard: service.Shard{
+			Name: "testing",
+		},
+		merger:        &MockXferMerging{},
+		cutoffTrigger: cutoffTrigger,
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		select {
+		case waiter := <-cutoffTrigger:
+			waiter.C <- waiterResponse
+			wg.Done()
+		}
+	}()
+
+	return fr, &wg
 }

@@ -33,6 +33,19 @@ type manualCutoffBody struct {
 	ShardNames []string `json:"shardNames"`
 }
 
+type shardResponses struct {
+	Shards map[string]*string `json:"shards"`
+}
+
+func (ss shardResponses) hasErrors() bool {
+	for _, err := range ss.Shards {
+		if err != nil {
+			return true
+		}
+	}
+	return false
+}
+
 func (fr *FileReceiver) triggerManualCutoff() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPut {
@@ -43,8 +56,8 @@ func (fr *FileReceiver) triggerManualCutoff() http.HandlerFunc {
 		var body manualCutoffBody
 		json.NewDecoder(r.Body).Decode(&body)
 
-		var errs struct {
-			Errors []string `json:"errors"`
+		responses := shardResponses{
+			Shards: make(map[string]*string),
 		}
 
 		for _, xfagg := range fr.shardAggregators {
@@ -54,7 +67,8 @@ func (fr *FileReceiver) triggerManualCutoff() http.HandlerFunc {
 
 			waiter, err := processManualCutoff(logger, body.ShardNames, xfagg.shard, xfagg)
 			if err != nil {
-				errs.Errors = append(errs.Errors, err.Error())
+				errString := err.Error()
+				responses.Shards[xfagg.shard.Name] = &errString
 				continue
 			}
 			if waiter == nil {
@@ -64,18 +78,25 @@ func (fr *FileReceiver) triggerManualCutoff() http.HandlerFunc {
 			if err := <-waiter.C; err != nil {
 				logger.Error().LogErrorf("ERROR when triggering shard: %v", err)
 				xfagg.alertOnError(err)
-				errs.Errors = append(errs.Errors, err.Error())
+
+				errString := err.Error()
+				responses.Shards[xfagg.shard.Name] = &errString
+
 			} else {
 				logger.Info().Log("successful manual trigger")
+				responses.Shards[xfagg.shard.Name] = nil
 			}
 		}
 
-		if len(errs.Errors) > 0 {
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			json.NewEncoder(w).Encode(errs)
+		// Write the response headers
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		if responses.hasErrors() {
+			w.WriteHeader(http.StatusBadRequest)
 		} else {
 			w.WriteHeader(http.StatusOK)
 		}
+
+		json.NewEncoder(w).Encode(responses)
 	}
 }
 
