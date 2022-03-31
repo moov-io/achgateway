@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -57,7 +58,8 @@ func (fr *FileReceiver) listShards() http.HandlerFunc {
 }
 
 type listShardFilesResponse struct {
-	Files []listFileResponse `json:"files"`
+	Files          []listFileResponse `json:"files"`
+	SourceHostname string
 }
 
 type listFileResponse struct {
@@ -100,8 +102,11 @@ func (fr *FileReceiver) listShardFiles() http.HandlerFunc {
 				ModTime:  matches[i].ModTime,
 			})
 		}
+
+		hostname, _ := os.Hostname()
 		json.NewEncoder(w).Encode(&listShardFilesResponse{
-			Files: wrapper,
+			Files:          wrapper,
+			SourceHostname: hostname,
 		})
 	}
 }
@@ -111,6 +116,7 @@ type getFileResponse struct {
 	ContentsBase64 string
 	Valid          error
 	ModTime        time.Time
+	SourceHostname string
 }
 
 func (fr *FileReceiver) getShardFile() http.HandlerFunc {
@@ -143,6 +149,7 @@ func (fr *FileReceiver) getShardFile() http.HandlerFunc {
 			return
 		}
 
+		hostname, _ := os.Hostname()
 		contents, err := marshalFile(file)
 
 		json.NewEncoder(w).Encode(getFileResponse{
@@ -150,6 +157,7 @@ func (fr *FileReceiver) getShardFile() http.HandlerFunc {
 			ContentsBase64: contents,
 			Valid:          err,
 			ModTime:        time.Now(),
+			SourceHostname: hostname,
 		})
 	}
 }
