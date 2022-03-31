@@ -112,11 +112,12 @@ func setupFileReceiver(t *testing.T, waiterResponse error) (*FileReceiver, *sync
 	wg.Add(1)
 
 	go func() {
-		select {
-		case waiter := <-cutoffTrigger:
-			waiter.C <- waiterResponse
-			wg.Done()
-		}
+		// block for our waiter
+		waiter := <-cutoffTrigger
+		// mock out XferMerging's processing
+		waiter.C <- waiterResponse
+		// let the main test continue
+		wg.Done()
 	}()
 
 	return fr, &wg
