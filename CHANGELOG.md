@@ -1,3 +1,11 @@
+## v0.14.0 (Released 2022-04-01)
+
+IMPROVEMENTS
+
+- pipeline: return the source hostname when listing pending files
+- pipeline: return the status (error) of each shard after manually triggered
+- pipeline: send holiday notification about skipping processing
+
 ## v0.13.2 (Released 2022-03-25)
 
 IMPROVEMENTS
