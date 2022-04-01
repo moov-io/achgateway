@@ -134,7 +134,7 @@ func (xfagg *aggregator) Start(ctx context.Context) {
 				}
 			}
 			if day.IsHoliday && !day.IsWeekend {
-				xfagg.notifyAboutHoliday(day.Time)
+				xfagg.notifyAboutHoliday(day)
 			}
 
 		// manually trigger cutoffs
@@ -327,16 +327,19 @@ func (xfagg *aggregator) notifyAfterUpload(filename string, file *ach.File, agen
 	return nil
 }
 
-func (xfagg *aggregator) notifyAboutHoliday(today time.Time) {
-	// TODO(adam): Only notify on the first cutoff time
-
+func (xfagg *aggregator) notifyAboutHoliday(day *schedule.Day) {
 	logger := xfagg.logger.With(log.Fields{
 		"shard": log.String(xfagg.shard.Name),
 	})
 
+	if !day.FirstWindow {
+		logger.Info().Log("skipping holiday notification")
+		return
+	}
+
 	uploadAgent := xfagg.uploadAgents.Find(xfagg.shard.UploadAgent)
 	if uploadAgent == nil {
-		logger.Warn().Logf("skipping holiday log for %v", today.Format("2006-01-02"))
+		logger.Warn().Logf("skipping holiday log for %v", day.Time.Format("2006-01-02"))
 		return
 	}
 

@@ -32,6 +32,8 @@ func TestCutoffTimes(t *testing.T) {
 	if next != expected {
 		t.Errorf("next=%q expected=%q", next, expected)
 	}
+
+	require.True(t, day.FirstWindow)
 }
 
 func TestCutoffTimesErr(t *testing.T) {
@@ -47,4 +49,12 @@ func TestCutoffTimesErr(t *testing.T) {
 	if err == nil {
 		t.Error("expected error")
 	}
+}
+
+func TestCutoffTimes__firstCutoff(t *testing.T) {
+	ct, err := ForCutoffTimes("America/New_York", []string{"16:15", "08:30", "12:00"})
+	require.NoError(t, err)
+	defer ct.Stop()
+
+	require.Equal(t, "08:30", ct.firstCutoff)
 }

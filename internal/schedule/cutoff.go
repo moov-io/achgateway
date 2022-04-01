@@ -7,6 +7,7 @@ package schedule
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/moov-io/base"
@@ -19,7 +20,8 @@ import (
 type CutoffTimes struct {
 	C chan *Day
 
-	sched *cron.Cron
+	sched       *cron.Cron
+	firstCutoff string
 }
 
 type Day struct {
@@ -28,6 +30,9 @@ type Day struct {
 	IsBankingDay bool
 	IsHoliday    bool
 	IsWeekend    bool
+
+	// FirstWindow is true when Time is the first cutoff time of the day
+	FirstWindow bool
 }
 
 func ForCutoffTimes(tz string, timestamps []string) (*CutoffTimes, error) {
@@ -35,6 +40,12 @@ func ForCutoffTimes(tz string, timestamps []string) (*CutoffTimes, error) {
 		C:     make(chan *Day),
 		sched: cron.New(),
 	}
+
+	if len(timestamps) > 0 {
+		sort.Strings(timestamps)
+		ct.firstCutoff = timestamps[0]
+	}
+
 	if err := ct.registerCutoffs(tz, timestamps); err != nil {
 		return nil, err
 	}
@@ -62,6 +73,7 @@ func (ct *CutoffTimes) maybeTick(location *time.Location) {
 			IsBankingDay: now.IsBankingDay(),
 			IsHoliday:    now.IsHoliday(),
 			IsWeekend:    now.IsWeekend(),
+			FirstWindow:  now.Format("15:04") == ct.firstCutoff,
 		}
 	}
 }
