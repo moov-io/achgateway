@@ -7,6 +7,7 @@ package schedule
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/moov-io/base"
@@ -17,16 +18,34 @@ import (
 // CutoffTimes is a time.Ticker which fires on banking days to trigger processing
 // events (like end-of-day, or same-day ACH).
 type CutoffTimes struct {
-	C chan time.Time
+	C chan *Day
 
-	sched *cron.Cron
+	sched       *cron.Cron
+	firstCutoff string
+}
+
+type Day struct {
+	Time time.Time
+
+	IsBankingDay bool
+	IsHoliday    bool
+	IsWeekend    bool
+
+	// FirstWindow is true when Time is the first cutoff time of the day
+	FirstWindow bool
 }
 
 func ForCutoffTimes(tz string, timestamps []string) (*CutoffTimes, error) {
 	ct := &CutoffTimes{
-		C:     make(chan time.Time),
+		C:     make(chan *Day),
 		sched: cron.New(),
 	}
+
+	if len(timestamps) > 0 {
+		sort.Strings(timestamps)
+		ct.firstCutoff = timestamps[0]
+	}
+
 	if err := ct.registerCutoffs(tz, timestamps); err != nil {
 		return nil, err
 	}
@@ -49,7 +68,13 @@ func (ct *CutoffTimes) Stop() {
 func (ct *CutoffTimes) maybeTick(location *time.Location) {
 	now := base.Now(location)
 	if !now.IsWeekend() && now.IsBankingDay() {
-		ct.C <- now.Time
+		ct.C <- &Day{
+			Time:         now.Time,
+			IsBankingDay: now.IsBankingDay(),
+			IsHoliday:    now.IsHoliday(),
+			IsWeekend:    now.IsWeekend(),
+			FirstWindow:  now.Format("15:04") == ct.firstCutoff,
+		}
 	}
 }
 

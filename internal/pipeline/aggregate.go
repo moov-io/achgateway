@@ -125,10 +125,16 @@ func (xfagg *aggregator) Start(ctx context.Context) {
 	for {
 		select {
 		// process automated cutoff time triggering
-		case tt := <-xfagg.cutoffs.C:
-			if err := xfagg.withEachFile(tt); err != nil {
-				err = xfagg.logger.LogErrorf("merging files: %v", err).Err()
-				xfagg.alertOnError(err)
+		case day := <-xfagg.cutoffs.C:
+			// Run our regular routines
+			if day.IsBankingDay {
+				if err := xfagg.withEachFile(day.Time); err != nil {
+					err = xfagg.logger.LogErrorf("merging files: %v", err).Err()
+					xfagg.alertOnError(err)
+				}
+			}
+			if day.IsHoliday && !day.IsWeekend {
+				xfagg.notifyAboutHoliday(day)
 			}
 
 		// manually trigger cutoffs
@@ -319,6 +325,40 @@ func (xfagg *aggregator) notifyAfterUpload(filename string, file *ach.File, agen
 	}
 
 	return nil
+}
+
+func (xfagg *aggregator) notifyAboutHoliday(day *schedule.Day) {
+	logger := xfagg.logger.With(log.Fields{
+		"shard": log.String(xfagg.shard.Name),
+	})
+
+	if !day.FirstWindow {
+		logger.Info().Log("skipping holiday notification")
+		return
+	}
+
+	uploadAgent := xfagg.uploadAgents.Find(xfagg.shard.UploadAgent)
+	if uploadAgent == nil {
+		logger.Warn().Logf("skipping holiday log for %v", day.Time.Format("2006-01-02"))
+		return
+	}
+
+	if uploadAgent.Notifications != nil {
+		slackConfigs := xfagg.shard.Notifications.FindSlacks(uploadAgent.Notifications.Slack)
+		for i := range slackConfigs {
+			ss, err := notify.NewSlack(&slackConfigs[i])
+			if err != nil {
+				logger.Error().LogErrorf("ERROR creating slack holiday notifier: %v", err)
+				continue
+			}
+			err = ss.Info(&notify.Message{
+				Contents: "%s is a holiday -- skipping processing",
+			})
+			if err != nil {
+				logger.Error().LogErrorf("ERROR sending holiday notification: %v", err)
+			}
+		}
+	}
 }
 
 func (xfagg *aggregator) alertOnError(err error) {

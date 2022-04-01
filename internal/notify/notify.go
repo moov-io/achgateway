@@ -20,6 +20,9 @@ type Message struct {
 	Filename  string
 	File      *ach.File
 	Hostname  string
+
+	// Contents will be used instead of the above fields
+	Contents string
 }
 
 type Sender interface {
