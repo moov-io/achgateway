@@ -70,7 +70,11 @@ type listFileResponse struct {
 
 func (fr *FileReceiver) listShardFiles() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		agg := fr.lookupAggregator(r)
+		logger := fr.logger.With(log.Fields{
+			"route": log.String("list_files"),
+		})
+
+		agg := fr.lookupAggregator(logger, r)
 		if agg == nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
@@ -78,14 +82,14 @@ func (fr *FileReceiver) listShardFiles() http.HandlerFunc {
 
 		chest := fr.getStorage(agg)
 		if chest == nil {
-			fr.logger.Warn().Logf("storage not found for shard %s", agg.shard.Name)
+			logger.Warn().Logf("storage not found for shard %s", agg.shard.Name)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		matches, err := chest.Glob(fmt.Sprintf("mergable/%s/*", agg.shard.Name))
 		if err != nil {
-			fr.logger.Error().LogErrorf("unable to list %s files: %w", agg.shard.Name, err)
+			logger.Error().LogErrorf("unable to list %s files: %w", agg.shard.Name, err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -121,7 +125,11 @@ type getFileResponse struct {
 
 func (fr *FileReceiver) getShardFile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		agg := fr.lookupAggregator(r)
+		logger := fr.logger.With(log.Fields{
+			"route": log.String("pending_file"),
+		})
+
+		agg := fr.lookupAggregator(logger, r)
 		if agg == nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
@@ -129,22 +137,22 @@ func (fr *FileReceiver) getShardFile() http.HandlerFunc {
 
 		chest := fr.getStorage(agg)
 		if chest == nil {
-			fr.logger.Warn().Logf("storage not found for shard %s", agg.shard.Name)
+			logger.Warn().Logf("storage not found for shard %s", agg.shard.Name)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		path := mux.Vars(r)["filepath"]
-		fr.logger.Info().Logf("attempting to load %s", path)
+		logger.Info().Logf("attempting to load %s", path)
 
 		file, err := chest.Open(fmt.Sprintf("mergable/%s/%s", agg.shard.Name, path))
 		if err != nil {
-			fr.logger.Error().LogErrorf("error reading %s: %w", path, err)
+			logger.Error().LogErrorf("error reading %s: %w", path, err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		if file == nil {
-			fr.logger.Error().Logf("%s not found", path)
+			logger.Error().Logf("%s not found", path)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -178,10 +186,10 @@ func marshalFile(contents storage.File) (string, error) {
 	return base64.StdEncoding.EncodeToString(buf.Bytes()), err
 }
 
-func (fr *FileReceiver) lookupAggregator(r *http.Request) *aggregator {
+func (fr *FileReceiver) lookupAggregator(logger log.Logger, r *http.Request) *aggregator {
 	shardName := mux.Vars(r)["shardName"]
 	if shardName == "" {
-		fr.logger.Warn().With(log.Fields{
+		logger.Warn().With(log.Fields{
 			"shard": log.String(shardName),
 		}).Log("shard not found")
 
@@ -189,7 +197,7 @@ func (fr *FileReceiver) lookupAggregator(r *http.Request) *aggregator {
 	}
 	agg, exists := fr.shardAggregators[shardName]
 	if !exists {
-		fr.logger.Warn().With(log.Fields{
+		logger.Warn().With(log.Fields{
 			"shard": log.String(shardName),
 		}).Log("shard not configured")
 		return nil
