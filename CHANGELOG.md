@@ -1,3 +1,10 @@
+## v0.15.0 (Released 2022-05-03)
+
+ADDITIONS
+
+- pipeline: support passing ach merge conditions through
+   - Note: This moves `FlattenBatches: {}` to under a shard's `Mergable` object. See [the configuration docs](https://github.com/moov-io/achgateway/blob/v0.15.0/docs/CONFIGURATION.md#sharding) for more information.
+
 ## v0.14.0 (Released 2022-04-01)
 
 IMPROVEMENTS
