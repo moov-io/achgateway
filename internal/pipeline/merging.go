@@ -244,7 +244,12 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 	}
 
 	// Combine Batches into one file, force ascending TraceNumbers starting from the first EntryDetail.
-	files, err = ach.MergeFiles(files)
+	// Also allow for custom merge conditions (max dollar amount per file, etc)
+	if m.shard.Mergable.Conditions != nil {
+		files, err = ach.MergeFilesWith(files, *m.shard.Mergable.Conditions)
+	} else {
+		files, err = ach.MergeFiles(files)
+	}
 	if err != nil {
 		el.Add(fmt.Errorf("unable to merge files: %v", err))
 	}
@@ -275,7 +280,7 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 	successfulRemoteWrites := 0
 	for i := range files {
 		// Optionally Flatten Batches
-		if m.cfg.Merging.FlattenBatches != nil {
+		if m.shard.Mergable.FlattenBatches != nil {
 			if file, err := files[i].FlattenBatches(); err != nil {
 				el.Add(err)
 			} else {

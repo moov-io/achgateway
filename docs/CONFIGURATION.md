@@ -157,6 +157,12 @@ ACHGateway:
               KeyFile: <string>
               KeyPassword: <string>
         UploadAgent: <string>
+        Mergable:
+          # If Conditions is nil files are merged until reaching Nacha's limit of 10,000 lines
+          Conditions:
+            MaxLines: <integer>
+            MaxDollarAmount: <integer>
+          FlattenBatches: {}
         OutboundFilenameTemplate: <string>
         Audit:
           ID: <string>
@@ -235,7 +241,6 @@ ACHGateway:
       AllowedIPs: <string>
     Merging:
       Directory: <string>
-      FlattenBatches: {}
     Retry:
       Interval: <duration>
       MaxRetries: <integer>

@@ -229,11 +229,7 @@ type UploadNotifiers struct {
 type Merging struct {
 	Storage   storage.Config
 	Directory string // fallback config for Storage.Filesystem.Directory
-
-	FlattenBatches *FlattenBatches
 }
-
-type FlattenBatches struct{}
 
 type UploadRetry struct {
 	Interval   time.Duration

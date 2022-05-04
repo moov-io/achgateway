@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/moov-io/ach"
 )
 
 var (
@@ -70,6 +72,7 @@ type Shard struct {
 	Cutoffs                  Cutoffs
 	PreUpload                *PreUpload
 	UploadAgent              string
+	Mergable                 MergableConfig
 	OutboundFilenameTemplate string
 	Output                   *Output
 	Notifications            *Notifications
@@ -137,6 +140,13 @@ func (cfg *PreUpload) Validate() error {
 	}
 	return nil
 }
+
+type MergableConfig struct {
+	Conditions     *ach.Conditions
+	FlattenBatches *FlattenBatches
+}
+
+type FlattenBatches struct{}
 
 type Output struct {
 	Format string

@@ -71,7 +71,7 @@ When a cutoff time is triggered there are several steps to be performed for each
 
 1. If self-elected leader
    1. Merge pending files (inside `storage/merging/:key/*.ach`) that do not contain a `*.canceled` file.
-      1. With moov-io/ach's `MergeFiles(...)` function
+      1. With moov-io/ach's `MergeFiles(...)` function (and optional `ach.Conditions` for max dollar amounts in a file, etc)
    1. Optionally `FlattenBatches()` on files and encrypt file contents (e.g. GPG)
    1. Render filename from template, prepare output formatting
    1. Save file to `uploaded/*.ach` inside of our `storage/merging/:key/` directory
