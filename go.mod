@@ -42,29 +42,25 @@ require (
 	github.com/minio/sha256-simd v1.0.0 // indirect
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
 	github.com/moov-io/ach v1.15.1
-	github.com/moov-io/base v0.28.1
+	github.com/moov-io/base v0.29.0
 	github.com/moov-io/cryptfs v0.1.0
 	github.com/ory/dockertest/v3 v3.8.1
 	github.com/ory/mail/v3 v3.0.0
 	github.com/performancecopilot/speed v3.0.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/pkg/sftp v1.13.0
+	github.com/pkg/sftp v1.13.1
 	github.com/prometheus/client_golang v1.12.1
 	github.com/rickar/cal v1.0.5 // indirect
 	github.com/rickar/cal/v2 v2.1.4 // indirect
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sethvargo/go-retry v0.1.0
 	github.com/snowflakedb/glog v0.0.0-20180824191149-f5055e6f21ce // indirect
-	github.com/spf13/viper v1.10.1
+	github.com/spf13/viper v1.11.0
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.1
 	gocloud.dev v0.23.0
 	gocloud.dev/pubsub/kafkapubsub v0.23.0
 	goftp.io/server v0.4.1
-	golang.org/x/crypto v0.0.0-20211202192323-5770296d904e
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
-	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b // indirect
-	golang.org/x/sys v0.0.0-20220307203707-22a9840ba4d7 // indirect
+	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
 	golang.org/x/text v0.3.7
-	google.golang.org/genproto v0.0.0-20220307174427-659dce7fcb03 // indirect
 )
