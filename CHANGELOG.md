@@ -1,3 +1,20 @@
+## v0.15.2 (Released 2022-05-17)
+
+IMPROVEMENTS
+
+- build: run Go tests on macOS and Windows
+- fix: sync, chmod, and then close in SFTP file upload
+- storage: always close files in tests
+- storage: close underlying file after decrypting contents
+- test: benchmark with AES merging encryption
+- test: fix path comparison on Windows
+- testing: skip external tests when -short is specified
+
+BUILD
+
+- build: update Docker image to Go 1.18
+- build: update github.com/moov-io/base to v0.29.0
+
 ## v0.15.1 (Released 2022-05-09)
 
 BUILD
