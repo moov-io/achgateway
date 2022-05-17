@@ -57,6 +57,8 @@ func (s *sftpDeployment) close(t *testing.T) {
 // You can verify this container launches with an ssh command like:
 //  $ ssh ssh://demo@127.0.0.1:33138 -s sftp
 func spawnSFTP(t *testing.T) *sftpDeployment {
+	t.Helper()
+
 	if testing.Short() {
 		t.Skip("-short flag enabled")
 	}
