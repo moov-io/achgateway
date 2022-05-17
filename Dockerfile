@@ -1,6 +1,6 @@
 # generated-from:a1ae955dd09d1cf3d9d820d45ef6354f287ba25a14bff6f3643b446d7825f2b8 DO NOT REMOVE, DO UPDATE
 
-FROM golang:1.16-buster as builder
+FROM golang:1.18-buster as builder
 WORKDIR /src
 ARG VERSION
 
