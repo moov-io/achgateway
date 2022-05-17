@@ -20,6 +20,7 @@ package test
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -41,6 +42,7 @@ import (
 	"github.com/moov-io/achgateway/internal/pipeline"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/shards"
+	"github.com/moov-io/achgateway/internal/storage"
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/database"
@@ -115,8 +117,20 @@ var (
 					},
 				},
 			},
+			Merging: service.Merging{
+				Storage: storage.Config{
+					Encryption: storage.EncryptionConfig{
+						AES: &storage.AESConfig{
+							Base64Key: mergingAESKey,
+						},
+						Encoding: "base64",
+					},
+				},
+			},
 		},
 	}
+
+	mergingAESKey = base64.RawStdEncoding.EncodeToString(bytes.Repeat([]byte("1"), 32))
 )
 
 func init() {
