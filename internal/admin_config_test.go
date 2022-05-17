@@ -28,6 +28,10 @@ import (
 )
 
 func TestAdminConfig(t *testing.T) {
+	if testing.Short() {
+		t.Skip("-short flag specified")
+	}
+
 	r := mux.NewRouter()
 	env := NewTestEnvironment(t, r)
 	t.Cleanup(env.Shutdown)

@@ -38,6 +38,10 @@ import (
 )
 
 func TestEnvironment_Startup(t *testing.T) {
+	if testing.Short() {
+		t.Skip("-short flag specified")
+	}
+
 	a := assert.New(t)
 
 	conf := dbtest.CreateTestDatabase(t, dbtest.LocalDatabaseConfig())
@@ -104,6 +108,10 @@ func NewTestEnvironment(t *testing.T, router *mux.Router) *TestEnvironment {
 }
 
 func TestEnvironmentTesting(t *testing.T) {
+	if testing.Short() {
+		t.Skip("-short flag specified")
+	}
+
 	r := mux.NewRouter()
 	env := NewTestEnvironment(t, r)
 	t.Cleanup(env.Shutdown)
