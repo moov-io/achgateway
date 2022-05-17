@@ -42,7 +42,7 @@ ifeq ($(OS),Windows_NT)
 else
 	@wget -O lint-project.sh https://raw.githubusercontent.com/moov-io/infra/master/go/lint-project.sh
 	@chmod +x ./lint-project.sh
-	COVER_THRESHOLD=44.5 GOLANGCI_LINTERS=gosec PROFILE_GOTEST=yes ./lint-project.sh
+	COVER_THRESHOLD=44.5 PROFILE_GOTEST=yes ./lint-project.sh
 endif
 
 .PHONY: teardown

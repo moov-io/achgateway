@@ -53,7 +53,7 @@ func TestCleanupErr(t *testing.T) {
 		t.Error("expected error")
 	}
 
-	if agent.DeletedFile != "inbound/file.ach" {
+	if agent.DeletedFile != filepath.Join("inbound", "file.ach") {
 		t.Errorf("unexpected deleted file: %s", agent.DeletedFile)
 	}
 }
@@ -78,7 +78,7 @@ func Test_CleanupEmptyFiles_InboundPath_Success(t *testing.T) {
 	err := CleanupEmptyFiles(log.NewNopLogger(), agent, dl)
 	require.NoError(t, err)
 
-	if agent.DeletedFile != "inbound/empty_file.ach" {
+	if agent.DeletedFile != filepath.Join("inbound", "empty_file.ach") {
 		t.Errorf("unexpected deleted file: %s", agent.DeletedFile)
 	}
 }
@@ -103,7 +103,7 @@ func Test_CleanupEmptyFiles_ReconciliationPath_Success(t *testing.T) {
 	err := CleanupEmptyFiles(log.NewNopLogger(), agent, dl)
 	require.NoError(t, err)
 
-	if agent.DeletedFile != "reconciliation/empty_file.ach" {
+	if agent.DeletedFile != filepath.Join("reconciliation", "empty_file.ach") {
 		t.Errorf("unexpected deleted file: %s", agent.DeletedFile)
 	}
 }
@@ -128,7 +128,7 @@ func Test_CleanupEmptyFiles_ReturnPath_Success(t *testing.T) {
 	err := CleanupEmptyFiles(log.NewNopLogger(), agent, dl)
 	require.NoError(t, err)
 
-	if agent.DeletedFile != "return/empty_file.ach" {
+	if agent.DeletedFile != filepath.Join("return", "empty_file.ach") {
 		t.Errorf("unexpected deleted file: %s", agent.DeletedFile)
 	}
 }

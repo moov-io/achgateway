@@ -25,6 +25,10 @@ import (
 )
 
 func TestAcquireLock(t *testing.T) {
+	if testing.Short() {
+		t.Skip("-short flag specified")
+	}
+
 	a := assert.New(t)
 	logger := log.NewDefaultLogger()
 

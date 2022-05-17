@@ -24,16 +24,25 @@ func (e *encrypted) Open(path string) (File, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	defer func() {
+		if file != nil {
+			file.Close()
+		}
+	}()
+
 	bs, err := ioutil.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}
+
 	if e.crypt != nil {
 		bs, err = e.crypt.Reveal(bs)
 		if err != nil {
 			return nil, err
 		}
 	}
+
 	return &buffer{
 		b:        bytes.NewBuffer(bs),
 		filename: file.Filename(),

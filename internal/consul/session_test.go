@@ -25,6 +25,10 @@ import (
 )
 
 func TestSession(t *testing.T) {
+	if testing.Short() {
+		t.Skip("-short flag was specified")
+	}
+
 	a := assert.New(t)
 	logger := log.NewDefaultLogger()
 

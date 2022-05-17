@@ -27,6 +27,10 @@ import (
 )
 
 func TestRepository(t *testing.T) {
+	if testing.Short() {
+		t.Skip("-short flag was specified")
+	}
+
 	conf := dbtest.CreateTestDatabase(t, dbtest.LocalDatabaseConfig())
 	db := dbtest.LoadDatabase(t, conf)
 	require.NoError(t, db.Ping())
