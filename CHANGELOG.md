@@ -1,3 +1,13 @@
+## v0.15.3 (Released 2022-05-18)
+
+IMPROVEMENTS
+
+- upload: let sync fail if the server doesn't support it
+
+BUILD
+
+- build: update base images
+
 ## v0.15.2 (Released 2022-05-17)
 
 IMPROVEMENTS
