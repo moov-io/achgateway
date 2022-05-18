@@ -328,7 +328,10 @@ func (agent *SFTPTransferAgent) UploadFile(f File) error {
 		return fmt.Errorf("sftp: problem copying (n=%d) %s: %v", n, f.Filename, err)
 	}
 	if err := fd.Sync(); err != nil {
-		return fmt.Errorf("sftp: problem with sync on %s: %v", f.Filename, err)
+		// Skip sync if the remote server doesn't support it
+		if !strings.Contains(err.Error(), "SSH_FX_OP_UNSUPPORTED") {
+			return fmt.Errorf("sftp: problem with sync on %s: %v", f.Filename, err)
+		}
 	}
 	if err := fd.Chmod(0600); err != nil {
 		return fmt.Errorf("sftp: problem with chmod on %s: %v", f.Filename, err)
