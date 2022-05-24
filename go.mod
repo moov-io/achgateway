@@ -14,10 +14,12 @@ require (
 	github.com/ProtonMail/go-crypto v0.0.0-20211112122917-428f8eabeeb3
 	github.com/Shopify/sarama v1.30.0
 	github.com/go-kit/kit v0.12.0
+	github.com/google/go-github/v35 v35.2.0 // indirect
 	github.com/google/go-replayers/grpcreplay v1.1.0 // indirect
 	github.com/google/go-replayers/httpreplay v1.0.0 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/consul/api v1.12.0
 	github.com/hashicorp/go-retryablehttp v0.7.0
 	github.com/jlaffaye/ftp v0.0.0-20210307004419-5d4190119067
@@ -27,19 +29,20 @@ require (
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/minio-go/v6 v6.0.57 // indirect
 	github.com/minio/sha256-simd v1.0.0 // indirect
-	github.com/moov-io/ach v1.15.1
-	github.com/moov-io/base v0.29.0
+	github.com/moov-io/ach v1.16.1
+	github.com/moov-io/base v0.29.2
 	github.com/moov-io/cryptfs v0.1.0
 	github.com/ory/dockertest/v3 v3.8.1
 	github.com/ory/mail/v3 v3.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.13.1
-	github.com/prometheus/client_golang v1.12.1
+	github.com/prometheus/client_golang v1.12.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sethvargo/go-retry v0.1.0
 	github.com/spf13/viper v1.11.0
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.1
+	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	gocloud.dev v0.23.0
 	gocloud.dev/pubsub/kafkapubsub v0.23.0
 	goftp.io/server v0.4.1
