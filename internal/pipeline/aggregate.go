@@ -41,6 +41,7 @@ import (
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/log"
+	"github.com/moov-io/base/stime"
 )
 
 type aggregator struct {
@@ -96,7 +97,8 @@ func newAggregator(
 		"shard": log.String(shard.Name),
 	}).Logf("setup %T output formatter", outputFormatter)
 
-	cutoffs, err := schedule.ForCutoffTimes(shard.Cutoffs.Timezone, shard.Cutoffs.Windows)
+	timeService := stime.NewSystemTimeService()
+	cutoffs, err := schedule.ForCutoffTimes(timeService, shard.Cutoffs.Timezone, shard.Cutoffs.Windows)
 	if err != nil {
 		return nil, fmt.Errorf("error creating cutoffs: %v", err)
 	}
@@ -356,6 +358,8 @@ func (xfagg *aggregator) notifyAboutHoliday(day *schedule.Day) {
 			})
 			if err != nil {
 				logger.Error().LogErrorf("ERROR sending holiday notification: %v", err)
+			} else {
+				logger.Info().Log("sent holiday notification")
 			}
 		}
 	}

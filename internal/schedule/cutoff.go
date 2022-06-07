@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/moov-io/base"
+	"github.com/moov-io/base/stime"
 
 	"github.com/robfig/cron/v3"
 )
@@ -22,6 +23,7 @@ type CutoffTimes struct {
 
 	sched       *cron.Cron
 	firstCutoff string
+	timeService stime.TimeService
 }
 
 type Day struct {
@@ -35,10 +37,11 @@ type Day struct {
 	FirstWindow bool
 }
 
-func ForCutoffTimes(tz string, timestamps []string) (*CutoffTimes, error) {
+func ForCutoffTimes(timeService stime.TimeService, tz string, timestamps []string) (*CutoffTimes, error) {
 	ct := &CutoffTimes{
-		C:     make(chan *Day),
-		sched: cron.New(),
+		C:           make(chan *Day),
+		sched:       cron.New(),
+		timeService: timeService,
 	}
 
 	if len(timestamps) > 0 {
@@ -66,8 +69,8 @@ func (ct *CutoffTimes) Stop() {
 }
 
 func (ct *CutoffTimes) maybeTick(location *time.Location) {
-	now := base.Now(location)
-	if !now.IsWeekend() && now.IsBankingDay() {
+	now := base.NewTime(ct.timeService.Now().In(location))
+	if !now.IsWeekend() {
 		ct.C <- &Day{
 			Time:         now.Time,
 			IsBankingDay: now.IsBankingDay(),

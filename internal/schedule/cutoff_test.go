@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/moov-io/base"
+	"github.com/moov-io/base/stime"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,9 +22,10 @@ func TestCutoffTimes(t *testing.T) {
 		t.Skip("not a banking day")
 	}
 
+	timeService := stime.NewSystemTimeService()
 	next := time.Now().UTC().Add(time.Minute).Format("15:04")
 
-	cutoffs, err := ForCutoffTimes("UTC", []string{next})
+	cutoffs, err := ForCutoffTimes(timeService, "UTC", []string{next})
 	require.NoError(t, err)
 	defer cutoffs.Stop()
 
@@ -37,24 +40,47 @@ func TestCutoffTimes(t *testing.T) {
 }
 
 func TestCutoffTimesErr(t *testing.T) {
-	_, err := ForCutoffTimes("bad_zone", nil)
+	timeService := stime.NewSystemTimeService()
+
+	_, err := ForCutoffTimes(timeService, "bad_zone", nil)
 	if err == nil {
 		t.Error("expected error")
 	}
-	_, err = ForCutoffTimes(time.Local.String(), nil)
+	_, err = ForCutoffTimes(timeService, time.Local.String(), nil)
 	if err == nil {
 		t.Error("expected error")
 	}
-	_, err = ForCutoffTimes(time.Local.String(), []string{"bad:time"})
+	_, err = ForCutoffTimes(timeService, time.Local.String(), []string{"bad:time"})
 	if err == nil {
 		t.Error("expected error")
 	}
 }
 
 func TestCutoffTimes__firstCutoff(t *testing.T) {
-	ct, err := ForCutoffTimes("America/New_York", []string{"16:15", "08:30", "12:00"})
+	timeService := stime.NewSystemTimeService()
+	ct, err := ForCutoffTimes(timeService, "America/New_York", []string{"16:15", "08:30", "12:00"})
 	require.NoError(t, err)
 	defer ct.Stop()
 
 	require.Equal(t, "08:30", ct.firstCutoff)
+}
+
+func TestCutoffTimes__Holiday(t *testing.T) {
+	holiday := time.Date(2022, time.July, 4, 15, 30, 0, 0, time.UTC)
+
+	timeService := stime.NewStaticTimeService()
+	timeService.Change(holiday)
+
+	ct, err := ForCutoffTimes(timeService, "America/New_York", []string{"15:30"})
+	require.NoError(t, err)
+	defer ct.Stop()
+
+	go ct.maybeTick(time.UTC)
+
+	cutoff := <-ct.C
+	require.Equal(t, holiday, cutoff.Time)
+	require.False(t, cutoff.IsBankingDay)
+	require.True(t, cutoff.IsHoliday)
+	require.False(t, cutoff.IsWeekend)
+	require.True(t, cutoff.FirstWindow)
 }
