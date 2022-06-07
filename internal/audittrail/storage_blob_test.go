@@ -15,14 +15,14 @@ import (
 )
 
 var (
-	keyPath = filepath.Join("..", "..", "internal", "gpgx", "testdata", "moov.pub")
+	publicKeyPath = filepath.Join("..", "gpgx", "testdata", "key.pub")
 )
 
 func TestBlobStorage(t *testing.T) {
 	cfg := &service.AuditTrail{
 		BucketURI: "mem://",
 		GPG: &service.GPG{
-			KeyFile: keyPath,
+			KeyFile: publicKeyPath,
 		},
 	}
 	store, err := newBlobStorage(cfg)

@@ -11,7 +11,7 @@ require (
 	github.com/Azure/go-autorest/autorest v0.11.21 // indirect
 	github.com/Azure/go-autorest/autorest/azure/cli v0.4.3 // indirect
 	github.com/PagerDuty/go-pagerduty v1.4.3
-	github.com/ProtonMail/go-crypto v0.0.0-20211112122917-428f8eabeeb3
+	github.com/ProtonMail/go-crypto v0.0.0-20220517143526-88bb52951d5b
 	github.com/Shopify/sarama v1.30.0
 	github.com/armon/go-metrics v0.4.0 // indirect
 	github.com/go-kit/kit v0.12.0
@@ -34,7 +34,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moov-io/ach v1.16.1
 	github.com/moov-io/base v0.29.2
-	github.com/moov-io/cryptfs v0.1.0
+	github.com/moov-io/cryptfs v0.4.0
 	github.com/ory/dockertest/v3 v3.8.1
 	github.com/ory/mail/v3 v3.0.0
 	github.com/pkg/errors v0.9.1
@@ -44,12 +44,15 @@ require (
 	github.com/sethvargo/go-retry v0.1.0
 	github.com/spf13/viper v1.11.0
 	github.com/stretchr/objx v0.3.0 // indirect
-	github.com/stretchr/testify v1.7.1
+	github.com/stretchr/testify v1.7.2
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	gocloud.dev v0.23.0
 	gocloud.dev/pubsub/kafkapubsub v0.23.0
 	goftp.io/server v0.4.1
-	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
+	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
+	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	golang.org/x/text v0.3.7
+	google.golang.org/api v0.74.0 // indirect
+	google.golang.org/grpc v1.45.0 // indirect
 )

@@ -9,9 +9,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ProtonMail/go-crypto/openpgp"
-	"github.com/moov-io/achgateway/internal/gpgx"
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/cryptfs"
 
 	"gocloud.dev/blob"
 	_ "gocloud.dev/blob/azureblob"
@@ -24,9 +23,9 @@ import (
 // blobStorage implements Storage with gocloud.dev/blob which allows
 // clients to use AWS S3, GCP Storage, and Azure Storage.
 type blobStorage struct {
-	id     string
-	bucket *blob.Bucket
-	pubKey openpgp.EntityList
+	id      string
+	bucket  *blob.Bucket
+	cryptor *cryptfs.FS
 }
 
 func newBlobStorage(cfg *service.AuditTrail) (*blobStorage, error) {
@@ -39,11 +38,10 @@ func newBlobStorage(cfg *service.AuditTrail) (*blobStorage, error) {
 	storage.bucket = bucket
 
 	if cfg.GPG != nil {
-		pubKey, err := gpgx.ReadArmoredKeyFile(cfg.GPG.KeyFile)
+		storage.cryptor, err = cryptfs.FromCryptor(cryptfs.NewGPGEncryptorFile(cfg.GPG.KeyFile))
 		if err != nil {
 			return nil, err
 		}
-		storage.pubKey = pubKey
 	}
 
 	// set default values for metrics
@@ -61,7 +59,7 @@ func (bs *blobStorage) Close() error {
 }
 
 func (bs *blobStorage) SaveFile(filepath string, data []byte) error {
-	encrypted, err := gpgx.Encrypt(data, bs.pubKey)
+	encrypted, err := bs.cryptor.Disfigure(data)
 	if err != nil {
 		uploadFilesErrors.With("type", "blob", "id", bs.id).Add(1)
 		return err
