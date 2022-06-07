@@ -12,25 +12,24 @@ import (
 	"testing"
 
 	"github.com/moov-io/ach"
-	"github.com/moov-io/achgateway/internal/gpgx"
 	"github.com/moov-io/achgateway/internal/service"
-	"github.com/moov-io/base/log"
+	"github.com/moov-io/cryptfs"
+
 	"github.com/stretchr/testify/require"
 )
 
 var (
 	password = []byte("password")
 
-	pubKeyFile  = filepath.Join("..", "..", "internal", "gpgx", "testdata", "moov.pub")
-	privKeyFile = filepath.Join("..", "..", "internal", "gpgx", "testdata", "moov.key")
+	pubKeyFile  = filepath.Join("..", "gpgx", "testdata", "key.pub")
+	privKeyFile = filepath.Join("..", "gpgx", "testdata", "key.priv")
 )
 
 func TestGPGEncryptor(t *testing.T) {
-	logger := log.NewNopLogger()
 	cfg := &service.GPG{
 		KeyFile: pubKeyFile,
 	}
-	gpg, err := NewGPGEncryptor(logger, cfg)
+	gpg, err := NewGPGEncryptor(cfg)
 	require.NoError(t, err)
 
 	// Read file and encrypt it
@@ -39,10 +38,9 @@ func TestGPGEncryptor(t *testing.T) {
 	res, err := gpg.Transform(&Result{File: orig})
 	require.NoError(t, err)
 
-	// Decrypt file and compare to original
-	privKey, err := gpgx.ReadPrivateKeyFile(privKeyFile, password)
+	dd, err := cryptfs.FromCryptor(cryptfs.NewGPGDecryptorFile(privKeyFile, password))
 	require.NoError(t, err)
-	decrypted, err := gpgx.Decrypt(res.Encrypted, privKey)
+	decrypted, err := dd.Reveal(res.Encrypted)
 	require.NoError(t, err)
 
 	if err := compareKeys(orig, decrypted); err != nil {
@@ -51,7 +49,6 @@ func TestGPGEncryptor(t *testing.T) {
 }
 
 func TestGPGAndSign(t *testing.T) {
-	logger := log.NewNopLogger()
 	cfg := &service.GPG{
 		KeyFile: pubKeyFile,
 		Signer: &service.Signer{
@@ -59,7 +56,7 @@ func TestGPGAndSign(t *testing.T) {
 			KeyPassword: "password",
 		},
 	}
-	gpg, err := NewGPGEncryptor(logger, cfg)
+	gpg, err := NewGPGEncryptor(cfg)
 	require.NoError(t, err)
 
 	// Read file and encrypt it
@@ -99,10 +96,4 @@ func compareKeys(orig *ach.File, decrypted []byte) error {
 	}
 
 	return nil
-}
-
-func TestGPG__fingerprint(t *testing.T) {
-	if fp := fingerprint(nil); fp != "" {
-		t.Errorf("unexpected fingerprint: %q", fp)
-	}
 }
