@@ -7,12 +7,10 @@ package transform
 import (
 	"bytes"
 	"errors"
-	"fmt"
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/gpgx"
 	"github.com/moov-io/achgateway/internal/service"
-	"github.com/moov-io/base/log"
 	"github.com/moov-io/cryptfs"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
@@ -23,11 +21,10 @@ type GPGEncryption struct {
 	signingKey openpgp.EntityList
 }
 
-func NewGPGEncryptor(logger log.Logger, cfg *service.GPG) (*GPGEncryption, error) {
+func NewGPGEncryptor(cfg *service.GPG) (*GPGEncryption, error) {
 	if cfg == nil {
 		return nil, errors.New("missing GPG config")
 	}
-	logger = logger.Set("service", log.String("GPG encryption"))
 
 	out := &GPGEncryption{}
 
@@ -74,7 +71,7 @@ func (morph *GPGEncryption) Transform(res *Result) (*Result, error) {
 
 func (morph *GPGEncryption) String() string {
 	if morph == nil {
-		return fmt.Sprintf("GPG: <nil>")
+		return "GPG: <nil>"
 	}
-	return fmt.Sprintf("GPG{...}")
+	return "GPG{...}"
 }

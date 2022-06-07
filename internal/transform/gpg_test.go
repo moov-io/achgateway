@@ -13,7 +13,6 @@ import (
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/service"
-	"github.com/moov-io/base/log"
 	"github.com/moov-io/cryptfs"
 
 	"github.com/stretchr/testify/require"
@@ -27,11 +26,10 @@ var (
 )
 
 func TestGPGEncryptor(t *testing.T) {
-	logger := log.NewNopLogger()
 	cfg := &service.GPG{
 		KeyFile: pubKeyFile,
 	}
-	gpg, err := NewGPGEncryptor(logger, cfg)
+	gpg, err := NewGPGEncryptor(cfg)
 	require.NoError(t, err)
 
 	// Read file and encrypt it
@@ -51,7 +49,6 @@ func TestGPGEncryptor(t *testing.T) {
 }
 
 func TestGPGAndSign(t *testing.T) {
-	logger := log.NewNopLogger()
 	cfg := &service.GPG{
 		KeyFile: pubKeyFile,
 		Signer: &service.Signer{
@@ -59,7 +56,7 @@ func TestGPGAndSign(t *testing.T) {
 			KeyPassword: "password",
 		},
 	}
-	gpg, err := NewGPGEncryptor(logger, cfg)
+	gpg, err := NewGPGEncryptor(cfg)
 	require.NoError(t, err)
 
 	// Read file and encrypt it

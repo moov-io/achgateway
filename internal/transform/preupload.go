@@ -44,7 +44,7 @@ func Multi(logger log.Logger, cfg *service.PreUpload) ([]PreUpload, error) {
 	}
 	var processors []PreUpload
 	if cfg.GPG != nil {
-		pc, err := NewGPGEncryptor(logger, cfg.GPG)
+		pc, err := NewGPGEncryptor(cfg.GPG)
 		if err != nil {
 			return nil, err
 		}
