@@ -1,3 +1,15 @@
+## v0.15.4 (Released 2022-06-08)
+
+IMPROVEMENTS
+
+- fix: cleanup fileReceiver shutdown
+- fix: send cutoff Day events on holidays
+- refactor: use cryptfs for most of GPG encryption
+
+BUILD
+
+- build: update github.com/moov-io/ach to v1.16.1
+
 ## v0.15.3 (Released 2022-05-18)
 
 IMPROVEMENTS
