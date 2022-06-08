@@ -92,13 +92,17 @@ func (fr *FileReceiver) Start(ctx context.Context) {
 func (fr *FileReceiver) Shutdown() {
 	fr.logger.Log("shutting down xfer aggregation")
 
+	// Pass a context that we cancel right away to our subscriptions
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+
 	if fr.httpFiles != nil {
-		if err := fr.httpFiles.Shutdown(context.Background()); err != nil {
+		if err := fr.httpFiles.Shutdown(ctx); err != nil {
 			fr.logger.LogErrorf("problem shutting down http file subscription: %v", err)
 		}
 	}
 	if fr.streamFiles != nil {
-		if err := fr.streamFiles.Shutdown(context.Background()); err != nil {
+		if err := fr.streamFiles.Shutdown(ctx); err != nil {
 			fr.logger.LogErrorf("problem shutting down stream file subscription: %v", err)
 		}
 	}
@@ -125,79 +129,92 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 		out <- nil
 	}
 	go func() {
-		msg, err := sub.Receive(ctx)
-		if err != nil {
-			fr.logger.LogErrorf("ERROR receiving message: %v", err)
-		}
-		if msg != nil {
-			msg.Ack()
-
-			// Optionally decode and decrypt message
-			data := msg.Body
-			data, err = compliance.Reveal(fr.transformConfig, data)
+		receiver := make(chan *pubsub.Message)
+		go func() {
+			msg, err := sub.Receive(ctx)
 			if err != nil {
-				fr.logger.Error().LogErrorf("unable to reveal incoming.ACHFile: %v", err)
+				fr.logger.LogErrorf("ERROR receiving message: %v", err)
 			}
+			receiver <- msg
+		}()
 
-			// Parse our incoming ACHFile
-			var file incoming.ACHFile
-			if err := models.ReadEvent(data, &file); err != nil {
-				fr.logger.Error().LogErrorf("unable to parse incoming.ACHFile: %v", err)
-				cleanup()
+		select {
+		case msg := <-receiver:
+			if msg != nil {
+				out <- fr.processMessage(msg)
 				return
-			}
-
-			if err := file.Validate(); err != nil {
-				fr.logger.Error().LogErrorf("invalid ACHFile: %v", err)
-				cleanup()
-				return
-			}
-
-			shardName, err := fr.shardRepository.Lookup(file.ShardKey)
-			if err != nil {
-				fr.logger.Error().LogErrorf("problem looking up shardKey=%s: %v", file.ShardKey, err)
-				cleanup()
-				return
-			}
-			fr.logger.With(log.Fields{
-				"fileID":    log.String(file.FileID),
-				"bytes":     log.Int(len(msg.Body)),
-				"shardName": log.String(shardName),
-				"shardKey":  log.String(file.ShardKey),
-			}).Log("begin handling of received ACHFile")
-
-			agg, exists := fr.shardAggregators[shardName]
-			if !exists {
-				agg, exists = fr.shardAggregators[fr.defaultShardName]
-				if !exists {
-					filesMissingShardAggregators.With("shard", shardName).Add(1)
-					fr.logger.Error().LogErrorf("missing shardAggregator for shardKey=%s shardName=%s", file.ShardKey, shardName)
-					cleanup()
-					return
-				}
-			}
-			if agg == nil {
-				fr.logger.Error().LogErrorf("nil shardAggregator for shardKey=%s shardName=%s", file.ShardKey, shardName)
-				cleanup()
-				return
-			}
-
-			if err := agg.acceptFile(file); err != nil {
-				fr.logger.Error().LogErrorf("problem accepting file under shardName=%s", shardName)
-				out <- err
 			} else {
-				pendingFiles.With("shard", shardName).Add(1)
-
-				fr.logger.With(log.Fields{
-					"fileID": log.String(file.FileID),
-				}).Log("finished handling ACHFile")
-
+				fr.logger.Log("nil message received")
 				cleanup()
+				return
 			}
-		} else {
-			fr.logger.Log("nil message received")
+
+		case <-ctx.Done():
 			cleanup()
+			return
 		}
 	}()
 	return out
+}
+
+func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
+	msg.Ack()
+
+	data := msg.Body
+	var err error
+
+	// Optionally decode and decrypt message
+	data, err = compliance.Reveal(fr.transformConfig, data)
+	if err != nil {
+		fr.logger.Error().LogErrorf("unable to reveal incoming.ACHFile: %v", err)
+	}
+
+	// Parse our incoming ACHFile
+	var file incoming.ACHFile
+	if err := models.ReadEvent(data, &file); err != nil {
+		fr.logger.Error().LogErrorf("unable to parse incoming.ACHFile: %v", err)
+		return nil
+	}
+
+	if err := file.Validate(); err != nil {
+		fr.logger.Error().LogErrorf("invalid ACHFile: %v", err)
+		return nil
+	}
+
+	shardName, err := fr.shardRepository.Lookup(file.ShardKey)
+	if err != nil {
+		fr.logger.Error().LogErrorf("problem looking up shardKey=%s: %v", file.ShardKey, err)
+		return nil
+	}
+	fr.logger.With(log.Fields{
+		"fileID":    log.String(file.FileID),
+		"bytes":     log.Int(len(msg.Body)),
+		"shardName": log.String(shardName),
+		"shardKey":  log.String(file.ShardKey),
+	}).Log("begin handling of received ACHFile")
+
+	agg, exists := fr.shardAggregators[shardName]
+	if !exists {
+		agg, exists = fr.shardAggregators[fr.defaultShardName]
+		if !exists {
+			filesMissingShardAggregators.With("shard", shardName).Add(1)
+			fr.logger.Error().LogErrorf("missing shardAggregator for shardKey=%s shardName=%s", file.ShardKey, shardName)
+			return nil
+		}
+	}
+	if agg == nil {
+		fr.logger.Error().LogErrorf("nil shardAggregator for shardKey=%s shardName=%s", file.ShardKey, shardName)
+		return nil
+	}
+
+	if err := agg.acceptFile(file); err != nil {
+		return fr.logger.Error().LogErrorf("problem accepting file under shardName=%s", shardName).Err()
+	} else {
+		pendingFiles.With("shard", shardName).Add(1)
+
+		fr.logger.With(log.Fields{
+			"fileID": log.String(file.FileID),
+		}).Log("finished handling ACHFile")
+	}
+	return nil
 }
