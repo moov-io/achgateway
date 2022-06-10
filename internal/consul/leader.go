@@ -18,13 +18,16 @@
 package consul
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/moov-io/base/log"
 
-	"github.com/hashicorp/consul/api"
+	consulapi "github.com/hashicorp/consul/api"
 )
 
 func (c *Client) AcquireLock(key string) error {
-	isLeader, _, err := c.underlying.KV().Acquire(&api.KVPair{
+	isLeader, _, err := c.underlying.KV().Acquire(&consulapi.KVPair{
 		Key:     key,
 		Value:   []byte(c.session.ID),
 		Session: c.session.ID,
@@ -39,4 +42,46 @@ func (c *Client) AcquireLock(key string) error {
 		"hostname":  log.String(c.hostname),
 		"sessionID": log.String(c.session.ID),
 	}).LogErrorf("we are not the leader of %s", key).Err()
+}
+
+func AcquireLock(logger log.Logger, client *Client, leaderKey string) error {
+	if client == nil {
+		return nil // no leader defined, skip election
+	}
+
+	var lockErr error
+
+	var try func(attempts int, leaderKey string) error
+	try = func(attempts int, leaderKey string) error {
+		if attempts >= 3 {
+			return fmt.Errorf("too many retries: %v", lockErr)
+		}
+		attempts++
+
+		// Attempt writing to the KV path
+		lockErr := client.AcquireLock(leaderKey)
+
+		if lockErr != nil {
+			// IsRetryableError returns true for 500 errors from the Consul servers, and network connection errors.
+			// These errors are not retryable for writes (which is what AcquireLock performs).
+			if consulapi.IsRetryableError(lockErr) || strings.Contains(lockErr.Error(), "invalid session") {
+				// If we're able to create a new session and see if achgateway can continue on.
+				// This error will be bubbled up to our Alterer to notify humans.
+				if innerErr := client.ClearSession(); innerErr != nil {
+					return fmt.Errorf("really bad consul error: %v and unable to restart session %v", lockErr, innerErr)
+				} else {
+					logger.Info().With(log.Fields{
+						"sessionID": log.String(client.SessionID()),
+					}).Logf("started new session")
+				}
+			}
+
+			// Retry leadership attempt
+			return try(attempts, leaderKey)
+		}
+		// We've got an active session and leadership of the shard
+		return nil
+	}
+
+	return try(0, leaderKey)
 }

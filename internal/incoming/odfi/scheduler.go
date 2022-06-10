@@ -122,15 +122,18 @@ func (s *PeriodicScheduler) tickAll() error {
 			continue
 		}
 
+		logger := s.logger.With(log.Fields{
+			"shard": log.String(shardName),
+		})
+
 		// Attempt to acquire leadership prior to processing
 		leaderKey := fmt.Sprintf("achgateway/odfi/%s", shardName)
 		s.logger.Logf("attempting to acquire ODFI leadership for %s", leaderKey)
 
 		// Acquire leadership for this shard
-		if err := s.consul.AcquireLock(leaderKey); err != nil {
-			s.logger.Info().With(log.Fields{
-				"shard": log.String(shardName),
-			}).Logf("skipping ODFI processing: %v", err)
+		err := consul.AcquireLock(logger, s.consul, leaderKey)
+		if err != nil {
+			logger.Info().Logf("skipping ODFI processing: %v", err)
 		} else {
 			s.logger.Info().Logf("starting odfi periodic processing for %s", shard.Name)
 			err := s.tick(shard)
