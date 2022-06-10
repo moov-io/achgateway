@@ -1,3 +1,10 @@
+## v0.15.5 (Released 2022-06-10)
+
+IMPROVEMENTS
+
+- docs: cleanup getting started example
+- fix: share consul session refresh logic, skip on nil consul client
+
 ## v0.15.4 (Released 2022-06-08)
 
 IMPROVEMENTS
