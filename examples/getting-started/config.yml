@@ -8,15 +8,15 @@ ACHGateway:
       #   Encryption:
       #     AES:
       #       Key: "secret"
+    Kafka:
+      brokers:
+        - "kafka1:9092"
+      key: "admin"
+      secret: "secret"
+      group: "achgateway"
+      tls: false
+      topic: "ach.outgoing-files"
     ODFI:
-      Publishing:
-        Kafka:
-          brokers:
-            - kafka1:9092
-          key: admin
-          secret: secret
-          tls: false
-          topic: "ach.odfi-files"
       Interval: "1m"
       Processors:
         Corrections:
@@ -28,8 +28,20 @@ ACHGateway:
       ShardNames:
         - "testing"
       Storage:
-        Directory: "./storage-1/"
+        Directory: "./storage/"
         CleanupLocalDirectory: true
+  Events:
+    Stream:
+      Kafka:
+        Brokers:
+          - "kafka1:9092"
+        Key: admin
+        Secret: secret
+        TLS: false
+        Topic: "ach.odfi-file-events"
+    Transform:
+      Encoding:
+        Base64: true
   Sharding:
     Shards:
       - name: "testing"
@@ -42,7 +54,9 @@ ACHGateway:
         output:
           format: "nacha"
     Mappings:
-      "foo": "testing"
+      "foo":
+        shardKey: "testing"  # Could be random value (UUID, fixed string)
+        shardName: "testing" # Maps to Sharding.Shards[_].name
     Default: "testing"
   Upload:
     agents:
@@ -57,4 +71,4 @@ ACHGateway:
           reconciliation: "/reconciliation/"
           return: "/returned/"
     merging:
-      directory: "./storage-1/"
+      directory: "./storage/"

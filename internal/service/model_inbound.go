@@ -146,20 +146,6 @@ type ODFIReturns struct {
 	Enabled bool
 }
 
-type ODFIPublishing struct {
-	Kafka *KafkaConfig
-}
-
-func (cfg *ODFIPublishing) Validate() error {
-	if cfg == nil {
-		return nil
-	}
-	if err := cfg.Kafka.Validate(); err != nil {
-		return fmt.Errorf("kafka: %v", err)
-	}
-	return nil
-}
-
 type ODFIStorage struct {
 	// Directory is the local filesystem path for downloading files into
 	Directory string

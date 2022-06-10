@@ -43,7 +43,7 @@ achgateway_1  | ts=2021-06-18T23:38:06Z msg="listening on [::]:9494" version=v0.
 
 Submit a file to achgateway (Nacha ACH format):
 ```
-$ curl -XPOST "http://localhost:8484/shards/foo2/files/f6" --data @./testdata/ppd-debit.ach
+$ curl -XPOST "http://localhost:8484/shards/foo/files/f6" --data @./testdata/ppd-debit.ach
 ...
 achgateway_1  | ts=2021-06-18T23:38:16Z msg="begin handle received ACHFile=f6 of 1918 bytes" level=info app=achgateway version=v0.4.1
 achgateway_1  | ts=2021-06-18T23:38:16Z msg="finished handling ACHFile=f6" level=info app=achgateway version=v0.4.1
