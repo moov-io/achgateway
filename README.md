@@ -35,7 +35,7 @@ Start achgateway and an FTP server:
 ```
 $ cd ./examples/getting-started/
 
-$ docker-compose up
+$ docker-compose up achgateway
 ...
 achgateway_1  | ts=2021-06-18T23:38:06Z msg="public listening on :8484" version=v0.4.1 level=info app=achgateway
 achgateway_1  | ts=2021-06-18T23:38:06Z msg="listening on [::]:9494" version=v0.4.1 level=info app=achgateway
