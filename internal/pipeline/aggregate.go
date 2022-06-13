@@ -56,7 +56,8 @@ type aggregator struct {
 	auditStorage          audittrail.Storage
 	preuploadTransformers []transform.PreUpload
 	outputFormatter       output.Formatter
-	alerter               alerting.Alerter
+	errorAlerters         []alerting.Alerter
+	warningAlerters       []alerting.Alerter
 }
 
 func newAggregator(
@@ -66,6 +67,7 @@ func newAggregator(
 	shard service.Shard,
 	uploadAgents service.UploadAgents,
 	errorAlerting service.ErrorAlerting,
+	warningAlerting service.ErrorAlerting,
 ) (*aggregator, error) {
 	merger, err := NewMerging(logger, consul, shard, uploadAgents)
 	if err != nil {
@@ -101,9 +103,13 @@ func newAggregator(
 		return nil, fmt.Errorf("error creating cutoffs: %v", err)
 	}
 
-	alerter, err := alerting.NewAlerter(errorAlerting)
+	errorAlerters, err := alerting.NewAlerters(errorAlerting)
 	if err != nil {
-		return nil, fmt.Errorf("error setting up alerter: %v", err)
+		return nil, fmt.Errorf("error setting up error alerters: %v", err)
+	}
+	warningAlerters, err := alerting.NewAlerters(errorAlerting)
+	if err != nil {
+		return nil, fmt.Errorf("error setting up warning alerters: %v", err)
 	}
 
 	return &aggregator{
@@ -117,7 +123,8 @@ func newAggregator(
 		auditStorage:          auditStorage,
 		preuploadTransformers: preuploadTransformers,
 		outputFormatter:       outputFormatter,
-		alerter:               alerter,
+		errorAlerters:         errorAlerters,
+		warningAlerters:       warningAlerters,
 	}, nil
 }
 
@@ -274,7 +281,7 @@ func (xfagg *aggregator) uploadFile(index int, agent upload.Agent, res *transfor
 
 	// Send Slack/PD or whatever notifications after the file is uploaded
 	if err := xfagg.notifyAfterUpload(filename, res.File, agent, err); err != nil {
-		xfagg.alertOnError(xfagg.logger.LogError(err).Err())
+		xfagg.alertOnWarning(xfagg.logger.LogError(err).Err())
 	}
 
 	// record our upload metrics
@@ -362,13 +369,31 @@ func (xfagg *aggregator) notifyAboutHoliday(day *schedule.Day) {
 }
 
 func (xfagg *aggregator) alertOnError(err error) {
-	if xfagg == nil || xfagg.alerter == nil {
+	if xfagg == nil || len(xfagg.errorAlerters) == 0 {
 		return
 	}
 	if err == nil {
 		return
 	}
-	if err := xfagg.alerter.AlertError(err); err != nil {
-		xfagg.logger.LogErrorf("ERROR sending alert: %v", err)
+
+	for _, alerter := range xfagg.errorAlerters {
+		if err := alerter.AlertError(err); err != nil {
+			xfagg.logger.LogErrorf("ERROR sending alert: %v", err)
+		}
+	}
+}
+
+func (xfagg *aggregator) alertOnWarning(err error) {
+	if xfagg == nil || len(xfagg.warningAlerters) == 0 {
+		return
+	}
+	if err == nil {
+		return
+	}
+
+	for _, alerter := range xfagg.warningAlerters {
+		if err := alerter.AlertError(err); err != nil {
+			xfagg.logger.LogErrorf("ERROR sending warning alert: %v", err)
+		}
 	}
 }
