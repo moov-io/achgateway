@@ -1,3 +1,9 @@
+## v0.15.6 (Released 2022-06-14)
+
+IMPROVEMENTS
+
+- fix: enable diffie-hellman-group-exchange-sha256 ssh algorithm
+
 ## v0.15.5 (Released 2022-06-10)
 
 IMPROVEMENTS
