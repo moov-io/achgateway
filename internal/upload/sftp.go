@@ -122,7 +122,14 @@ func sftpConnect(logger log.Logger, cfg service.UploadAgent) (*ssh.Client, io.Wr
 		return nil, nil, nil, errors.New("nil config or sftp config")
 	}
 
+	sshConf := ssh.Config{}
+	sshConf.SetDefaults()
+	sshConf.KeyExchanges = append(
+		sshConf.KeyExchanges,
+		"diffie-hellman-group-exchange-sha256",
+	)
 	conf := &ssh.ClientConfig{
+		Config:  sshConf,
 		User:    cfg.SFTP.Username,
 		Timeout: cfg.SFTP.Timeout(),
 	}
