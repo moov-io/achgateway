@@ -281,7 +281,7 @@ func (xfagg *aggregator) uploadFile(index int, agent upload.Agent, res *transfor
 
 	// Send Slack/PD or whatever notifications after the file is uploaded
 	if err := xfagg.notifyAfterUpload(filename, res.File, agent, err); err != nil {
-		xfagg.alertOnWarning(xfagg.logger.LogError(err).Err())
+		xfagg.alertOnError(xfagg.logger.LogError(err).Err())
 	}
 
 	// record our upload metrics
@@ -335,18 +335,23 @@ func (xfagg *aggregator) notifyAfterUpload(filename string, file *ach.File, agen
 }
 
 func (xfagg *aggregator) notifyAboutHoliday(day *schedule.Day) {
+	var msg string
 	logger := xfagg.logger.With(log.Fields{
 		"shard": log.String(xfagg.shard.Name),
 	})
 
 	if !day.FirstWindow {
-		logger.Info().Log("skipping holiday notification")
+		msg = "skipping holiday notification"
+		xfagg.alertOnWarning(errors.New(msg))
+		logger.Info().Logf(msg)
 		return
 	}
 
 	uploadAgent := xfagg.uploadAgents.Find(xfagg.shard.UploadAgent)
 	if uploadAgent == nil {
-		logger.Warn().Logf("skipping holiday log for %v", day.Time.Format("2006-01-02"))
+		msg = fmt.Sprintf("skipping holiday log for %v", day.Time.Format("2006-01-02"))
+		xfagg.alertOnWarning(errors.New(msg))
+		logger.Warn().Logf(msg)
 		return
 	}
 
