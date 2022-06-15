@@ -67,15 +67,18 @@ func newFileReceiver(
 
 func (fr *FileReceiver) Start(ctx context.Context) {
 	for {
+		// Create a context that will be shutdown by its parent or after a read iteration
+		innerCtx, cancelFunc := context.WithCancel(ctx)
+
 		select {
-		case err := <-fr.handleMessage(ctx, fr.httpFiles):
+		case err := <-fr.handleMessage(innerCtx, fr.httpFiles):
 			incomingHTTPFiles.With().Add(1)
 			if err != nil {
 				httpFileProcessingErrors.With().Add(1)
 				fr.logger.LogErrorf("error handling http file: %v", err)
 			}
 
-		case err := <-fr.handleMessage(ctx, fr.streamFiles):
+		case err := <-fr.handleMessage(innerCtx, fr.streamFiles):
 			incomingStreamFiles.With().Add(1)
 			if err != nil {
 				streamFileProcessingErrors.With().Add(1)
@@ -83,9 +86,13 @@ func (fr *FileReceiver) Start(ctx context.Context) {
 			}
 
 		case <-ctx.Done():
+			cancelFunc()
 			fr.Shutdown()
 			return
 		}
+
+		// After processing a message cancel the inner context to release any resources.
+		cancelFunc()
 	}
 }
 
@@ -133,7 +140,9 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 		go func() {
 			msg, err := sub.Receive(ctx)
 			if err != nil {
-				fr.logger.LogErrorf("ERROR receiving message: %v", err)
+				if err != context.Canceled {
+					fr.logger.LogErrorf("ERROR receiving message: %v", err)
+				}
 			}
 			receiver <- msg
 		}()
@@ -144,7 +153,6 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 				out <- fr.processMessage(msg)
 				return
 			} else {
-				fr.logger.Log("nil message received")
 				cleanup()
 				return
 			}
