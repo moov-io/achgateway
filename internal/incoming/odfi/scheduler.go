@@ -52,8 +52,7 @@ type PeriodicScheduler struct {
 	downloader Downloader
 	processors Processors
 
-	errorAlerters   []alerting.Alerter
-	warningAlerters []alerting.Alerter
+	errorAlerters []alerting.Alerter
 }
 
 func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, consul *consul.Client, processors Processors) (Scheduler, error) {
@@ -70,27 +69,22 @@ func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, consul *consul
 	if err != nil {
 		return nil, fmt.Errorf("ERROR creating error alerters: %v", err)
 	}
-	warningAlerters, err := alerting.NewAlerters(cfg.Warnings)
-	if err != nil {
-		return nil, fmt.Errorf("ERROR creating warning alerters: %v", err)
-	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
 
 	return &PeriodicScheduler{
-		logger:          logger,
-		odfi:            cfg.Inbound.ODFI,
-		sharding:        cfg.Sharding,
-		uploadAgents:    cfg.Upload,
-		ticker:          time.NewTicker(cfg.Inbound.ODFI.Interval),
-		inboundTrigger:  make(chan manuallyTriggeredInbound, 1),
-		consul:          consul,
-		downloader:      dl,
-		processors:      processors,
-		shutdown:        ctx,
-		shutdownFunc:    cancelFunc,
-		errorAlerters:   errorAlerters,
-		warningAlerters: warningAlerters,
+		logger:         logger,
+		odfi:           cfg.Inbound.ODFI,
+		sharding:       cfg.Sharding,
+		uploadAgents:   cfg.Upload,
+		ticker:         time.NewTicker(cfg.Inbound.ODFI.Interval),
+		inboundTrigger: make(chan manuallyTriggeredInbound, 1),
+		consul:         consul,
+		downloader:     dl,
+		processors:     processors,
+		shutdown:       ctx,
+		shutdownFunc:   cancelFunc,
+		errorAlerters:  errorAlerters,
 	}, nil
 }
 

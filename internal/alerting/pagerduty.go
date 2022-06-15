@@ -28,7 +28,7 @@ func NewPagerDutyAlerter(cfg *service.PagerDutyAlerting) (*PagerDuty, error) {
 	return notifier, nil
 }
 
-func (pd *PagerDuty) AlertError(e error) error {
+func (pd *PagerDuty) Alert(e error) error {
 	if e == nil {
 		return nil
 	}

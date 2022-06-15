@@ -41,8 +41,7 @@ type Config struct {
 	Events   *EventsConfig
 	Sharding Sharding
 	Upload   UploadAgents
-	Warnings ErrorAlerting
-	Errors   ErrorAlerting
+	Errors   AlertingConfig
 }
 
 func (cfg *Config) Validate() error {
@@ -60,9 +59,6 @@ func (cfg *Config) Validate() error {
 	}
 	if err := cfg.Upload.Validate(); err != nil {
 		return fmt.Errorf("upload: %v", err)
-	}
-	if err := cfg.Warnings.Validate(); err != nil {
-		return fmt.Errorf("warnings: %v", err)
 	}
 	if err := cfg.Errors.Validate(); err != nil {
 		return fmt.Errorf("errors: %v", err)

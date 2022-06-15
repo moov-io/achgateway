@@ -56,8 +56,7 @@ type aggregator struct {
 	auditStorage          audittrail.Storage
 	preuploadTransformers []transform.PreUpload
 	outputFormatter       output.Formatter
-	errorAlerters         []alerting.Alerter
-	warningAlerters       []alerting.Alerter
+	alerters              *alerting.Alerters
 }
 
 func newAggregator(
@@ -66,8 +65,7 @@ func newAggregator(
 	eventEmitter events.Emitter,
 	shard service.Shard,
 	uploadAgents service.UploadAgents,
-	errorAlerting service.ErrorAlerting,
-	warningAlerting service.ErrorAlerting,
+	errorAlerting service.AlertingConfig,
 ) (*aggregator, error) {
 	merger, err := NewMerging(logger, consul, shard, uploadAgents)
 	if err != nil {
@@ -103,13 +101,9 @@ func newAggregator(
 		return nil, fmt.Errorf("error creating cutoffs: %v", err)
 	}
 
-	errorAlerters, err := alerting.NewAlerters(errorAlerting)
+	alerters, err := alerting.NewAlerters(logger, errorAlerting)
 	if err != nil {
-		return nil, fmt.Errorf("error setting up error alerters: %v", err)
-	}
-	warningAlerters, err := alerting.NewAlerters(errorAlerting)
-	if err != nil {
-		return nil, fmt.Errorf("error setting up warning alerters: %v", err)
+		return nil, fmt.Errorf("error setting up alerters: %v", err)
 	}
 
 	return &aggregator{
@@ -123,8 +117,7 @@ func newAggregator(
 		auditStorage:          auditStorage,
 		preuploadTransformers: preuploadTransformers,
 		outputFormatter:       outputFormatter,
-		errorAlerters:         errorAlerters,
-		warningAlerters:       warningAlerters,
+		alerters:              alerters,
 	}, nil
 }
 
@@ -374,31 +367,8 @@ func (xfagg *aggregator) notifyAboutHoliday(day *schedule.Day) {
 }
 
 func (xfagg *aggregator) alertOnError(err error) {
-	if xfagg == nil || len(xfagg.errorAlerters) == 0 {
+	if xfagg == nil || err == nil {
 		return
 	}
-	if err == nil {
-		return
-	}
-
-	for _, alerter := range xfagg.errorAlerters {
-		if err := alerter.AlertError(err); err != nil {
-			xfagg.logger.LogErrorf("ERROR sending alert: %v", err)
-		}
-	}
-}
-
-func (xfagg *aggregator) alertOnWarning(err error) {
-	if xfagg == nil || len(xfagg.warningAlerters) == 0 {
-		return
-	}
-	if err == nil {
-		return
-	}
-
-	for _, alerter := range xfagg.warningAlerters {
-		if err := alerter.AlertError(err); err != nil {
-			xfagg.logger.LogErrorf("ERROR sending warning alert: %v", err)
-		}
-	}
+	xfagg.alerters.Error(err)
 }

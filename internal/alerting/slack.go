@@ -26,7 +26,7 @@ func NewSlackAlerter(cfg *service.SlackAlerting) (*Slack, error) {
 	return notifier, nil
 }
 
-func (s *Slack) AlertError(e error) error {
+func (s *Slack) Alert(e error) error {
 	if e == nil {
 		return nil
 	}

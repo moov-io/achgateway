@@ -22,12 +22,12 @@ import (
 	"fmt"
 )
 
-type ErrorAlerting struct {
+type AlertingConfig struct {
 	PagerDuty *PagerDutyAlerting
 	Slack     *SlackAlerting
 }
 
-func (n ErrorAlerting) Validate() error {
+func (n AlertingConfig) Validate() error {
 	if n.PagerDuty != nil {
 		if err := n.PagerDuty.Validate(); err != nil {
 			return fmt.Errorf("pager duty config: %v", err)
