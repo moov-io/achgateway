@@ -56,7 +56,7 @@ type aggregator struct {
 	auditStorage          audittrail.Storage
 	preuploadTransformers []transform.PreUpload
 	outputFormatter       output.Formatter
-	alerters              []alerting.Alerter
+	alerters              alerting.Alerters
 }
 
 func newAggregator(
@@ -369,9 +369,7 @@ func (xfagg *aggregator) alertOnError(err error) {
 		return
 	}
 
-	for _, alerter := range xfagg.alerters {
-		if err := alerter.AlertError(err); err != nil {
-			xfagg.logger.LogErrorf("ERROR sending alert: %v", err)
-		}
+	if err := xfagg.alerters.AlertError(err); err != nil {
+		xfagg.logger.LogErrorf("ERROR sending alert: %v", err)
 	}
 }

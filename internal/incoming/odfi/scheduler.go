@@ -52,7 +52,7 @@ type PeriodicScheduler struct {
 	downloader Downloader
 	processors Processors
 
-	alerters []alerting.Alerter
+	alerters alerting.Alerters
 }
 
 func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, consul *consul.Client, processors Processors) (Scheduler, error) {
@@ -195,9 +195,7 @@ func (s *PeriodicScheduler) alertOnError(err error) {
 		return
 	}
 
-	for _, alerter := range s.alerters {
-		if err := alerter.AlertError(err); err != nil {
-			s.logger.LogErrorf("ERROR sending alert: %v", err)
-		}
+	if err := s.alerters.AlertError(err); err != nil {
+		s.logger.LogErrorf("ERROR sending alert: %v", err)
 	}
 }

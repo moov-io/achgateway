@@ -54,7 +54,7 @@ func TestNewAlertersPagerDutyAndSlack(t *testing.T) {
 		t.Skip("Skip as PD_API_KEY and SLACK_ACCESS_TOKEN are not set")
 	}
 	var cfg service.ErrorAlerting
-	var alerters []Alerter
+	var alerters Alerters
 	var err error
 
 	cfg = service.ErrorAlerting{
@@ -72,8 +72,6 @@ func TestNewAlertersPagerDutyAndSlack(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, alerters, 2)
 
-	for _, alerter := range alerters {
-		err = alerter.AlertError(errors.New("error message"))
-		require.NoError(t, err)
-	}
+	err = alerters.AlertError(errors.New("error message"))
+	require.NoError(t, err)
 }
