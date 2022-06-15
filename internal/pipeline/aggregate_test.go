@@ -55,9 +55,8 @@ func TestAggregateACHFile(t *testing.T) {
 		DefaultAgentID: "ftp-live",
 	}
 	var errorAlerting service.ErrorAlerting
-	var warningAlerting service.ErrorAlerting
 
-	xfagg, err := newAggregator(log.NewNopLogger(), nil, &events.MockEmitter{}, shard, uploadAgents, errorAlerting, warningAlerting)
+	xfagg, err := newAggregator(log.NewNopLogger(), nil, &events.MockEmitter{}, shard, uploadAgents, errorAlerting)
 	require.NoError(t, err)
 
 	merge := &MockXferMerging{}
@@ -104,9 +103,8 @@ func TestAggregate_notifyAfterUpload(t *testing.T) {
 		DefaultAgentID: "mock-agent",
 	}
 	var errorAlerting service.ErrorAlerting
-	var warningAlerting service.ErrorAlerting
 
-	xfagg, err := newAggregator(log.NewNopLogger(), nil, &events.MockEmitter{}, shard, uploadAgents, errorAlerting, warningAlerting)
+	xfagg, err := newAggregator(log.NewNopLogger(), nil, &events.MockEmitter{}, shard, uploadAgents, errorAlerting)
 	require.NoError(t, err)
 
 	require.NotPanics(t, func() {
@@ -139,9 +137,8 @@ func TestAggregate_notifyAfterUploadErr(t *testing.T) {
 		DefaultAgentID: "mock-agent",
 	}
 	var errorAlerting service.ErrorAlerting
-	var warningAlerting service.ErrorAlerting
 
-	xfagg, err := newAggregator(log.NewNopLogger(), nil, &events.MockEmitter{}, shard, uploadAgents, errorAlerting, warningAlerting)
+	xfagg, err := newAggregator(log.NewNopLogger(), nil, &events.MockEmitter{}, shard, uploadAgents, errorAlerting)
 	require.NoError(t, err)
 
 	require.NotPanics(t, func() {

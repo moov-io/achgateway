@@ -56,8 +56,7 @@ type aggregator struct {
 	auditStorage          audittrail.Storage
 	preuploadTransformers []transform.PreUpload
 	outputFormatter       output.Formatter
-	errorAlerters         []alerting.Alerter
-	warningAlerters       []alerting.Alerter
+	alerters              []alerting.Alerter
 }
 
 func newAggregator(
@@ -67,7 +66,6 @@ func newAggregator(
 	shard service.Shard,
 	uploadAgents service.UploadAgents,
 	errorAlerting service.ErrorAlerting,
-	warningAlerting service.ErrorAlerting,
 ) (*aggregator, error) {
 	merger, err := NewMerging(logger, consul, shard, uploadAgents)
 	if err != nil {
@@ -103,13 +101,9 @@ func newAggregator(
 		return nil, fmt.Errorf("error creating cutoffs: %v", err)
 	}
 
-	errorAlerters, err := alerting.NewAlerters(errorAlerting)
+	alerters, err := alerting.NewAlerters(errorAlerting)
 	if err != nil {
-		return nil, fmt.Errorf("error setting up error alerters: %v", err)
-	}
-	warningAlerters, err := alerting.NewAlerters(errorAlerting)
-	if err != nil {
-		return nil, fmt.Errorf("error setting up warning alerters: %v", err)
+		return nil, fmt.Errorf("error setting up alerters: %v", err)
 	}
 
 	return &aggregator{
@@ -123,8 +117,7 @@ func newAggregator(
 		auditStorage:          auditStorage,
 		preuploadTransformers: preuploadTransformers,
 		outputFormatter:       outputFormatter,
-		errorAlerters:         errorAlerters,
-		warningAlerters:       warningAlerters,
+		alerters:              alerters,
 	}, nil
 }
 
@@ -335,23 +328,18 @@ func (xfagg *aggregator) notifyAfterUpload(filename string, file *ach.File, agen
 }
 
 func (xfagg *aggregator) notifyAboutHoliday(day *schedule.Day) {
-	var msg string
 	logger := xfagg.logger.With(log.Fields{
 		"shard": log.String(xfagg.shard.Name),
 	})
 
 	if !day.FirstWindow {
-		msg = "skipping holiday notification"
-		xfagg.alertOnWarning(errors.New(msg))
-		logger.Info().Logf(msg)
+		logger.Info().Log("skipping holiday notification")
 		return
 	}
 
 	uploadAgent := xfagg.uploadAgents.Find(xfagg.shard.UploadAgent)
 	if uploadAgent == nil {
-		msg = fmt.Sprintf("skipping holiday log for %v", day.Time.Format("2006-01-02"))
-		xfagg.alertOnWarning(errors.New(msg))
-		logger.Warn().Logf(msg)
+		logger.Warn().Logf("skipping holiday log for %v", day.Time.Format("2006-01-02"))
 		return
 	}
 
@@ -374,31 +362,16 @@ func (xfagg *aggregator) notifyAboutHoliday(day *schedule.Day) {
 }
 
 func (xfagg *aggregator) alertOnError(err error) {
-	if xfagg == nil || len(xfagg.errorAlerters) == 0 {
+	if xfagg == nil || len(xfagg.alerters) == 0 {
 		return
 	}
 	if err == nil {
 		return
 	}
 
-	for _, alerter := range xfagg.errorAlerters {
+	for _, alerter := range xfagg.alerters {
 		if err := alerter.AlertError(err); err != nil {
 			xfagg.logger.LogErrorf("ERROR sending alert: %v", err)
-		}
-	}
-}
-
-func (xfagg *aggregator) alertOnWarning(err error) {
-	if xfagg == nil || len(xfagg.warningAlerters) == 0 {
-		return
-	}
-	if err == nil {
-		return
-	}
-
-	for _, alerter := range xfagg.warningAlerters {
-		if err := alerter.AlertError(err); err != nil {
-			xfagg.logger.LogErrorf("ERROR sending warning alert: %v", err)
 		}
 	}
 }

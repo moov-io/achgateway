@@ -52,8 +52,7 @@ type PeriodicScheduler struct {
 	downloader Downloader
 	processors Processors
 
-	errorAlerters   []alerting.Alerter
-	warningAlerters []alerting.Alerter
+	alerters []alerting.Alerter
 }
 
 func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, consul *consul.Client, processors Processors) (Scheduler, error) {
@@ -66,31 +65,26 @@ func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, consul *consul
 		return nil, err
 	}
 
-	errorAlerters, err := alerting.NewAlerters(cfg.Errors)
+	alerters, err := alerting.NewAlerters(cfg.Errors)
 	if err != nil {
-		return nil, fmt.Errorf("ERROR creating error alerters: %v", err)
-	}
-	warningAlerters, err := alerting.NewAlerters(cfg.Warnings)
-	if err != nil {
-		return nil, fmt.Errorf("ERROR creating warning alerters: %v", err)
+		return nil, fmt.Errorf("ERROR creating alerters: %v", err)
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
 
 	return &PeriodicScheduler{
-		logger:          logger,
-		odfi:            cfg.Inbound.ODFI,
-		sharding:        cfg.Sharding,
-		uploadAgents:    cfg.Upload,
-		ticker:          time.NewTicker(cfg.Inbound.ODFI.Interval),
-		inboundTrigger:  make(chan manuallyTriggeredInbound, 1),
-		consul:          consul,
-		downloader:      dl,
-		processors:      processors,
-		shutdown:        ctx,
-		shutdownFunc:    cancelFunc,
-		errorAlerters:   errorAlerters,
-		warningAlerters: warningAlerters,
+		logger:         logger,
+		odfi:           cfg.Inbound.ODFI,
+		sharding:       cfg.Sharding,
+		uploadAgents:   cfg.Upload,
+		ticker:         time.NewTicker(cfg.Inbound.ODFI.Interval),
+		inboundTrigger: make(chan manuallyTriggeredInbound, 1),
+		consul:         consul,
+		downloader:     dl,
+		processors:     processors,
+		shutdown:       ctx,
+		shutdownFunc:   cancelFunc,
+		alerters:       alerters,
 	}, nil
 }
 
@@ -194,14 +188,14 @@ func (s *PeriodicScheduler) tick(shard *service.Shard) error {
 }
 
 func (s *PeriodicScheduler) alertOnError(err error) {
-	if s == nil || len(s.errorAlerters) == 0 {
+	if s == nil || len(s.alerters) == 0 {
 		return
 	}
 	if err == nil {
 		return
 	}
 
-	for _, alerter := range s.errorAlerters {
+	for _, alerter := range s.alerters {
 		if err := alerter.AlertError(err); err != nil {
 			s.logger.LogErrorf("ERROR sending alert: %v", err)
 		}
