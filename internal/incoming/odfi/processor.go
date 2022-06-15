@@ -87,8 +87,21 @@ func ProcessFiles(dl *downloadedFiles, auditSaver *AuditSaver, fileProcessors Pr
 		return fmt.Errorf("reading %s: %v", dl.dir, err)
 	}
 	for i := range dirs {
-		if err := process(filepath.Join(dl.dir, dirs[i].Name()), auditSaver, fileProcessors); err != nil {
-			el.Add(fmt.Errorf("%s: %v", dirs[i], err))
+		where := filepath.Join(dl.dir, dirs[i].Name())
+
+		if dirs[i].Mode().IsDir() {
+			err = processDir(where, auditSaver, fileProcessors)
+			if err != nil {
+				el.Add(fmt.Errorf("processDir %s: %v", dirs[i], err))
+				continue
+			}
+		}
+		if dirs[i].Mode().IsRegular() {
+			err = processFile(where, auditSaver, fileProcessors)
+			if err != nil {
+				el.Add(fmt.Errorf("processfile - %s: %v", dirs[i], err))
+				continue
+			}
 		}
 	}
 	if el.Empty() {
@@ -97,7 +110,7 @@ func ProcessFiles(dl *downloadedFiles, auditSaver *AuditSaver, fileProcessors Pr
 	return el
 }
 
-func process(dir string, auditSaver *AuditSaver, fileProcessors Processors) error {
+func processDir(dir string, auditSaver *AuditSaver, fileProcessors Processors) error {
 	infos, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return fmt.Errorf("reading %s: %v", dir, err)
@@ -105,43 +118,10 @@ func process(dir string, auditSaver *AuditSaver, fileProcessors Processors) erro
 
 	var el base.ErrorList
 	for i := range infos {
-		// Read the file's contents
-		bs, err := ioutil.ReadFile(filepath.Join(dir, infos[i].Name()))
-		if err != nil {
-			el.Add(fmt.Errorf("problem opening %s: %v", infos[i].Name(), err))
-			continue
-		}
+		where := filepath.Join(dir, infos[i].Name())
 
-		// Parse the ACH file
-		file, err := ach.NewReader(bytes.NewReader(bs)).Read()
-		if err != nil {
-			// Some return files don't contain FileHeader info, but can be processed as there
-			// are batches with entries. Let's continue to process those, but skip other errors.
-			if !base.Has(err, ach.ErrFileHeader) {
-				el.Add(fmt.Errorf("problem parsing %s: %v", infos[i].Name(), err))
-				continue
-			}
-		}
-
-		// Persist the file if needed
-		if auditSaver != nil {
-			currentDir := filepath.Base(dir)
-			path := fmt.Sprintf("odfi/%s/%s/%s/%s", auditSaver.hostname, currentDir, time.Now().Format("2006-01-02"), infos[i].Name())
-			err = auditSaver.save(path, bs)
-			if err != nil {
-				el.Add(fmt.Errorf("audittrail %s error: %v", infos[i].Name(), err))
-				continue
-			}
-		}
-
-		// Pass the file off to our handler
-		err = fileProcessors.HandleAll(File{
-			Filepath: filepath.Join(dir, infos[i].Name()),
-			ACHFile:  &file,
-		})
-		if err != nil {
-			el.Add(fmt.Errorf("processing %s error: %v", infos[i].Name(), err))
-			continue
+		if err := processFile(where, auditSaver, fileProcessors); err != nil {
+			el.Add(err)
 		}
 	}
 
@@ -149,4 +129,44 @@ func process(dir string, auditSaver *AuditSaver, fileProcessors Processors) erro
 		return nil
 	}
 	return el
+}
+
+func processFile(path string, auditSaver *AuditSaver, fileProcessors Processors) error {
+	bs, err := ioutil.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("problem opening %s: %v", path, err)
+	}
+
+	// Parse the ACH file
+	file, err := ach.NewReader(bytes.NewReader(bs)).Read()
+	if err != nil {
+		// Some return files don't contain FileHeader info, but can be processed as there
+		// are batches with entries. Let's continue to process those, but skip other errors.
+		if !base.Has(err, ach.ErrFileHeader) {
+			return fmt.Errorf("problem parsing %s: %v", path, err)
+		}
+	}
+
+	dir, filename := filepath.Split(path)
+	dir = filepath.Base(dir)
+
+	// Persist the file if needed
+	if auditSaver != nil {
+		path := fmt.Sprintf("odfi/%s/%s/%s/%s", auditSaver.hostname, dir, time.Now().Format("2006-01-02"), filename)
+		err = auditSaver.save(path, bs)
+		if err != nil {
+			return fmt.Errorf("audittrail %s error: %v", path, err)
+		}
+	}
+
+	// Pass the file off to our handler
+	err = fileProcessors.HandleAll(File{
+		Filepath: path,
+		ACHFile:  &file,
+	})
+	if err != nil {
+		return fmt.Errorf("processing %s error: %v", path, err)
+	}
+
+	return nil
 }
