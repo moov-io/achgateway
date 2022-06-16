@@ -59,7 +59,13 @@ func (bs *blobStorage) Close() error {
 }
 
 func (bs *blobStorage) SaveFile(filepath string, data []byte) error {
-	encrypted, err := bs.cryptor.Disfigure(data)
+	var encrypted []byte
+	var err error
+	if bs.cryptor != nil {
+		encrypted, err = bs.cryptor.Disfigure(data)
+	} else {
+		encrypted = data
+	}
 	if err != nil {
 		uploadFilesErrors.With("type", "blob", "id", bs.id).Add(1)
 		return err
