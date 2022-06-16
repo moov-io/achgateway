@@ -45,6 +45,28 @@ func TestBlobStorage(t *testing.T) {
 	}
 }
 
+func TestBlobStorage__NoGPG(t *testing.T) {
+	cfg := &service.AuditTrail{
+		BucketURI: "mem://",
+	}
+
+	store, err := newBlobStorage(cfg)
+	require.NoError(t, err)
+	defer store.Close()
+
+	data := []byte("nacha formatted data")
+	err = store.SaveFile("ftp.dev.com/saved.ach", data)
+	require.NoError(t, err)
+
+	r, err := store.GetFile("ftp.dev.com/saved.ach")
+	require.NoError(t, err)
+	defer r.Close()
+
+	bs, err := ioutil.ReadAll(r)
+	require.NoError(t, err)
+	require.Equal(t, data, bs)
+}
+
 func TestBlobStorageErr(t *testing.T) {
 	cfg := &service.AuditTrail{
 		BucketURI: "bad://",
