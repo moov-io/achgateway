@@ -1,3 +1,11 @@
+## v0.15.7 (Released 2022-06-16)
+
+IMPROVEMENTS
+
+- fix: save plaintext audit files when GPG isn't configured
+- fix: stop accumulating receivers on each handled message
+- incoming/odfi: fix ProcessFiles to route around directories and files
+
 ## v0.15.6 (Released 2022-06-14)
 
 IMPROVEMENTS
