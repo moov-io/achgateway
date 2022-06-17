@@ -188,7 +188,7 @@ func (s *PeriodicScheduler) tick(shard *service.Shard) error {
 }
 
 func (s *PeriodicScheduler) alertOnError(err error) {
-	if s == nil || len(s.alerters) == 0 {
+	if s == nil {
 		return
 	}
 	if err == nil {

@@ -43,26 +43,6 @@ func (s *Slack) AlertError(e error) error {
 	return nil
 }
 
-func (s *Slack) AlertWithAttachments(msg, color string, fields []slack.AttachmentField) error {
-	var attachment = slack.Attachment{
-		Fields: fields,
-		// color hex value, example: "#8E1600"
-		Color: color,
-	}
-
-	_, _, err := s.client.PostMessage(
-		s.channelID,
-		slack.MsgOptionText(msg, false),
-		slack.MsgOptionAttachments(attachment),
-		slack.MsgOptionAsUser(false),
-	)
-	if err != nil {
-		return fmt.Errorf("sending slack message: %v", err)
-	}
-
-	return nil
-}
-
 func (s *Slack) AuthTest() error {
 	if s == nil || s.client == nil {
 		return errors.New("slack: nil or no slack client")

@@ -362,7 +362,7 @@ func (xfagg *aggregator) notifyAboutHoliday(day *schedule.Day) {
 }
 
 func (xfagg *aggregator) alertOnError(err error) {
-	if xfagg == nil || len(xfagg.alerters) == 0 {
+	if xfagg == nil {
 		return
 	}
 	if err == nil {

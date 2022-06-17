@@ -43,12 +43,12 @@ func NewAlerters(cfg service.ErrorAlerting) (Alerters, error) {
 	return alerters, nil
 }
 
-func (s *Alerters) AlertError(e error) error {
+func (s Alerters) AlertError(e error) error {
 	if e == nil {
 		return nil
 	}
 
-	for _, alerter := range *s {
+	for _, alerter := range s {
 		err := alerter.AlertError(e)
 		if err != nil {
 			return fmt.Errorf("alerting error: %v", err)
