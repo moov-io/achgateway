@@ -259,6 +259,9 @@ ACHGateway:
     PagerDuty:
       ApiKey: <string>
       RoutingKey: <string>
+    Slack:
+      AccessToken: <string>
+      ChannelID: <string>
     Mock:
       Enabled: <boolean>
 ```

@@ -52,7 +52,7 @@ type PeriodicScheduler struct {
 	downloader Downloader
 	processors Processors
 
-	alerter alerting.Alerter
+	alerters alerting.Alerters
 }
 
 func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, consul *consul.Client, processors Processors) (Scheduler, error) {
@@ -65,9 +65,9 @@ func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, consul *consul
 		return nil, err
 	}
 
-	alerter, err := alerting.NewAlerter(cfg.Errors)
+	alerters, err := alerting.NewAlerters(cfg.Errors)
 	if err != nil {
-		return nil, fmt.Errorf("ERROR creating alerter: %v", err)
+		return nil, fmt.Errorf("ERROR creating alerters: %v", err)
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
@@ -84,7 +84,7 @@ func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, consul *consul
 		processors:     processors,
 		shutdown:       ctx,
 		shutdownFunc:   cancelFunc,
-		alerter:        alerter,
+		alerters:       alerters,
 	}, nil
 }
 
@@ -191,13 +191,14 @@ func (s *PeriodicScheduler) tick(shard *service.Shard) error {
 }
 
 func (s *PeriodicScheduler) alertOnError(err error) {
-	if s == nil || s.alerter == nil {
+	if s == nil {
 		return
 	}
 	if err == nil {
 		return
 	}
-	if err := s.alerter.AlertError(err); err != nil {
+
+	if err := s.alerters.AlertError(err); err != nil {
 		s.logger.LogErrorf("ERROR sending alert: %v", err)
 	}
 }

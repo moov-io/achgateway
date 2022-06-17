@@ -57,7 +57,7 @@ type aggregator struct {
 	auditStorage          audittrail.Storage
 	preuploadTransformers []transform.PreUpload
 	outputFormatter       output.Formatter
-	alerter               alerting.Alerter
+	alerters              alerting.Alerters
 }
 
 func newAggregator(
@@ -103,9 +103,9 @@ func newAggregator(
 		return nil, fmt.Errorf("error creating cutoffs: %v", err)
 	}
 
-	alerter, err := alerting.NewAlerter(errorAlerting)
+	alerters, err := alerting.NewAlerters(errorAlerting)
 	if err != nil {
-		return nil, fmt.Errorf("error setting up alerter: %v", err)
+		return nil, fmt.Errorf("error setting up alerters: %v", err)
 	}
 
 	return &aggregator{
@@ -119,7 +119,7 @@ func newAggregator(
 		auditStorage:          auditStorage,
 		preuploadTransformers: preuploadTransformers,
 		outputFormatter:       outputFormatter,
-		alerter:               alerter,
+		alerters:              alerters,
 	}, nil
 }
 
@@ -366,13 +366,14 @@ func (xfagg *aggregator) notifyAboutHoliday(day *schedule.Day) {
 }
 
 func (xfagg *aggregator) alertOnError(err error) {
-	if xfagg == nil || xfagg.alerter == nil {
+	if xfagg == nil {
 		return
 	}
 	if err == nil {
 		return
 	}
-	if err := xfagg.alerter.AlertError(err); err != nil {
+
+	if err := xfagg.alerters.AlertError(err); err != nil {
 		xfagg.logger.LogErrorf("ERROR sending alert: %v", err)
 	}
 }

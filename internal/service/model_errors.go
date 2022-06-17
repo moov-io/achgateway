@@ -24,6 +24,7 @@ import (
 
 type ErrorAlerting struct {
 	PagerDuty *PagerDutyAlerting
+	Slack     *SlackAlerting
 }
 
 func (n ErrorAlerting) Validate() error {
@@ -50,6 +51,23 @@ func (cfg PagerDutyAlerting) Validate() error {
 	}
 	if cfg.RoutingKey == "" {
 		return errors.New("pagerduty error alerting: routingKey is missing")
+	}
+	return nil
+}
+
+type SlackAlerting struct {
+	// Oauth 2.0 access tokens are generated manually when creating a slack app
+	// https://api.slack.com/authentication/token-types
+	AccessToken string
+
+	// A default channel can be specified when creating a Slack app, and this config
+	// can override or be used as the default
+	ChannelID string
+}
+
+func (cfg SlackAlerting) Validate() error {
+	if cfg.AccessToken == "" {
+		return errors.New("slack error alerting: access token is missing")
 	}
 	return nil
 }

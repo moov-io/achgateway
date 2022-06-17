@@ -9,20 +9,69 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPagerDutyErrorAlert(t *testing.T) {
+func TestNewAlertersPagerDuty(t *testing.T) {
 	if os.Getenv("PD_API_KEY") == "" {
-		t.Skip("Skip PagerDuty notification as PD_API_KEY and PD_ROUTING_KEY are not set")
+		t.Skip("Skip TestNewAlertersPagerDuty as PD_API_KEY is not set")
+	}
+	var cfg service.ErrorAlerting
+	var alerters []Alerter
+	var err error
+
+	cfg = service.ErrorAlerting{
+		PagerDuty: &service.PagerDutyAlerting{
+			ApiKey:     os.Getenv("PD_API_KEY"),
+			RoutingKey: os.Getenv("PD_ROUTING_KEY"),
+		},
 	}
 
-	cfg := &service.PagerDutyAlerting{
-		ApiKey:     os.Getenv("PD_API_KEY"),
-		RoutingKey: os.Getenv("PD_ROUTING_KEY"),
-	}
-
-	notifier, err := NewPagerDutyAlerter(cfg)
+	alerters, err = NewAlerters(cfg)
 	require.NoError(t, err)
-	require.NotNil(t, notifier)
+	require.Len(t, alerters, 1)
+}
 
-	err = notifier.AlertError(errors.New("error message"))
+func TestNewAlertersSlack(t *testing.T) {
+	if os.Getenv("SLACK_ACCESS_TOKEN") == "" {
+		t.Skip("Skip TestNewAlertersSlack as SLACK_ACCESS_TOKEN is not set")
+	}
+	var cfg service.ErrorAlerting
+	var alerters []Alerter
+	var err error
+
+	cfg = service.ErrorAlerting{
+		Slack: &service.SlackAlerting{
+			AccessToken: os.Getenv("SLACK_ACCESS_TOKEN"),
+			ChannelID:   os.Getenv("SLACK_CHANNEL_ID"),
+		},
+	}
+
+	alerters, err = NewAlerters(cfg)
+	require.NoError(t, err)
+	require.Len(t, alerters, 1)
+}
+
+func TestNewAlertersPagerDutyAndSlack(t *testing.T) {
+	if os.Getenv("PD_API_KEY") == "" && os.Getenv("SLACK_ACCESS_TOKEN") == "" {
+		t.Skip("Skip as PD_API_KEY and SLACK_ACCESS_TOKEN are not set")
+	}
+	var cfg service.ErrorAlerting
+	var alerters Alerters
+	var err error
+
+	cfg = service.ErrorAlerting{
+		PagerDuty: &service.PagerDutyAlerting{
+			ApiKey:     os.Getenv("PD_API_KEY"),
+			RoutingKey: os.Getenv("PD_ROUTING_KEY"),
+		},
+		Slack: &service.SlackAlerting{
+			AccessToken: os.Getenv("SLACK_ACCESS_TOKEN"),
+			ChannelID:   os.Getenv("SLACK_CHANNEL_ID"),
+		},
+	}
+
+	alerters, err = NewAlerters(cfg)
+	require.NoError(t, err)
+	require.Len(t, alerters, 2)
+
+	err = alerters.AlertError(errors.New("error message"))
 	require.NoError(t, err)
 }

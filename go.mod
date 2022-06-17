@@ -42,6 +42,7 @@ require (
 	github.com/prometheus/client_golang v1.12.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sethvargo/go-retry v0.1.0
+	github.com/slack-go/slack v0.10.3 // indirect
 	github.com/spf13/viper v1.11.0
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.2
