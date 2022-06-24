@@ -1,45 +1,23 @@
-<!--generated-from:11badeae7f5171e6ec312a610718a7a4ac276e18df06d4d715e771702f50aba8 DO NOT REMOVE, DO UPDATE -->
-[![Moov Banner Logo](https://user-images.githubusercontent.com/20115216/104214617-885b3c80-53ec-11eb-8ce0-9fc745fb5bfc.png)](https://github.com/moov-io)
+---
+layout: page
+title: Usage | Docker
+hide_hero: true
+show_sidebar: false
+menubar: docs-menu
+---
 
-<p align="center">
-  <a href="https://github.com/moov-io/achgateway/blob/master/docs/README.md">Project Documentation</a>
-  ·
-  <a href="https://moov.io/blog/education/ach-gateway-guide/">Quickstart Guide</a>
-  ·
-  <a href="https://slack.moov.io/">Community</a>
-  ·
-  <a href="https://moov.io/blog/">Blog</a>
-  <br>
-  <br>
-</p>
+# Docker
 
-[![GoDoc](https://godoc.org/github.com/moov-io/achgateway?status.svg)](https://godoc.org/github.com/moov-io/achgateway)
-[![Build Status](https://github.com/moov-io/achgateway/workflows/Go/badge.svg)](https://github.com/moov-io/achgateway/actions)
-[![Coverage Status](https://codecov.io/gh/moov-io/achgateway/branch/master/graph/badge.svg)](https://codecov.io/gh/moov-io/achgateway)
-[![Go Report Card](https://goreportcard.com/badge/github.com/moov-io/achgateway)](https://goreportcard.com/report/github.com/moov-io/achgateway)
-[![Apache 2 licensed](https://img.shields.io/badge/license-Apache2-blue.svg)](https://raw.githubusercontent.com/moov-io/achgateway/master/LICENSE)
+You can download a [docker image called `moov/achgateway`](https://hub.docker.com/r/moov/achgateway/) from Docker Hub or use this repository. However it's recommended to [download the code repository](https://github.com/moov-io/achgateway) and running `docker-compose up` in the root directory.
 
-# moov-io/achgateway
-
-An extensible, highly-available, distributed, and fault-tolerant ACH uploader and downloader. ACH Gateway creates events for outside services and transforms files prior to upload to fit real-world requirements of production systems.
-
-If you believe you have identified a security vulnerability please responsibly report the issue as via email to security@moov.io. Please do not post it to a public issue tracker.
-
-## Getting started
-
-Read through the [project docs](docs/README.md) to gain an understanding of this project's purpose and how to run it.
-
-We publish a [public Docker image `moov/achgateway`](https://hub.docker.com/r/moov/achgateway/) from Docker Hub or use this repository. No configuration is required to serve on `:8484` and metrics at `:9494/metrics` in Prometheus format.
-
-Start achgateway and an FTP server:
 ```
-$ cd ./examples/getting-started/
-
 $ docker-compose up achgateway
 ...
 achgateway_1  | ts=2021-06-18T23:38:06Z msg="public listening on :8484" version=v0.4.1 level=info app=achgateway
 achgateway_1  | ts=2021-06-18T23:38:06Z msg="listening on [::]:9494" version=v0.4.1 level=info app=achgateway
 ```
+
+### Submitting a file
 
 Submit a file to achgateway (Nacha ACH format):
 ```
@@ -57,6 +35,8 @@ achgateway_1  | ts=2021-06-18T23:38:16Z msg="begin handle received ACHFile=f4 of
 achgateway_1  | ts=2021-06-18T23:38:16Z msg="finished handling ACHFile=f4" level=info app=achgateway version=v0.4.1
 ```
 
+### Uploading files (to your ODFI)
+
 Initiate cutoff time processing (aka upload to your ODFI):
 ```
 $ curl -XPUT "http://localhost:9494/trigger-cutoff"
@@ -67,7 +47,10 @@ achgateway_1  | ts=2021-06-18T23:38:20Z msg="found 1 matching ACH files: []strin
 achgateway_1  | ts=2021-06-18T23:38:20Z msg="merged 1 files into 1 files" level=info app=achgateway version=v0.4.1 tenantID=foo
 ```
 
-View the uploaded file:
+### View the uploaded file:
+
+Using the [achcli](https://github.com/moov-io/ach#command-line) tool to view ACH files in a human readable format.
+
 ```
 $ achcli ./testdata/ftp-server/outbound/20210618-233820-231380104.ach
 Describing ACH file './testdata/ftp-server/outbound/20210618-233820-231380104.ach'
@@ -91,7 +74,8 @@ Describing ACH file './testdata/ftp-server/outbound/20210618-233820-231380104.ac
   1           1           2                  100000            100000
 ```
 
-Initiate inbound file processing:
+### Process files from your ODFI
+
 ```
 $ curl -XPUT "http://localhost:9494/trigger-inbound"
 achgateway_1  | ts=2021-06-18T23:39:06Z msg="starting odfi periodic processing for testing" level=info app=achgateway version=v0.4.1
@@ -111,40 +95,3 @@ achgateway_1  | ts=2021-06-18T23:39:06Z msg="cleanup: deleted remote file /recon
 achgateway_1  | ts=2021-06-18T23:39:06Z msg="cleanup: deleted remote file /returned/return-WEB.ach" level=info app=achgateway version=v0.4.1
 achgateway_1  | ts=2021-06-18T23:39:06Z msg="finished odfi periodic processing for testing" app=achgateway version=v0.4.1 level=info
 ```
-
-## Usage
-
-achgateway accepts files over HTTP and Kafka to queue them up for upload at a Nacha cutoff time. This allows systems and humans to publish files and have them be optimized for upload. achgateway is inspired by [the work done in moov-io/paygate](https://github.com/moov-io/paygate) and is used in production at Moov.
-
-## Project status
-
-This project is used in production at multiple companies and has reached a stable status. We are looking to improve the configuration of ACHGateway and looking for feedback from real-world usage. Please reach out and share your story.
-
-## Getting help
-
- channel | info
- ------- | -------
-[Project Documentation](./docs/README.md) | Our project documentation available online.
-Twitter [@moov](https://twitter.com/moov)	| You can follow Moov.io's Twitter feed to get updates on our project(s). You can also tweet us questions or just share blogs or stories.
-[GitHub Issue](https://github.com/moov-io/achgateway/issues) | If you are able to reproduce a problem please open a GitHub Issue under the specific project that caused the error.
-[moov-io slack](https://slack.moov.io/) | Join our slack channel (`#ach`) to have an interactive discussion about the development of the project.
-
-## Supported and tested platforms
-
-- 64-bit Linux (Ubuntu, Debian), macOS, and Windows
-
-## Contributing
-
-Yes please! Please review our [Contributing guide](CONTRIBUTING.md) and [Code of Conduct](https://github.com/moov-io/ach/blob/master/CODE_OF_CONDUCT.md) to get started! Checkout our [issues for first time contributors](https://github.com/moov-io/achgateway/contribute) for something to help out with.
-
-This project uses [Go Modules](https://github.com/golang/go/wiki/Modules) and uses Go 1.14 or higher. See [Golang's install instructions](https://golang.org/doc/install) for help setting up Go. You can download the source code and we offer [tagged and released versions](https://github.com/moov-io/achgateway/releases/latest) as well. We highly recommend you use a tagged release for production.
-
-### Test coverage
-
-Improving test coverage is a great candidate for new contributors and allows the project to move more quickly by reducing regression issues that might not be caught before a release is pushed out to our users. One great way to improve coverage is by adding edge cases and different inputs to functions (or [contributing and running fuzzers](https://github.com/dvyukov/go-fuzz)).
-
-Tests can run processes (like SQLite databases), but should only do so locally.
-
-## License
-
-Apache License 2.0 - See [LICENSE](LICENSE) for details.

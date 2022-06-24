@@ -1,14 +1,17 @@
-<!-- generated-from:c55598a61b9a43ce98e8500432e597669da2f8955b40d9e772eac6011e2bb1c5 DO NOT REMOVE, DO UPDATE -->
-# ACH Gateway
-**[Purpose](README.md)** | **Configuration** | **[Running](RUNNING.md)**
-
+---
+layout: page
+title: Overview
+hide_hero: true
+show_sidebar: false
+menubar: docs-menu
 ---
 
-## Configuration
+# Configuration
+
 Custom configuration for this application may be specified via an environment variable `APP_CONFIG` to a configuration file that will be merged with the default configuration file.
 
-- [Default Configuration](../configs/config.default.yml)
-- [Config Source Code](../pkg/service/model_config.go)
+- [Default Configuration](https://github.com/moov-io/achgateway/tree/master/configs/config.default.yml)
+- [Config Source Code](https://github.com/moov-io/achgateway/blob/master/internal/service/model_config.go)
 
 ### General Configuration
 

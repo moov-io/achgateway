@@ -1,0 +1,53 @@
+- label: Getting started
+  items:
+    - name: Overview
+      link: /
+    - name: Project Goals
+      link: /goals/
+
+- label: Usage
+  items:
+    - name: Docker
+      link: /usage/docker/
+    - name: Kubernetes
+      link: /usage/kubernetes/
+    - name: Configuration
+      link: /config/
+
+- label: Concepts
+  items:
+    - name: Submitting Files
+      link: /concepts/submission/
+    - name: ODFI Files
+      link: /concepts/odfi-files/
+    - name: Shards / Upload Agents
+      link: /concepts/shards/
+    - name: Audit Trail
+      link: /concepts/audit-trail/
+    - name: Events
+      link: /concepts/events/
+    - name: Errors
+      link: /concepts/errors/
+
+- label: Use Cases
+  items:
+    - name: Account Validation
+      link: /guides/account-validation/
+
+- label: Operations
+  items:
+    - name: Leader Election
+      link: /ops/leadership/
+    - name: Merging
+      link: /ops/merging/
+    - name: Cutoffs
+      link: /ops/cutoffs/
+    - name: File Options
+      link: /ops/file-options/
+
+- label: Production
+  items:
+    - name: Prometheus Metrics
+      link: /metrics/
+    - name: Runbooks
+      link: /runbooks/
