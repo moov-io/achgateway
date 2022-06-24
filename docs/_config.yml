@@ -27,7 +27,7 @@ url: "https://moov-io.github.io" # the base hostname & protocol for your site, e
 baseurl: "/achgateway" # the subpath of your site, e.g. /blog
 twitter_username: moov
 github_username:  moov-io
-source_code: https://github.com/moov-io/ach
+source_code: https://github.com/moov-io/achgateway
 permalink: pretty
 
 # Build settings
