@@ -28,6 +28,8 @@
       link: /concepts/events/
     - name: Errors
       link: /concepts/errors/
+    - name: Notifications
+      link: /concepts/notifications/
 
 - label: Use Cases
   items:
