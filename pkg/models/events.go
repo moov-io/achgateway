@@ -144,7 +144,7 @@ func (evt *QueueACHFile) SetValidation(opts *ach.ValidateOpts) {
 }
 
 // CancelACHFile is an event that achgateway receives to cancel uploading a file to the ODFI.
-type CancelACHFile incoming.ACHFile
+type CancelACHFile incoming.CancelACHFile
 
 // FileUploaded is an event sent after a queued file has been uploaded to the ODFI.
 // The entries and batches may have been merged into a larger file to optimize on cost,
