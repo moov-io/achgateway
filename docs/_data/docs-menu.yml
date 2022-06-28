@@ -20,8 +20,10 @@
       link: /concepts/submission/
     - name: ODFI Files
       link: /concepts/odfi-files/
-    - name: Shards / Upload Agents
+    - name: Shards
       link: /concepts/shards/
+    - name: Upload Agents
+      link: /concepts/upload/
     - name: Audit Trail
       link: /concepts/audit-trail/
     - name: Events

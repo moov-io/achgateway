@@ -22,6 +22,7 @@ Several other features of achgateway include:
 # Non-Goals
 
 - Nacha compliant limit analysis
+- Balance verification
 - Transaction authorization
 - Settlement availability
 - Risk calculations

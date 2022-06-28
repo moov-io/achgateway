@@ -20,3 +20,35 @@ Example with 30-min ODFI deadline
 ## Developers
 
 Moov publishes [a `Time` object in moov-io/base](https://pkg.go.dev/github.com/moov-io/base?utm_source=godoc#Time) to assist with calculating banking days and when holidays are observed. There is also a [`bankcron` Docker image](https://github.com/moov-io/bankcron) for running tasks only on banking days.
+
+## Manual Triggers
+
+ACHGateway supports manually triggering inbound or cutoff processing. A list of shards can be specified or all shards can be triggered.
+
+### Flushing ACH Files
+
+There is an endpoint to initiate cutoff processing as if a window has approached. This involves merging transfers into files, upload attempts, and audit trail storage.
+
+```
+$ curl -XPUT http://localhost:9092/trigger-cutoff --data '{"shardNames":["testing"]}'
+{
+  "shards": {
+    "testing": null,
+    "SD-live": "ERROR: unknown host"
+  }
+}
+```
+
+### Processing ODFI Files
+
+There is an endpoint to initiate processing of ODFI files which could be incoming transfers, returned files, corrected files, and pre-notifications.
+
+```
+$ curl -XPUT http://localhost:9092/trigger-inbound
+{
+  "shards": {
+    "testing": null,
+    "SD-live": "ERROR: unknown host"
+  }
+}
+```

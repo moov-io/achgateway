@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Shards / Upload Agents
+title: Shards
 hide_hero: true
 show_sidebar: false
 menubar: docs-menu
@@ -33,3 +33,7 @@ Each shard has a wealth of configuration options, but the major options are:
 - Audit Trail: Encrypted storage of uploaded and downloaded files
 - Notifications: Email, PagerDuty, and Slack alerting of successful or failed processing
 - Merge conditions: Maximum file dollar amounts, or line length restrictions
+
+## Mapping
+
+TODO(adam): Link to OpenAPI docs

@@ -29,6 +29,11 @@ ACHGateway has an endpoint for submitting a file to be queued.
 POST /shards/{shardKey}/files/{fileID}
 ```
 
+- Content-Type: `text/plain` (default)
+   - Body: Nacha format
+- Content-Type: `application/json`
+   - Body: moov-io/ach JSON format
+
 The request body may be a [Nacha formatted](https://github.com/moov-io/ach/blob/master/test/testdata/ppd-debit.ach) file or the [moov-io/ach JSON representation](https://github.com/moov-io/ach/blob/master/test/testdata/ppd-valid.json). The incoming file must pass Nacha validation rules enforced by the moov-io/ach library.
 
 ### Stream
