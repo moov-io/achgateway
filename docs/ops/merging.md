@@ -12,6 +12,8 @@ When a shard is triggered (either by [cutoff time](../cutoffs/) or manual) the i
 
 ## Encryption
 
+ACHGateway supports encrypting pending and merged files in the filesystem used for staging. This uses the [moov-io/cryptfs](https://github.com/moov-io/cryptfs) library and can be configured to use AES and encoded in base64 on disk.
+
 ## Merging
 
 1. Rename the existing directory of pending files from `storage/merging/{shardKey}/` to a timestamp version (e.g. `storage/merging/{shardKey}-$timestamp/`).

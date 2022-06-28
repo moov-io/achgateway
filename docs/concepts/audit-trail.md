@@ -20,3 +20,19 @@ GET /shards/{shardName}/files/{filepath}
 ```
 
 TODO(adam): link to openapi specification
+
+### Storage Layout
+
+Inside of an S3-compatiable bucket files will be stored according to the following layout:
+
+Files retrieved from the ODFI
+```
+/odfi/$hostname/$yyyy-mm-dd/$filename
+```
+Example: `/odfi/sftp.bank.com/inbound/2022-01-17/BANK_ACH_DOWNLOAD_20220601_123051.ach`
+
+Files uploaded to the ODFI
+```
+/outbound/$hostname/$dir/$yyyy-mm-dd/$filename
+```
+Example: `/outbound/sftp.bank.com/2022-01-17/BANK_ACH_UPLOAD_20220601_123051.ach`
