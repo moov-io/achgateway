@@ -12,7 +12,6 @@ import (
 
 	"github.com/moov-io/achgateway/internal/service"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -96,36 +95,4 @@ func TestFilenameTemplate__functions(t *testing.T) {
 			t.Errorf("#%d: %s", i, res)
 		}
 	}
-}
-
-func TestFilenameTemplate__RoundSequenceNumber(t *testing.T) {
-	if n := RoundSequenceNumber(0); n != "0" {
-		t.Errorf("got %s", n)
-	}
-	if n := RoundSequenceNumber(10); n != "A" {
-		t.Errorf("got %s", n)
-	}
-}
-
-func TestFilenameTemplate__ACHFilenameSeq(t *testing.T) {
-	n := ACHFilenameSeq("")
-	assert.Equal(t, n, 0)
-
-	n = ACHFilenameSeq("20210102-C.ach")
-	assert.Equal(t, n, 12)
-
-	n = ACHFilenameSeq("20060102-0830-987654320-1.ach")
-	assert.Equal(t, n, 1)
-
-	n = ACHFilenameSeq("20060102-987654320-1.ach")
-	assert.Equal(t, n, 1)
-
-	n = ACHFilenameSeq("20060102-987654320-2.ach.gpg")
-	assert.Equal(t, n, 2)
-
-	n = ACHFilenameSeq("my-20060102-987654320-3.ach")
-	assert.Equal(t, n, 3)
-
-	n = ACHFilenameSeq("20060102-B-987654320.ach")
-	assert.Equal(t, n, 11)
 }
