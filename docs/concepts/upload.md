@@ -16,11 +16,11 @@ ACHGateway supports templated naming of ACH files prior to their upload. This is
 
 Example:
 
-```
 {% raw %}
-{{ .ShardName }}-{{ date "20060102" }}-{{ .Index }}.ach{{ if .GPG }}.gpg{{ end }}
-{% endraw %}
 ```
+{{ .ShardName }}-{{ date "20060102" }}-{{ .Index }}.ach{{ if .GPG }}.gpg{{ end }}
+```
+{% endraw %}
 
 The following fields are passed to templates giving them data to build a filename from:
 
