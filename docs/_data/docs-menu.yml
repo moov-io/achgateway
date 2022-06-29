@@ -53,5 +53,5 @@
   items:
     - name: Prometheus Metrics
       link: /metrics/
-    - name: Runbooks
-      link: /runbooks/
+    # - name: Runbooks
+    #   link: /runbooks/
