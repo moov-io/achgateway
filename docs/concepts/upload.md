@@ -10,6 +10,8 @@ menubar: docs-menu
 
 ACH files which are uploaded to another FI primarily use FTP(s) ([File Transport Protocol](https://en.wikipedia.org/wiki/File_Transfer_Protocol) with TLS) or SFTP ([SSH File Transfer Protocol](https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol)) and follow a filename pattern like: `FOO_YYYYMMDD_ABA.ach` (example: `BANKNAME_20181222_301234567.ach`). The configuration file determines how ACHGateway uploads and transforms the files.
 
+**See Also**: Configure the [`Upload` object](../../config/#upload-agents)
+
 ### Filename templates
 
 ACHGateway supports templated naming of ACH files prior to their upload. This is helpful for ODFI's which require specific naming of uploaded files.Templates use Go's [`text/template` syntax](https://golang.org/pkg/text/template/) and are validated when ACHGateway starts or changed via admin endpoints.

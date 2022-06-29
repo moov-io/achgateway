@@ -12,4 +12,4 @@ As ACHGateway uploads and retrieves files with the remote servers it will emit e
 
 Events may be delivered over a HTTP webhook or supported Stream provider (e.g. Kafka). Events are encoded in their JSON format and may be optionally encrypted. To reveal events the [`compliance` package can be used](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/compliance).
 
-TODO(adam): link to config
+**See Also**: Configure the [`Events` object](../../config/#eventing)

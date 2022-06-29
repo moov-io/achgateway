@@ -9,8 +9,8 @@
   items:
     - name: Docker
       link: /usage/docker/
-    - name: Kubernetes
-      link: /usage/kubernetes/
+    # - name: Kubernetes
+    #   link: /usage/kubernetes/
     - name: Configuration
       link: /config/
 

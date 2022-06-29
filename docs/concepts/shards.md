@@ -21,7 +21,7 @@ A business might have several customers that map to each shard. For example ever
 
 The mapping is a `shardKey` (CustomerID, UUID, etc) to the `shardName` (e.g. `SD-live-bank1`). This configuration can be managed within ACHGateway via [HTTP endpoints](#) (TODO(adam)) or in the config file. Many implementations will also use a 1:1 mapping (`SD-live-bank1` -> `SD-live-bank1` and another database manages the mapping.
 
-TODO(adam): Link to config
+**Example**: Configure the [`Sharding` object](../../config/#sharding)
 
 ## Shard Configuration
 

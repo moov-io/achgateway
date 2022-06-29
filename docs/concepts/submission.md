@@ -65,7 +65,7 @@ Or `CancelACHFile` to cancel previously submitted files:
 
 Both submission implementations can accepted encoded and encrypted files. This is often required to meet compliance rules. Refer to the [`compliance` package provided with ACHGateway](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/compliance) for protecting files prior to submission.
 
-TODO(adam): link to config
+**Example**: Specify the [`Transform` config section](../../config/#inbound)
 
 ## Upload Receipt
 

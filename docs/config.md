@@ -18,25 +18,25 @@ Custom configuration for this application may be specified via an environment va
 ```yaml
 ACHGateway:
   Admin:
-    BindAddress: <string>
+    BindAddress: <string> # Example :9494
 ```
 
 ### Database
 ```yaml
   Database:
     MySQL:
-      Address: <string>
+      Address: <string> # Example tcp(localhost:3306)
       User: <string>
       Password: <string>
-      Connections:
+      Connections: # Optional Object
         MaxOpen: <integer>
         MaxIdle: <integer>
         MaxLifetime: <duration>
         MaxIdleTime: <duration>
-      UseTLS: <boolean>
-      TLSCAFile: <string>
-      InsecureSkipVerify: <boolean>
-      VerifyCAFile: <boolean>
+      [ UseTLS: <boolean> | default = false ]
+      [ TLSCAFile: <string> ]
+      [ InsecureSkipVerify: <boolean> | default = false ]
+      [ VerifyCAFile: <boolean> | default = false]
     SQLite:
       Path: <string>
     DatabaseName: <string>
@@ -45,86 +45,88 @@ ACHGateway:
 ### Consul
 
 ```yaml
-  Consul:
-    Address: <string>
-    Scheme: <string>
+  Consul: # Optional Object
+    Address: <string> # Example http://127.0.0.1:8500
+    [ Scheme: <string> | default = "" ]
     SessionPath: <string>
-
-    Tags:
+    Tags: # Optional
       - <string>
-
-    Token: <string>
-    TokenFile: <string>
-
-    Datacenter: <string>
-    Namespace: <string>
-
-    Agent:
-      ServiceCheckAddress: <string>
-      ServiceCheckInterval: <duration>
-
+    [ Token: <string> ]
+    [ TokenFile: <string> ]
+    [ Datacenter: <string> ]
+    [ Namespace: <string> ]
     Session:
-      CheckInterval: <duration>
-
+       [ CheckInterval: <duration> | 10s ]
     TLS:
-      CAFile: <string>
-      CertFile: <string>
-      KeyFile: <string>
+      [ CAFile: <string> ]
+      [ CertFile: <string> ]
+      [ KeyFile: <string> ]
 ```
 
 ### Inbound
 ```yaml
   Inbound:
     HTTP:
-      BindAddress: <string>
+      BindAddress: <string> # Example :8484
+      Transform:
+        Encoding:
+          [ Base64: <boolean> | default = false ]
+        Encryption:
+          AES:
+            [ Key: <string> | default = "" ]
     InMem:
-      URL: <string>
+      [ URL: <string> ]
     Kafka:
       Brokers:
         - <string>
       Key: <string>
       Secret: <string>
-      Group: <string>
+      [ Group: <string> | default = "" ]
       Topic: <string>
       TLS: <boolean>
       AutoCommit: <boolean>
+      Transform:
+        Encoding:
+          [ Base64: <boolean> | default = false ]
+        Encryption:
+          AES:
+            [ Key: <string> | default = "" ]
     ODFI:
       Audit:
         ID: <string>
-        BucketURI: <string>
-        GPG:
+        BucketURI: <string> # Example: s3://my-bucket/ OR gcs://my-bucket/
+        GPG: # Optional, but recommended
           KeyFile: <string>
           Signer:
             KeyFile: <string>
             KeyPassword: <string>
       Processors:
         Corrections:
-          Enabled: <boolean>
+          [ Enabled: <boolean> | default = false]
         Reconciliation:
-          Enabled: <boolean>
-          PathMatcher: <string>
+          [ Enabled: <boolean> | default = false]
+          [ PathMatcher: <string> ]
         Prenotes:
-          Enabled: <boolean>
+          [ Enabled: <boolean> | default = false]
         Returns:
-          Enabled: <boolean>
+          [ Enabled: <boolean> | default = false]
       Publishing:
         Kafka:
           Brokers:
             - <string>
           Key: <string>
           Secret: <string>
-          Group: <string>
           Topic: <string>
-          TLS: <boolean>
-          AutoCommit: <boolean>
+          [ TLS: <boolean> | default = false ]
+          [ AutoCommit: <boolean> | default = false ]
       Interval: <duration>
       ShardNames:
         - <string>
       Storage:
         Directory: <string>
-        CleanupLocalDirectory: <boolean>
-        KeepRemoteFiles: <boolean>
-        RemoveZeroByteFiles: <boolean>
+        [ CleanupLocalDirectory: <boolean> | default = false]
+        [ KeepRemoteFiles: <boolean> | default = false]
+        [ RemoveZeroByteFiles: <boolean> | default = false]
 ```
 
 ### Eventing
@@ -136,12 +138,11 @@ ACHGateway:
           - <string>
         Key: <string>
         Secret: <string>
-        Group: <string>
         Topic: <string>
-        TLS: <boolean>
-        AutoCommit: <boolean>
+        [ TLS: <boolean> | default = false ]
+        [ AutoCommit: <boolean> | default = false ]
     Webhook:
-      Endpoint: <string>
+      [ Endpoint: <string> | default = "" ]
 ```
 
 ### Sharding
@@ -154,7 +155,7 @@ ACHGateway:
           Windows:
             - <string>
         PreUpload:
-          GPG:
+          GPG: # Optional
             KeyFile: <string>
             Signer:
               KeyFile: <string>
@@ -165,7 +166,7 @@ ACHGateway:
           Conditions:
             MaxLines: <integer>
             MaxDollarAmount: <integer>
-          FlattenBatches: {}
+          FlattenBatches: {} # Specify a non-null object to flatten batches
         OutboundFilenameTemplate: <string>
         Audit:
           ID: <string>
@@ -176,7 +177,7 @@ ACHGateway:
               KeyFile: <string>
               KeyPassword: <string>
         Output:
-          Format: <string>
+          Format: <string> # Example nacha, base64, encrypted-bytes
         Notifications:
           Email:
             - ID: <string>
@@ -250,12 +251,6 @@ ACHGateway:
     DefaultAgentID: <string>
 ```
 
-### Notifications
-```yaml
-  Notifications:
-    # TODO(adam)
-```
-
 ### Error Alerting
 ```yaml
   Errors:
@@ -268,6 +263,3 @@ ACHGateway:
     Mock:
       Enabled: <boolean>
 ```
-
----
-**[Next - Running](RUNNING.md)**
