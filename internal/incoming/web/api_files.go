@@ -89,6 +89,8 @@ func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Reque
 		c.logger.LogErrorf("error publishing fileID=%s: %v", fileID, err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (c *FilesController) readBody(req *http.Request) ([]byte, error) {
