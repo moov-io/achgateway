@@ -1,0 +1,324 @@
+openapi: 3.0.2
+info:
+  description: |
+    Moov ACHGateway is an extensible, highly-available, distributed, and fault-tolerant ACH uploader and downloader. ACHGateway creates events for outside services and transforms files prior to upload to fit real-world requirements of production systems.
+  version: v1
+  title: ACHGateway API
+  contact:
+    url: https://github.com/moov-io/achgateway
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+
+servers: []
+
+tags:
+  - name: Files
+    description: TODO
+  - name: Shard Mapping
+    description: TODO
+  - name: Operations
+    description: TODO
+
+paths:
+  /shards/{shardKey}/files/{fileID}:
+    post:
+      tags: [ "Files" ]
+      servers:
+        - url: http://localhost:8484
+          description: Business Logic
+      parameters:
+        - name: shardKey
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "testing"
+        - name: fileID
+          in: path
+          required: true
+          schema:
+            type: string
+            example: AE694B55-C103-4FA5-B62E-E4F6F79AD581
+      requestBody:
+        description: Content of the ACH file in moov-io/ach JSON or Nacha formatted text
+        required: true
+        content:
+          text/plain:
+            schema:
+              description: A plaintext ACH file
+              type: string
+              example: |
+               101 23138010401210428821906240000A094101Federal Reserve Bank   My Bank Name
+               5225Name on Account                     121042882 PPDREG.SALARY      190625   1121042880000001
+               62723138010412345678         0100000000               Receiver Account Name   0121042880000001
+               82250000010023138010000100000000000000000000121042882                          121042880000001
+               9000001000001000000010023138010000100000000000000000000
+               9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
+               9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
+               9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
+               9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
+               9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
+          application/json:
+            schema:
+              $ref: 'https://raw.githubusercontent.com/moov-io/ach/master/openapi.yaml#/components/schemas/CreateFile'
+      responses:
+        '200':
+          description: File accepted successfully without errors.
+        '400':
+          description: Unable to read file, make sure the file is in either valid Nacha or moov-io/ach formatting.
+        '500':
+          description: Error publishing the file. Check logs for publishing errors.
+
+  /shards/{shardName}/files:
+    get:
+      tags: [ "Operations" ]
+      servers:
+        - url: http://localhost:9494
+          description: Admin Endpoints
+      parameters:
+        - name: shardName
+          in: path
+          required: true
+          description: Name of shard from configuration file
+          schema:
+            type: string
+            example: SD-live
+      responses:
+        '200':
+          description: List of pending files in the shard. TODO - content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShardFilesResponse'
+
+  /shards/{shardName}/files/{filepath}:
+    get:
+      tags: [ "Operations" ]
+      servers:
+        - url: http://localhost:9494
+          description: Admin Endpoints
+      parameters:
+        - name: shardName
+          in: path
+          required: true
+          description: Name of shard from configuration file
+          schema:
+            type: string
+            example: SD-live
+        - name: filepath
+          in: path
+          required: true
+          description: Relative filepath within the shard
+          schema:
+            type: string
+            example: "616d04d8-f8ec-46a9-b467-1d6ec009852f.ach"
+      responses:
+        '200':
+          description: Content of pending ACH file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PendingFile'
+
+  /shards:
+    get:
+      tags: [ "Shard Mapping" ]
+      servers:
+        - url: http://localhost:9494
+          description: Admin Endpoints
+      responses:
+        '200':
+          description: List of configured shards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shards'
+
+  /shard_mappings:
+    get:
+      tags: [ "Shard Mapping" ]
+      servers:
+        - url: http://localhost:8484
+          description: Business Logic
+      responses:
+        '200':
+          description: List of shard mappings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShardMappings'
+    post:
+      tags: [ "Shard Mapping" ]
+      servers:
+        - url: http://localhost:8484
+          description: Business Logic
+      requestBody:
+        description: Shard mapping to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShardMapping'
+      responses:
+        '201':
+          description: Shard mapping created
+        '400':
+          description: Error creating shard mapping
+
+  /shard_mappings/{shardKey}:
+    get:
+      tags: [ "Shard Mapping" ]
+      servers:
+        - url: http://localhost:8484
+          description: Business Logic
+      parameters:
+        - name: shardKey
+          in: path
+          required: true
+          description: Key to lookup and retrieve the configured shard mapped to it.
+          schema:
+            type: string
+            example: userID123
+      responses:
+        '200':
+          description: Shard mapped to specified key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShardMapping'
+        '404':
+          description: Shard key not found
+
+# Operations
+  /config:
+    get:
+      tags: [ "Operations" ]
+      servers:
+        - url: http://localhost:9494
+          description: Admin Endpoints
+      responses:
+        '200':
+          description: Masked application configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+
+  /trigger-cutoff:
+    put:
+      tags: [ "Operations" ]
+      servers:
+        - url: http://localhost:9494
+          description: Admin Endpoints
+      requestBody:
+        description: |
+          List of shards to trigger cutoff processing for. If no shards are specified then all configured shards will be processed.
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TriggerRequest'
+      responses:
+        '200':
+          description: All specified shards have completed cutoff processing successfully. TODO - content
+
+  /trigger-inbound:
+    put:
+      tags: [ "Operations" ]
+      servers:
+        - url: http://localhost:9494
+          description: Admin Endpoints
+      requestBody:
+        description: |
+          List of shards to trigger inbound processing for. This involves consuming all Correction, Inbound, Return, Pre-Note, and Reconciliation files on the upload agent servers, If no shards are specified then all configured shards will be processed.
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TriggerRequest'
+      responses:
+        '200':
+          description: All specified shards have completed inbound processing successfully. TODO - content
+
+components:
+  schemas:
+    Config:
+      description: |
+        Full config object loaded with ACHGateway. Certain sensitive values are masked to protect their value.
+        See https://moov-io.github.io/achgateway/config/ for a full specification.
+      properties: {}
+
+    Shards:
+      type: array
+      items:
+        type: string
+      example:
+        - testing
+        - SD-live
+        - ND-live
+
+    ShardFilesResponse:
+      properties:
+        Files:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShardFile'
+        SourceHostname:
+          type: string
+          example: "achgateway-1.apps.svc.cluster.local"
+
+    ShardFile:
+      properties:
+        Filename:
+          type: string
+          example: "dd437bdf-c5ff-4caf-9e0c-9bf2a100b7be.ach"
+        Path:
+          type: string
+          example: "mergable/SD-live/dd437bdf-c5ff-4caf-9e0c-9bf2a100b7be.ach"
+        ModTime:
+          type: string
+          format: date-time
+          example: "2022-01-02T15:04:05Z07:00"
+
+    PendingFile:
+      properties:
+        Filename:
+          type: string
+          example: "dd437bdf-c5ff-4caf-9e0c-9bf2a100b7be.ach"
+        ContentsBase64:
+          type: string
+          example: "bW9vdi1pbyBhY2hnYXRld2F5Cg=="
+        Valid:
+          type: string
+          description: Optional value describing Nacha validation
+        ModTime:
+          type: string
+          format: date-time
+          example: "2022-01-02T15:04:05Z07:00"
+        SourceHostname:
+          type: string
+          example: "achgateway-1.apps.svc.cluster.local"
+
+    ShardMapping:
+      properties:
+        shardKey:
+          type: string
+          example: 8c458c10-5476-4f9c-aeb4-9339fb85d481
+        shardName:
+          type: string
+          example: SD-live
+
+    ShardMappings:
+      type: array
+      items:
+        $ref: '#/components/schemas/ShardMapping'
+
+    TriggerRequest:
+      properties:
+        ShardNames:
+          type: array
+          items:
+            type: string
+          example:
+            - "SD-live"
+            - "ND-live"
