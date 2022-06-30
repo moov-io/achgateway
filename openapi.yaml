@@ -14,11 +14,11 @@ servers: []
 
 tags:
   - name: Files
-    description: TODO
+    description: Endpoint for submitting files to ACHGateway for later upload.
   - name: Shard Mapping
-    description: TODO
+    description: Linking shard keys (often random values used to identify clients/users/etc) with shard names (testing, SD-live).
   - name: Operations
-    description: TODO
+    description: Endpoints for monitoring ACHGateway and triggering manual steps outside of the automated processes.
 
 paths:
   /shards/{shardKey}/files/{fileID}:
@@ -86,7 +86,7 @@ paths:
             example: SD-live
       responses:
         '200':
-          description: List of pending files in the shard. TODO - content
+          description: List of pending files in the shard.
           content:
             application/json:
               schema:
@@ -220,7 +220,11 @@ paths:
               $ref: '#/components/schemas/TriggerRequest'
       responses:
         '200':
-          description: All specified shards have completed cutoff processing successfully. TODO - content
+          description: All specified shards have completed cutoff processing successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TriggerResponse'
 
   /trigger-inbound:
     put:
@@ -238,7 +242,11 @@ paths:
               $ref: '#/components/schemas/TriggerRequest'
       responses:
         '200':
-          description: All specified shards have completed inbound processing successfully. TODO - content
+          description: All specified shards have completed inbound processing successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TriggerResponse'
 
 components:
   schemas:
@@ -322,3 +330,12 @@ components:
           example:
             - "SD-live"
             - "ND-live"
+
+    TriggerResponse:
+      properties:
+        Shards:
+          description: A map of shards and any errors encountered during processing.
+          type: object
+          example:
+            "testing": "ERROR processing shard: hostname not found"
+            "SD-live": null
