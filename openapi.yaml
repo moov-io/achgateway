@@ -2,6 +2,8 @@ openapi: 3.0.2
 info:
   description: |
     Moov ACHGateway is an extensible, highly-available, distributed, and fault-tolerant ACH uploader and downloader. ACHGateway creates events for outside services and transforms files prior to upload to fit real-world requirements of production systems.
+
+    Refer to the documentation site for more information on running ACHGateway. https://moov-io.github.io/achgateway/
   version: v1
   title: ACHGateway API
   contact:
