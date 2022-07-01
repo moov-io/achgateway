@@ -15,14 +15,20 @@ servers: []
 tags:
   - name: Files
     description: Endpoint for submitting files to ACHGateway for later upload.
-  - name: Shard Mapping
-    description: Linking shard keys (often random values used to identify clients/users/etc) with shard names (testing, SD-live).
+  - name: Shards
+    description: |
+      Shards are logical grouping for ACH file delivery. They are designed to allow a large number of identifiers map to a small number
+      of upload agents and schedules. This allows customization to match business and banking requirements. Identifiers can be random
+      values (e.g. UUIDs) with shard names (e.g. testing, SD-live).
   - name: Operations
     description: Endpoints for monitoring ACHGateway and triggering manual steps outside of the automated processes.
 
 paths:
   /shards/{shardKey}/files/{fileID}:
     post:
+      description: |
+        Submit a file to ACHGateway for upload at the next cutoff processing. The file may be in either Nacha formatted ACH or moov-io/ach's
+        JSON specification. When ValidateOpts are required the JSON specification must be used.
       tags: [ "Files" ]
       servers:
         - url: http://localhost:8484
@@ -72,6 +78,8 @@ paths:
 
   /shards/{shardName}/files:
     get:
+      description: |
+        List files pending for the given shard.
       tags: [ "Operations" ]
       servers:
         - url: http://localhost:9494
@@ -94,6 +102,8 @@ paths:
 
   /shards/{shardName}/files/{filepath}:
     get:
+      description: |
+        Get pending file metadata.
       tags: [ "Operations" ]
       servers:
         - url: http://localhost:9494
@@ -123,6 +133,8 @@ paths:
 
   /shards:
     get:
+      description: |
+        List the configured shards.
       tags: [ "Shard Mapping" ]
       servers:
         - url: http://localhost:9494
@@ -137,6 +149,8 @@ paths:
 
   /shard_mappings:
     get:
+      description: |
+        List existing shard mappings.
       tags: [ "Shard Mapping" ]
       servers:
         - url: http://localhost:8484
@@ -149,6 +163,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ShardMappings'
     post:
+      description: |
+        Create a new shard mapping.
       tags: [ "Shard Mapping" ]
       servers:
         - url: http://localhost:8484
@@ -167,6 +183,8 @@ paths:
 
   /shard_mappings/{shardKey}:
     get:
+      description: |
+        Get shard for a specific key.
       tags: [ "Shard Mapping" ]
       servers:
         - url: http://localhost:8484
@@ -192,6 +210,8 @@ paths:
 # Operations
   /config:
     get:
+      description: |
+        Retrieve the active configuration.
       tags: [ "Operations" ]
       servers:
         - url: http://localhost:9494
@@ -206,6 +226,8 @@ paths:
 
   /trigger-cutoff:
     put:
+      description: |
+        Initiate cutoff processing for shards.
       tags: [ "Operations" ]
       servers:
         - url: http://localhost:9494
@@ -228,6 +250,8 @@ paths:
 
   /trigger-inbound:
     put:
+      description: |
+        Initiate inbound processing of ODFI files for shards.
       tags: [ "Operations" ]
       servers:
         - url: http://localhost:9494
