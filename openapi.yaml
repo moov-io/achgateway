@@ -32,6 +32,8 @@ paths:
         Submit a file to ACHGateway for upload at the next cutoff processing. The file may be in either Nacha formatted ACH or moov-io/ach's
         JSON specification. When ValidateOpts are required the JSON specification must be used.
       tags: [ "Files" ]
+      operationId: submitFile
+      summary: Submit file
       servers:
         - url: http://localhost:8484
           description: Business Logic
@@ -83,6 +85,8 @@ paths:
       description: |
         List files pending for the given shard.
       tags: [ "Operations" ]
+      operationId: listPendingFiles
+      summary: List pending files
       servers:
         - url: http://localhost:9494
           description: Admin Endpoints
@@ -107,6 +111,8 @@ paths:
       description: |
         Get pending file metadata.
       tags: [ "Operations" ]
+      operationId: getPendingFile
+      summary: Get pending file
       servers:
         - url: http://localhost:9494
           description: Admin Endpoints
@@ -138,6 +144,8 @@ paths:
       description: |
         List the configured shards.
       tags: [ "Shard Mapping" ]
+      operationId: listShards
+      summary: List shards
       servers:
         - url: http://localhost:9494
           description: Admin Endpoints
@@ -154,6 +162,8 @@ paths:
       description: |
         List existing shard mappings.
       tags: [ "Shard Mapping" ]
+      operationId: listShardMappings
+      summary: List shard mappings
       servers:
         - url: http://localhost:8484
           description: Business Logic
@@ -168,6 +178,8 @@ paths:
       description: |
         Create a new shard mapping.
       tags: [ "Shard Mapping" ]
+      operationId: createShardMapping
+      summary: Create shard mapping
       servers:
         - url: http://localhost:8484
           description: Business Logic
@@ -188,6 +200,8 @@ paths:
       description: |
         Get shard for a specific key.
       tags: [ "Shard Mapping" ]
+      operationId: getShardMapping
+      summary: Get shard mapping
       servers:
         - url: http://localhost:8484
           description: Business Logic
@@ -215,6 +229,8 @@ paths:
       description: |
         Retrieve the active configuration.
       tags: [ "Operations" ]
+      operationId: getConfig
+      summary: Get ACHGateway config
       servers:
         - url: http://localhost:9494
           description: Admin Endpoints
@@ -231,6 +247,8 @@ paths:
       description: |
         Initiate cutoff processing for shards.
       tags: [ "Operations" ]
+      operationId: triggerCutoff
+      summary: Trigger cutoff processing
       servers:
         - url: http://localhost:9494
           description: Admin Endpoints
@@ -255,6 +273,8 @@ paths:
       description: |
         Initiate inbound processing of ODFI files for shards.
       tags: [ "Operations" ]
+      operationId: triggerInbound
+      summary: Trigger inbound processing
       servers:
         - url: http://localhost:9494
           description: Admin Endpoints
