@@ -94,7 +94,10 @@ ACHGateway:
     ODFI:
       Audit:
         ID: <string>
-        BucketURI: <string> # Example: s3://my-bucket/ OR gcs://my-bucket/
+        # BucketURI is the S3-compatiable bucket location. AWS S3 and Google Cloud Storage are supported.
+        # See https://gocloud.dev/howto/blob/ for more information on configuring each cloud provide.r.
+        # Example: s3://my-bucket?region=us-west-1 OR gcs://my-bucket/
+        BucketURI: <string>
         GPG: # Optional, but recommended
           KeyFile: <string>
           Signer:
@@ -170,6 +173,9 @@ ACHGateway:
         OutboundFilenameTemplate: <string>
         Audit:
           ID: <string>
+          # BucketURI is the S3-compatiable bucket location. AWS S3 and Google Cloud Storage are supported.
+          # See https://gocloud.dev/howto/blob/ for more information on configuring each cloud provide.r.
+          # Example: s3://my-bucket?region=us-west-1 OR gcs://my-bucket/
           BucketURI: <string>
           GPG:
             KeyFile: <string>
@@ -244,7 +250,13 @@ ACHGateway:
           - <string>
       AllowedIPs: <string>
     Merging:
-      Directory: <string>
+      Storage:
+        Filesystem:
+          [ Directory: <strong> | default = "" ]
+        Encryption:
+          AES:
+            [ Base64Key: <string> | default = "" ]
+          Encoding: <string> # Example: base64
     Retry:
       Interval: <duration>
       MaxRetries: <integer>

@@ -31,4 +31,4 @@ Merging files accepts a few parameters to tweak uploaded files. This allows for 
 
 The moov-io/ach library [supports merge conditions](https://pkg.go.dev/github.com/moov-io/ach?utm_source=godoc#Conditions) and an ACHGateway shard can be configured to use them as well. An ACHGateway shard can also be configured to "flatten batches" which will consolidate EntryDetail records into fewer batches when their BatchHeader records are identical.
 
-TODO(adam): link to config
+Refer to the [`Merging` section](../../config/#upload-agents) of the `Upload` config to tweak these values.

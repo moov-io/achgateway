@@ -19,7 +19,7 @@ GET /shards/{shardName}/files
 GET /shards/{shardName}/files/{filepath}
 ```
 
-TODO(adam): link to openapi specification
+Refer to the [pending file endpoints](https://moov-io.github.io/achgateway/api/#tag--Operations) for viewing pending files.
 
 ### Storage Layout
 

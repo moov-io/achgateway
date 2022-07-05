@@ -20,18 +20,32 @@ ACH operates with a bi-directional set of messages. There are several message ty
 
 Correction Files (NOCs) are files with "Notification of Change" entries within them. These are used to advise originators of data updates. Often RDFI's send these to notify originators about account/routing number changes, individual name updates, or other data to update. Debits and Credits still post to their respective accounts. For more details refer to the [moov-io/ach page for Corrections](https://moov-io.github.io/ach/changes/).
 
+Notes: [Schema for `CorrectionFile`](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/models#CorrectionFile)
+
 ## Incoming File
 
 Many implementations will receive ACH files from other originators that impact the bank accounts the implementation controls. These are often specific to your use-case, risk, and business.
+
+Notes: [Schema for `IncomingFile`](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/models#IncomingFile)
 
 ## Prenote File
 
 Nacha has defined a "prenote" as a zero-dollar EntryDetail used to verify an account exists and is authorized to be transacted with. Not every vendor or FI supports prenotes.
 
+Notes: [Schema for `PrenoteFile`](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/models#PrenoteFile)
+
 ## Reconciliation File
 
 Reconciliation files is a term defined with ACHGateway to signify a partial ACH file used to signify balance clearing and settlement. Often ODFIs can deliver credit/debit entries which correspond to balance activity on accounts at the ODFI. Not every vendor or FI supports reconciliation files.
 
+Notes: [Schema for `ReconciliationFile`](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/models#ReconciliationFile)
+
 ## Return File
 
 Returns are Nacha defined Entry Detail records that have failed to post against the given account/routing number. There are lots of return codes used to indicate specific reasons. For more details refer to the [moov-io/ach page on Returns](https://moov-io.github.io/ach/returns/).
+
+Notes: [Schema for `ReturnFile`](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/models#ReturnFile)
+
+# Additional Links
+
+- [Nacha Dev Guide: How ACH Works](https://achdevguide.nacha.org/how-ach-works)

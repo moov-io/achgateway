@@ -19,7 +19,7 @@ TODO(adam): Diagram
 
 A business might have several customers that map to each shard. For example every new signup might be mapped to the `testing` shard until they're verified and onboarded successfully. Premium customers might be assigned to the `SD-live-bank1` window and free users may be mapped to `ND-live-bank1`.
 
-The mapping is a `shardKey` (CustomerID, UUID, etc) to the `shardName` (e.g. `SD-live-bank1`). This configuration can be managed within ACHGateway via [HTTP endpoints](#) (TODO(adam)) or in the config file. Many implementations will also use a 1:1 mapping (`SD-live-bank1` -> `SD-live-bank1` and another database manages the mapping.
+The mapping is a `shardKey` (CustomerID, UUID, etc) to the `shardName` (e.g. `SD-live-bank1`). This configuration can be managed within ACHGateway via [HTTP endpoints](https://moov-io.github.io/achgateway/api/#tag--Shard-Mapping) or in the config file. Many implementations will also use a 1:1 mapping (`SD-live-bank1` -> `SD-live-bank1` and another database manages the mapping.
 
 **Example**: Configure the [`Sharding` object](../../config/#sharding)
 
@@ -36,4 +36,4 @@ Each shard has a wealth of configuration options, but the major options are:
 
 ## Mapping
 
-TODO(adam): Link to OpenAPI docs
+Refer to the [API endpoints](https://moov-io.github.io/achgateway/api/#tag--Shard-Mapping) for configuring shard mapping.

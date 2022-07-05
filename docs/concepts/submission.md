@@ -61,6 +61,10 @@ Or `CancelACHFile` to cancel previously submitted files:
 }
 ```
 
+#### Notes
+
+Make sure to understand the implications of enabling/disabling consumer groups with your kafka subscription and multiple instances of ACHGateway.
+
 ## Encryption
 
 Both submission implementations can accepted encoded and encrypted files. This is often required to meet compliance rules. Refer to the [`compliance` package provided with ACHGateway](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/compliance) for protecting files prior to submission.
@@ -79,3 +83,7 @@ After pending files are uploaded to the remote server a `FileUploaded` event is 
     "uploadedAt": "timestamp"
 }
 ```
+
+## Additional Notes
+
+- Refer to the [merging operations](../../ops/merging/) page for more details on pending file storage.
