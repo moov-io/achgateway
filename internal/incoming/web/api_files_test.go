@@ -80,3 +80,28 @@ func TestCreateFileHandlerErr(t *testing.T) {
 
 	require.Equal(t, http.StatusBadRequest, w.Code)
 }
+
+func TestCancelFileHandler(t *testing.T) {
+	topic, sub := streamtest.InmemStream(t)
+
+	controller := NewFilesController(log.NewNopLogger(), service.HTTPConfig{}, topic)
+	r := mux.NewRouter()
+	controller.AppendRoutes(r)
+
+	// Cancel our file
+	req := httptest.NewRequest("DELETE", "/shards/s2/files/f2", nil)
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
+
+	// Verify our subscription receives a message
+	msg, err := sub.Receive(context.Background())
+	require.NoError(t, err)
+
+	var file incoming.CancelACHFile
+	require.NoError(t, models.ReadEvent(msg.Body, &file))
+
+	require.Equal(t, "f2", file.FileID)
+	require.Equal(t, "s2", file.ShardKey)
+}
