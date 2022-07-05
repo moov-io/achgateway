@@ -79,6 +79,31 @@ paths:
           description: Unable to read file, make sure the file is in either valid Nacha or moov-io/ach formatting.
         '500':
           description: Error publishing the file. Check logs for publishing errors.
+    delete:
+      description: Cancel a pending ACH file
+      tags: [ "Files" ]
+      operationId: cancelFile
+      servers:
+        - url: http://localhost:8484
+          description: Business Logic
+      parameters:
+        - name: shardKey
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "testing"
+        - name: fileID
+          in: path
+          required: true
+          schema:
+            type: string
+            example: AE694B55-C103-4FA5-B62E-E4F6F79AD581
+      responses:
+        '200':
+          description: File accepted successfully without errors.
+        '500':
+          description: Error canceling the file. Check logs for publishing errors.
 
   /shards/{shardName}/files:
     get:
