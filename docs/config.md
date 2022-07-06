@@ -108,7 +108,8 @@ ACHGateway:
           [ Enabled: <boolean> | default = false]
         Reconciliation:
           [ Enabled: <boolean> | default = false]
-          [ PathMatcher: <string> ]
+          # Partial filename to match on. Example: "RECON_"
+          [ PathMatcher: <string> | default = "" ]
         Prenotes:
           [ Enabled: <boolean> | default = false]
         Returns:
