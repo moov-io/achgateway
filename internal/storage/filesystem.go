@@ -67,7 +67,7 @@ func (fs *filesystem) Glob(pattern string) ([]FileStat, error) {
 
 func (fs *filesystem) ReplaceFile(oldpath, newpath string) error {
 	oldpath = filepath.Join(fs.root, oldpath)
-	newpath = filepath.Join(fs.root, newpath+".canceled")
+	newpath = filepath.Join(fs.root, newpath)
 
 	// Create the new dir(s)
 	dir, _ := filepath.Split(newpath)
@@ -77,7 +77,7 @@ func (fs *filesystem) ReplaceFile(oldpath, newpath string) error {
 
 	// file doesn't exist, so write newpath
 	if _, err := os.Stat(oldpath); err != nil && os.IsNotExist(err) {
-		return ioutil.WriteFile(filepath.Join(fs.root, newpath), nil, 0600)
+		return ioutil.WriteFile(newpath, nil, 0600)
 	}
 
 	// move the existing file

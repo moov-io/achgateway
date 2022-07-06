@@ -20,6 +20,7 @@ package models
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -48,6 +49,45 @@ func (evt Event) MarshalJSON() ([]byte, error) {
 	})
 }
 
+// Read will unmarshal an event and return the wrapper for it.
+func Read(data []byte) (*Event, error) {
+	var eventType struct {
+		Type string `json:"type"`
+	}
+	err := json.Unmarshal(data, &eventType)
+	if err != nil {
+		return nil, fmt.Errorf("reading type: %v", err)
+	}
+
+	var evt interface{}
+	switch eventType.Type {
+	case "CorrectionFile":
+		evt = &CorrectionFile{}
+	case "IncomingFile":
+		evt = &IncomingFile{}
+	case "PrenoteFile":
+		evt = &PrenoteFile{}
+	case "ReconciliationFile":
+		evt = &ReconciliationFile{}
+	case "ReturnFile":
+		evt = &ReturnFile{}
+	case "ACHFile", "QueueACHFile":
+		evt = &QueueACHFile{}
+	case "CancelACHFile":
+		evt = &CancelACHFile{}
+	}
+
+	err = ReadEvent(data, evt)
+	if err != nil {
+		return nil, fmt.Errorf("reading event: %v", err)
+	}
+	return &Event{
+		Event: evt,
+		Type:  eventType.Type,
+	}, nil
+}
+
+// ReadEvent will unmarshal the event, but assumes the event type is known by the caller.
 func ReadEvent(data []byte, evt interface{}) error {
 	return json.Unmarshal(data, &Event{
 		Event: evt,

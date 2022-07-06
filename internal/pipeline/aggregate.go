@@ -165,6 +165,10 @@ func (xfagg *aggregator) acceptFile(msg incoming.ACHFile) error {
 	return xfagg.merger.HandleXfer(msg)
 }
 
+func (xfagg *aggregator) cancelFile(msg incoming.CancelACHFile) error {
+	return xfagg.merger.HandleCancel(msg)
+}
+
 func (xfagg *aggregator) withEachFile(when time.Time) error {
 	window := when.Format("15:04")
 	tzname, _ := when.Zone()

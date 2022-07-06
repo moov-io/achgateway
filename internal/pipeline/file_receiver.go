@@ -19,6 +19,8 @@ package pipeline
 
 import (
 	"context"
+	"errors"
+	"strings"
 
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/shards"
@@ -140,9 +142,13 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 		go func() {
 			msg, err := sub.Receive(ctx)
 			if err != nil {
-				if err != context.Canceled {
-					fr.logger.LogErrorf("ERROR receiving message: %v", err)
+				if err == context.Canceled {
+					return
 				}
+				if strings.Contains(err.Error(), "Subscription has been Shutdown") {
+					return
+				}
+				fr.logger.LogErrorf("ERROR receiving message: %v", err)
 			}
 			receiver <- msg
 		}()
@@ -166,63 +172,135 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 }
 
 func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
-	msg.Ack()
-
 	data := msg.Body
 	var err error
 
 	// Optionally decode and decrypt message
 	data, err = compliance.Reveal(fr.transformConfig, data)
 	if err != nil {
-		fr.logger.Error().LogErrorf("unable to reveal incoming.ACHFile: %v", err)
-	}
-
-	// Parse our incoming ACHFile
-	var file incoming.ACHFile
-	if err := models.ReadEvent(data, &file); err != nil {
-		fr.logger.Error().LogErrorf("unable to parse incoming.ACHFile: %v", err)
+		fr.logger.Error().LogErrorf("unable to reveal event: %v", err)
 		return nil
 	}
 
-	if err := file.Validate(); err != nil {
-		fr.logger.Error().LogErrorf("invalid ACHFile: %v", err)
-		return nil
-	}
-
-	shardName, err := fr.shardRepository.Lookup(file.ShardKey)
+	event, err := models.Read(data)
 	if err != nil {
-		fr.logger.Error().LogErrorf("problem looking up shardKey=%s: %v", file.ShardKey, err)
+		fr.logger.Error().LogErrorf("unable to read event: %v", err)
 		return nil
 	}
-	fr.logger.With(log.Fields{
-		"fileID":    log.String(file.FileID),
-		"bytes":     log.Int(len(msg.Body)),
-		"shardName": log.String(shardName),
-		"shardKey":  log.String(file.ShardKey),
-	}).Log("begin handling of received ACHFile")
+
+	switch evt := event.Event.(type) {
+	case incoming.ACHFile:
+		err = fr.processACHFile(evt)
+		if err != nil {
+			return err
+		}
+		msg.Ack()
+		return nil
+
+	case *models.QueueACHFile:
+		file := incoming.ACHFile(*evt)
+		err = fr.processACHFile(file)
+		if err != nil {
+			return err
+		}
+		msg.Ack()
+		return nil
+
+	case *models.CancelACHFile:
+		err = fr.cancelACHFile(evt)
+		if err != nil {
+			return err
+		}
+		msg.Ack()
+		return nil
+	}
+
+	fr.logger.Error().LogErrorf("unexpected %T event", event.Event)
+	return nil
+}
+
+func (fr *FileReceiver) getAggregator(shardKey string) *aggregator {
+	shardName, err := fr.shardRepository.Lookup(shardKey)
+	if err != nil {
+		fr.logger.Error().LogErrorf("problem looking up shardKey=%s: %v", shardKey, err)
+		return nil
+	}
 
 	agg, exists := fr.shardAggregators[shardName]
 	if !exists {
 		agg, exists = fr.shardAggregators[fr.defaultShardName]
 		if !exists {
 			filesMissingShardAggregators.With("shard", shardName).Add(1)
-			fr.logger.Error().LogErrorf("missing shardAggregator for shardKey=%s shardName=%s", file.ShardKey, shardName)
+			fr.logger.Error().LogErrorf("missing shardAggregator for shardKey=%s shardName=%s", shardKey, shardName)
 			return nil
 		}
 	}
 	if agg == nil {
-		fr.logger.Error().LogErrorf("nil shardAggregator for shardKey=%s shardName=%s", file.ShardKey, shardName)
+		fr.logger.Error().LogErrorf("nil shardAggregator for shardKey=%s shardName=%s", shardKey, shardName)
+		return nil
+	}
+	return agg
+}
+
+func (fr *FileReceiver) processACHFile(file incoming.ACHFile) error {
+	if file.FileID == "" || file.ShardKey == "" {
+		return errors.New("missing fileID or shardKey")
+	}
+
+	err := file.Validate()
+	if err != nil {
+		fr.logger.Error().LogErrorf("invalid ACHFile: %v", err)
 		return nil
 	}
 
-	if err := agg.acceptFile(file); err != nil {
-		return fr.logger.Error().LogErrorf("problem accepting file under shardName=%s", shardName).Err()
-	} else {
-		pendingFiles.With("shard", shardName).Add(1)
-
-		fr.logger.With(log.Fields{
-			"fileID": log.String(file.FileID),
-		}).Log("finished handling ACHFile")
+	agg := fr.getAggregator(file.ShardKey)
+	if agg == nil {
+		return nil
 	}
+
+	logger := fr.logger.With(log.Fields{
+		"fileID":    log.String(file.FileID),
+		"shardName": log.String(agg.shard.Name),
+		"shardKey":  log.String(file.ShardKey),
+	})
+	logger.Log("begin handling of received ACH file")
+
+	err = agg.acceptFile(file)
+	if err != nil {
+		return logger.Error().LogErrorf("problem accepting file under shardName=%s", agg.shard.Name).Err()
+	}
+
+	// Record the file as accepted
+	pendingFiles.With("shard", agg.shard.Name).Add(1)
+	logger.Log("finished handling ACH file")
+
+	return nil
+}
+
+func (fr *FileReceiver) cancelACHFile(cancel *models.CancelACHFile) error {
+	if cancel == nil || cancel.FileID == "" || cancel.ShardKey == "" {
+		return errors.New("missing fileID or shardKey")
+	}
+
+	agg := fr.getAggregator(cancel.ShardKey)
+	if agg == nil {
+		return nil
+	}
+
+	logger := fr.logger.With(log.Fields{
+		"fileID":    log.String(cancel.FileID),
+		"shardName": log.String(agg.shard.Name),
+		"shardKey":  log.String(cancel.ShardKey),
+	})
+	logger.Log("begin canceling ACH file")
+
+	evt := incoming.CancelACHFile(*cancel)
+
+	err := agg.cancelFile(evt)
+	if err != nil {
+		return logger.Error().LogErrorf("problem canceling file: %v", err).Err()
+	}
+
+	logger.Log("finished cancel of file")
 	return nil
 }
