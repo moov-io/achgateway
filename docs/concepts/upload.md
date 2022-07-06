@@ -36,6 +36,8 @@ Also, several functions are available (in addition to Go's standard template fun
 - `env` Takes an environment variable name and returns the value from `os.Getenv`.
 - `lower` and `upper` convert a string into lowercase or uppercase
 
+Refer to the [`Shard` config section](../../config/#sharding) to tweak the `OutboundFilenameTemplate`.
+
 ### IP Whitelisting
 
 When ACHGateway uploads an ACH file to the ODFI server it can verify the remote server's hostname resolves to a whitelisted IP or CIDR range.

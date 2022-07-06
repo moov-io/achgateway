@@ -16,7 +16,7 @@ TODO(adam): diagram
 
 ## Implementation
 
-There are two main methods for submitting files to ACHGateway: HTTP or stream. Files can also be canceled. Each file needs to have a `shardKey` and `fileID`. Refer to [our guide on sharding](./shards/) for more context.
+There are two main methods for submitting files to ACHGateway: HTTP or stream. Files can also be canceled. Each file needs to have a `shardKey` and `fileID`. Refer to [our guide on sharding](../shards/) for more context.
 
 - `shardKey`: This is a many-to-one identifier used for assigning the shard.
 - `fileID`: A unique identifier for this file.
