@@ -27,8 +27,8 @@ require (
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/minio-go/v6 v6.0.57 // indirect
 	github.com/minio/sha256-simd v1.0.0 // indirect
-	github.com/moov-io/ach v1.16.1
-	github.com/moov-io/base v0.31.1
+	github.com/moov-io/ach v1.18.2
+	github.com/moov-io/base v0.32.0
 	github.com/moov-io/cryptfs v0.4.0
 	github.com/ory/dockertest/v3 v3.8.1
 	github.com/ory/mail/v3 v3.0.0
@@ -39,8 +39,7 @@ require (
 	github.com/sethvargo/go-retry v0.1.0
 	github.com/slack-go/slack v0.10.3
 	github.com/spf13/viper v1.12.0
-	github.com/stretchr/objx v0.3.0 // indirect
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.8.0
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
