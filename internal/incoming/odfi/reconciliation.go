@@ -59,6 +59,13 @@ func (pc *creditReconciliation) Type() string {
 	return "CreditReconciliation"
 }
 
+func isReconciliationFile(cfg service.ODFIReconciliation, file File) bool {
+	if !cfg.Enabled {
+		return false
+	}
+	return cfg.PathMatcher != "" && strings.Contains(strings.ToLower(file.Filepath), cfg.PathMatcher)
+}
+
 func (pc *creditReconciliation) Handle(file File) error {
 	if file.ACHFile == nil {
 		return errors.New("nil ach.File")
@@ -69,7 +76,7 @@ func (pc *creditReconciliation) Handle(file File) error {
 	// for when we should treat the file as a recon file.
 	//
 	// Example: /reconciliation/fileMoovTester_TRANACTIONSFAKE.TXT
-	if pc.cfg.PathMatcher != "" && !strings.Contains(strings.ToLower(file.Filepath), pc.cfg.PathMatcher) {
+	if !isReconciliationFile(pc.cfg, file) {
 		return nil // skip the file
 	}
 

@@ -59,8 +59,12 @@ func (pc *returnEmitter) Type() string {
 	return "return"
 }
 
+func isReturnFile(file File) bool {
+	return len(file.ACHFile.ReturnEntries) >= 0
+}
+
 func (pc *returnEmitter) Handle(file File) error {
-	if len(file.ACHFile.ReturnEntries) == 0 {
+	if !isReturnFile(file) {
 		return nil
 	}
 

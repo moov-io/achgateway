@@ -111,6 +111,19 @@ func (pc *prenoteEmitter) sendEvent(event interface{}) {
 	}
 }
 
+func isPrenoteFile(file File) bool {
+	for i := range file.ACHFile.Batches {
+		entries := file.ACHFile.Batches[i].GetEntries()
+		for j := range entries {
+			isPrenote, _ := isPrenoteEntry(entries[j])
+			if isPrenote {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // isPrenoteEntry checks if a given EntryDetail matches the pre-notification
 // criteria. Per NACHA rules that means a zero amount and prenote transaction code.
 func isPrenoteEntry(entry *ach.EntryDetail) (bool, error) {
