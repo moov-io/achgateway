@@ -108,6 +108,10 @@ ACHGateway:
           [ Enabled: <boolean> | default = false]
           # Partial filename to match on. Example: "CORRECTION_"
           [ PathMatcher: <string> | default = "" ]
+        Inbound:
+          [ Enabled: <boolean> | default = false]
+          # Partial filename to match on. Example: "CORRECTION_"
+          [ PathMatcher: <string> | default = "" ]
         Reconciliation:
           [ Enabled: <boolean> | default = false]
           # Partial filename to match on. Example: "RECON_"
