@@ -20,6 +20,7 @@ package odfi
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/events"
@@ -41,6 +42,7 @@ var (
 type prenoteEmitter struct {
 	logger log.Logger
 	svc    events.Emitter
+	cfg    service.ODFIPrenotes
 }
 
 func PrenoteEmitter(logger log.Logger, cfg service.ODFIPrenotes, svc events.Emitter) *prenoteEmitter {
@@ -50,6 +52,7 @@ func PrenoteEmitter(logger log.Logger, cfg service.ODFIPrenotes, svc events.Emit
 	return &prenoteEmitter{
 		logger: logger,
 		svc:    svc,
+		cfg:    cfg,
 	}
 }
 
@@ -58,6 +61,11 @@ func (pc *prenoteEmitter) Type() string {
 }
 
 func (pc *prenoteEmitter) Handle(file File) error {
+	// Ignore files if they don't contain the PathMatcher value
+	if pc.cfg.PathMatcher != "" && !strings.Contains(strings.ToLower(file.Filepath), pc.cfg.PathMatcher) {
+		return nil // skip the file
+	}
+
 	var batches []models.Batch
 
 	for i := range file.ACHFile.Batches {
