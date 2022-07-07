@@ -106,14 +106,20 @@ ACHGateway:
       Processors:
         Corrections:
           [ Enabled: <boolean> | default = false]
+          # Partial filename to match on. Example: "CORRECTION_"
+          [ PathMatcher: <string> | default = "" ]
         Reconciliation:
           [ Enabled: <boolean> | default = false]
           # Partial filename to match on. Example: "RECON_"
           [ PathMatcher: <string> | default = "" ]
         Prenotes:
           [ Enabled: <boolean> | default = false]
+          # Partial filename to match on. Example: "PRENOTE_"
+          [ PathMatcher: <string> | default = "" ]
         Returns:
           [ Enabled: <boolean> | default = false]
+          # Partial filename to match on. Example: "RET_"
+          [ PathMatcher: <string> | default = "" ]
       Publishing:
         Kafka:
           Brokers:

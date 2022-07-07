@@ -20,6 +20,7 @@ package odfi
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/service"
@@ -40,6 +41,7 @@ var (
 type returnEmitter struct {
 	logger log.Logger
 	svc    events.Emitter
+	cfg    service.ODFIReturns
 }
 
 func ReturnEmitter(logger log.Logger, cfg service.ODFIReturns, svc events.Emitter) *returnEmitter {
@@ -49,6 +51,7 @@ func ReturnEmitter(logger log.Logger, cfg service.ODFIReturns, svc events.Emitte
 	return &returnEmitter{
 		logger: logger,
 		svc:    svc,
+		cfg:    cfg,
 	}
 }
 
@@ -59,6 +62,11 @@ func (pc *returnEmitter) Type() string {
 func (pc *returnEmitter) Handle(file File) error {
 	if len(file.ACHFile.ReturnEntries) == 0 {
 		return nil
+	}
+
+	// Ignore files if they don't contain the PathMatcher value
+	if pc.cfg.PathMatcher != "" && !strings.Contains(strings.ToLower(file.Filepath), pc.cfg.PathMatcher) {
+		return nil // skip the file
 	}
 
 	msg := models.ReturnFile{

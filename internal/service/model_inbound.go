@@ -130,7 +130,8 @@ func (cfg ODFIProcessors) Validate() error {
 }
 
 type ODFICorrections struct {
-	Enabled bool
+	Enabled     bool
+	PathMatcher string
 }
 
 type ODFIReconciliation struct {
@@ -139,11 +140,13 @@ type ODFIReconciliation struct {
 }
 
 type ODFIPrenotes struct {
-	Enabled bool
+	Enabled     bool
+	PathMatcher string
 }
 
 type ODFIReturns struct {
-	Enabled bool
+	Enabled     bool
+	PathMatcher string
 }
 
 type ODFIStorage struct {

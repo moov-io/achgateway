@@ -20,6 +20,7 @@ package odfi
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/service"
@@ -40,6 +41,7 @@ var (
 type correctionProcessor struct {
 	logger log.Logger
 	svc    events.Emitter
+	cfg    service.ODFICorrections
 }
 
 func CorrectionEmitter(logger log.Logger, cfg service.ODFICorrections, svc events.Emitter) *correctionProcessor {
@@ -49,6 +51,7 @@ func CorrectionEmitter(logger log.Logger, cfg service.ODFICorrections, svc event
 	return &correctionProcessor{
 		logger: logger,
 		svc:    svc,
+		cfg:    cfg,
 	}
 }
 
@@ -59,6 +62,11 @@ func (pc *correctionProcessor) Type() string {
 func (pc *correctionProcessor) Handle(file File) error {
 	if len(file.ACHFile.NotificationOfChange) == 0 {
 		return nil
+	}
+
+	// Ignore files if they don't contain the PathMatcher value
+	if pc.cfg.PathMatcher != "" && !strings.Contains(strings.ToLower(file.Filepath), pc.cfg.PathMatcher) {
+		return nil // skip the file
 	}
 
 	msg := models.CorrectionFile{
