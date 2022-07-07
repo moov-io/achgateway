@@ -32,3 +32,17 @@ Merging files accepts a few parameters to tweak uploaded files. This allows for 
 The moov-io/ach library [supports merge conditions](https://pkg.go.dev/github.com/moov-io/ach?utm_source=godoc#Conditions) and an ACHGateway shard can be configured to use them as well. An ACHGateway shard can also be configured to "flatten batches" which will consolidate EntryDetail records into fewer batches when their BatchHeader records are identical.
 
 Refer to the [`Merging` section](../../config/#upload-agents) of the `Upload` config to tweak these values.
+
+### Persistence
+
+There are two methods for deploying ACHGateway with a persistent storage attached. Each instance of ACHGateway having a unique volume attached or the instances share one volume. Both methods have advantages and drawbacks.
+
+**Unique Volumes**
+
+When each instance of ACHGateway has a unique volume attached the fault tolerance of ACH operations can be higher when other instances pickup the slack. With this deployment operators will need to decide between having ACHGateway instances consume all submitted files or a subset. If multiple instances consume all submitted files then [leader election](../leadership/) is recommended in order to avoid duplicated uploads. If instances a subset of files (e.g. by specifying a Kafka consumer group) then leader election is not recommended as each instance needs to upload its share of pending files.
+
+**Shared Volume**
+
+A shared volume between multiple ACHGateway instances offers a benefit where you can have several consumers handling the submitted files and optional [leader election](../leadership/) during uploads. Operators should be aware of duplicate uploads when instances do not perform leader election but share the underlying volume. Shared volumes will need to handle the combined I/O operations of all instances. Not all cloud providers support this "many write, many read" deployment for volumes.
+
+> Note: Moov has not tested running ACHGateway with a shared volume.
