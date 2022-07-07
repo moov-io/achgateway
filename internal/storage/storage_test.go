@@ -29,7 +29,7 @@ func testStorage(t *testing.T, chest Chest) {
 	// replace file
 	err = chest.WriteFile("test-20210101-0101/foo.ach", []byte("nacha"))
 	require.NoError(t, err)
-	err = chest.ReplaceFile("test-20210101-0101/foo.ach", "after/foo.ach")
+	err = chest.ReplaceFile("test-20210101-0101/foo.ach", "after/foo.ach.canceled")
 	require.NoError(t, err)
 	file, err = chest.Open("after/foo.ach.canceled")
 	require.NoError(t, err)

@@ -56,6 +56,13 @@ func (c *FilesController) AppendRoutes(router *mux.Router) *mux.Router {
 		Methods("POST").
 		Path("/shards/{shardKey}/files/{fileID}").
 		HandlerFunc(c.CreateFileHandler)
+
+	router.
+		Name("Files.cancel").
+		Methods("DELETE").
+		Path("/shards/{shardKey}/files/{fileID}").
+		HandlerFunc(c.CancelFileHandler)
+
 	return router
 }
 
@@ -86,8 +93,13 @@ func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	if err := c.publishFile(shardKey, fileID, &file); err != nil {
-		c.logger.LogErrorf("error publishing fileID=%s: %v", fileID, err)
+		c.logger.With(log.Fields{
+			"shard_key": log.String(shardKey),
+			"file_id":   log.String(fileID),
+		}).LogErrorf("publishing file", err)
+
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -117,7 +129,7 @@ func (c *FilesController) publishFile(shardKey, fileID string, file *ach.File) e
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("unable to protect event: %v", err)
+		return fmt.Errorf("unable to protect incoming file event: %v", err)
 	}
 
 	meta := make(map[string]string)
@@ -128,4 +140,47 @@ func (c *FilesController) publishFile(shardKey, fileID string, file *ach.File) e
 		Body:     bs,
 		Metadata: meta,
 	})
+}
+
+func (c *FilesController) CancelFileHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	shardKey, fileID := vars["shardKey"], vars["fileID"]
+	if shardKey == "" || fileID == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if err := c.cancelFile(shardKey, fileID); err != nil {
+		c.logger.With(log.Fields{
+			"shard_key": log.String(shardKey),
+			"file_id":   log.String(fileID),
+		}).LogErrorf("canceling file: %v", err)
+
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (c *FilesController) cancelFile(shardKey, fileID string) error {
+	bs, err := compliance.Protect(c.cfg.Transform, models.Event{
+		Event: incoming.CancelACHFile{
+			FileID:   fileID,
+			ShardKey: shardKey,
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("unable to protect cancel file event: %v", err)
+	}
+
+	meta := make(map[string]string)
+	meta["fileID"] = fileID
+	meta["shardKey"] = shardKey
+
+	return c.publisher.Send(context.Background(), &pubsub.Message{
+		Body:     bs,
+		Metadata: meta,
+	})
+
 }

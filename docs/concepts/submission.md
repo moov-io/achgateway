@@ -23,7 +23,7 @@ There are two main methods for submitting files to ACHGateway: HTTP or stream. F
 
 ### HTTP
 
-ACHGateway has an endpoint for submitting a file to be queued.
+ACHGateway has an endpoint for submitting a file to be queued. Refer to the [endpoint docs](https://moov-io.github.io/achgateway/api/#post-/shards/-shardKey-/files/-fileID-) for more details.
 
 ```
 POST /shards/{shardKey}/files/{fileID}
@@ -52,15 +52,6 @@ Submit `QueueACHFile` events:
 }
 ```
 
-Or `CancelACHFile` to cancel previously submitted files:
-
-```
-{
-  "id": "uuid",
-  "shardKey": "uuid"
-}
-```
-
 #### Notes
 
 Make sure to understand the implications of enabling/disabling consumer groups with your kafka subscription and multiple instances of ACHGateway.
@@ -84,6 +75,27 @@ After pending files are uploaded to the remote server a `FileUploaded` event is 
 }
 ```
 
-## Additional Notes
+# Canceling Files
+
+### HTTP
+
+Make an HTTP request to cancel the file. This request can be made before the file is submitted to ACHGateway. Refer to the [endpoint docs](https://moov-io.github.io/achgateway/api/#delete-/shards/-shardKey-/files/-fileID-) for more details.
+
+```
+DELETE /shards/{shardKey}/files/{fileID}
+```
+
+### Stream
+
+Publish a [`CancelACHFile`](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/models#CancelACHFile) event to cancel a submitted file. The canceling can arrive before the `QueueACHFile` event and will still cancel the file.
+
+```
+{
+  "id": "uuid",
+  "shardKey": "uuid"
+}
+```
+
+# Additional Notes
 
 - Refer to the [merging operations](../../ops/merging/) page for more details on pending file storage.

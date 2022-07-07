@@ -43,6 +43,7 @@ import (
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/shards"
 	"github.com/moov-io/achgateway/internal/storage"
+	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/database"
@@ -170,6 +171,7 @@ func TestUploads(t *testing.T) {
 
 	// Upload our files
 	createdEntries := 0
+	canceledEntries := 0
 	for i := 0; i < 1000; i++ {
 		shardKey := shardKeys[i%10]
 		fileID := base.ID()
@@ -177,9 +179,13 @@ func TestUploads(t *testing.T) {
 		createdEntries += countEntries(file)
 		w := submitFile(t, r, shardKey, fileID, file)
 		require.Equal(t, http.StatusOK, w.Code)
+
+		canceledEntries += maybeCancelFile(t, r, shardKey, fileID, file)
 	}
 
-	t.Logf("created %d entries", createdEntries)
+	t.Logf("created %d entries and canceled %d entries", createdEntries, canceledEntries)
+	require.Greater(t, createdEntries, 0)
+	require.Greater(t, canceledEntries, 0)
 	time.Sleep(5 * time.Second)
 
 	req, _ := http.NewRequest("PUT", "http://"+adminServer.BindAddr()+"/trigger-cutoff", nil)
@@ -194,9 +200,10 @@ func TestUploads(t *testing.T) {
 	createdFiles, err := ach.ReadDir(outboundPath)
 	require.NoError(t, err)
 
-	expected := countAllEntries(createdFiles)
-	t.Logf("found %d entries of %d expected", expected, createdEntries)
-	require.Equal(t, expected, createdEntries)
+	expected := createdEntries - canceledEntries
+	found := countAllEntries(createdFiles)
+	t.Logf("found %d entries of %d expected (%d canceled)", found, expected, canceledEntries)
+	require.Equal(t, found, expected)
 }
 
 func setupTestDirectory(t *testing.T, cfg *service.Config) string {
@@ -322,4 +329,38 @@ func submitFile(t *testing.T, r *mux.Router, shardKey, fileID string, file *ach.
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 	return w
+}
+
+func maybeCancelFile(t *testing.T, r *mux.Router, shardKey, fileID string, file *ach.File) int {
+	t.Helper()
+
+	if shouldCancelFile(t) {
+		cancelFile(t, r, shardKey, fileID)
+		return countEntries(file)
+	}
+
+	return 0
+}
+
+func shouldCancelFile(t *testing.T) bool {
+	t.Helper()
+
+	return rand.Int63n(100)%10 == 0 // nolint:gosec
+}
+
+func cancelFile(t *testing.T, r *mux.Router, shardKey, fileID string) {
+	t.Helper()
+
+	var body bytes.Buffer
+	err := json.NewEncoder(&body).Encode(&models.CancelACHFile{
+		ShardKey: shardKey,
+		FileID:   fileID,
+	})
+	require.NoError(t, err)
+
+	req := httptest.NewRequest("DELETE", fmt.Sprintf("/shards/%s/files/%s", shardKey, fileID), &body)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusOK, w.Code)
 }

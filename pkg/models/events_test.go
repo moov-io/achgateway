@@ -62,6 +62,27 @@ func TestEvent(t *testing.T) {
 	}, `"type":"FileUploaded"`)
 }
 
+func TestRead(t *testing.T) {
+	orig := CancelACHFile{
+		FileID:   base.ID(),
+		ShardKey: base.ID(),
+	}
+
+	bs := (Event{
+		Event: orig,
+	}).Bytes()
+
+	second, err := Read(bs)
+	require.NoError(t, err)
+	require.Equal(t, "CancelACHFile", second.Type)
+
+	cancel, ok := second.Event.(*CancelACHFile)
+	require.True(t, ok)
+
+	require.Equal(t, orig.FileID, cancel.FileID)
+	require.Equal(t, orig.ShardKey, cancel.ShardKey)
+}
+
 func TestPartialReconciliationFile(t *testing.T) {
 	file, err := ach.ReadFile(filepath.Join("testdata", "partial-recon.ach"))
 	require.NotNil(t, err)
