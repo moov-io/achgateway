@@ -87,7 +87,7 @@ DELETE /shards/{shardKey}/files/{fileID}
 
 ### Stream
 
-Publish an `CancelACHFile` event to cancel a submitted file. The canceling can arrive before the `QueueACHFile` event and will still cancel the file.
+Publish a [`CancelACHFile`](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/models#CancelACHFile) event to cancel a submitted file. The canceling can arrive before the `QueueACHFile` event and will still cancel the file.
 
 ```
 {
