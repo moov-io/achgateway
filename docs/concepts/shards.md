@@ -37,3 +37,29 @@ Each shard has a wealth of configuration options, but the major options are:
 ## Mapping
 
 Refer to the [API endpoints](https://moov-io.github.io/achgateway/api/#tag--Shard-Mapping) for configuring shard mapping.
+
+## Filename templates
+
+ACHGateway supports templated naming of ACH files prior to their upload. This is helpful for ODFI's which require specific naming of uploaded files.Templates use Go's [`text/template` syntax](https://golang.org/pkg/text/template/) and are validated when ACHGateway starts or changed via admin endpoints.
+
+Example:
+
+{% raw %}
+```
+{{ .ShardName }}-{{ date "20060102" }}-{{ .Index }}.ach{{ if .GPG }}.gpg{{ end }}
+```
+{% endraw %}
+
+The following fields are passed to templates giving them data to build a filename from:
+
+- `ShardName`: string of the shard performing an upload
+- `GPG`: boolean if file is encrypted
+- `Index`: integer starting from 0 of the Nth file uploaded during a cutoff from an ACHGateway instance
+
+Also, several functions are available (in addition to Go's standard template functions)
+
+- `date` Takes a Go [`Time` format](https://golang.org/pkg/time/#Time.Format) and returns the formatted string
+- `env` Takes an environment variable name and returns the value from `os.Getenv`.
+- `lower` and `upper` convert a string into lowercase or uppercase
+
+Refer to the [`Shard` config section](../../config/#sharding) to tweak the `OutboundFilenameTemplate`.
