@@ -58,16 +58,16 @@ func (pc *incomingEmitter) Handle(file File) error {
 	}
 
 	// Skip files that have matched a previous Processor
-	if isCorrectionFile(file) {
+	if pc.cfg.ExcludeCorrections && isCorrectionFile(file) {
 		return nil
 	}
-	if isPrenoteFile(file) {
+	if pc.cfg.ExcludePrenotes && isPrenoteFile(file) {
 		return nil
 	}
-	if isReturnFile(file) {
+	if pc.cfg.ExcludeReturns && isReturnFile(file) {
 		return nil
 	}
-	if isReconciliationFile(pc.recon, file) {
+	if pc.cfg.ExcludeReconciliations && isReconciliationFile(pc.recon, file) {
 		return nil
 	}
 
