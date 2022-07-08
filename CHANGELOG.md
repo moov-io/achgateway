@@ -1,3 +1,21 @@
+## v0.16.0 (Unreleased)
+
+We've refreshed the [documentation site](https://moov-io.github.io/achgateway/) for ACHGateway with this release. We hope it helps to understand and operate ACHGateway. We've received a lot of community feedback that has improved the project and docs.
+
+ADDITIONS
+
+- alerting: added slack as a notifier
+- feat: add endpoint for canceling a file
+- feat: emit `IncomingFile` events
+- feat: support filtering ODFI files by their paths
+
+IMPROVEMENTS
+
+- api: add operationId and summary fields for docs
+- build: update moov-io/base to v0.32.0 and moov-io/ach to v1.18.2
+- fix: handle CancelACHFile inside the pipeline
+- incoming/web: clearly return 200 on successful file submission
+
 ## v0.15.7 (Released 2022-06-16)
 
 IMPROVEMENTS
