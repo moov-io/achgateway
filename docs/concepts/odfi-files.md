@@ -24,7 +24,7 @@ Notes: [Schema for `CorrectionFile`](https://pkg.go.dev/github.com/moov-io/achga
 
 ## Incoming File
 
-Many implementations will receive ACH files from other originators that impact the bank accounts the implementation controls. These are often specific to your use-case, risk, and business.
+Many implementations will receive ACH files from other originators that impact the bank accounts the implementation controls. These are often specific to your use-case, risk, and business. By default this processor will produce an event for each file encountered, but files containing corrections, pre-notes, returns, or reconciliations can be excluded. Some vendors/ODFIs consolidate all incoming entries in a single file and others distribute separate files.
 
 Notes: [Schema for `IncomingFile`](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/models#IncomingFile)
 

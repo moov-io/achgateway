@@ -120,7 +120,7 @@ func (cfg *ODFIFiles) Validate() error {
 
 type ODFIProcessors struct {
 	Corrections    ODFICorrections
-	Inbound        ODFIIncoming
+	Incoming       ODFIIncoming
 	Reconciliation ODFIReconciliation
 	Prenotes       ODFIPrenotes
 	Returns        ODFIReturns
@@ -138,6 +138,11 @@ type ODFICorrections struct {
 type ODFIIncoming struct {
 	Enabled     bool
 	PathMatcher string
+
+	ExcludeCorrections     bool
+	ExcludePrenotes        bool
+	ExcludeReturns         bool
+	ExcludeReconciliations bool
 }
 
 type ODFIReconciliation struct {
