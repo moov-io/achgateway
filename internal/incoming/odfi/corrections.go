@@ -59,8 +59,12 @@ func (pc *correctionProcessor) Type() string {
 	return "correction"
 }
 
+func isCorrectionFile(file File) bool {
+	return len(file.ACHFile.NotificationOfChange) >= 0
+}
+
 func (pc *correctionProcessor) Handle(file File) error {
-	if len(file.ACHFile.NotificationOfChange) == 0 {
+	if !isCorrectionFile(file) {
 		return nil
 	}
 
