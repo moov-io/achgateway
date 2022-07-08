@@ -27,7 +27,7 @@ import (
 
 func Topic(logger log.Logger, cfg *service.Config) (*pubsub.Topic, error) {
 	if cfg.Inbound.Kafka != nil {
-		return createKafkaTopic(logger, cfg.Inbound.Kafka)
+		return openKafkaTopic(logger, cfg.Inbound.Kafka)
 	}
 	if cfg.Inbound.InMem != nil {
 		return pubsub.OpenTopic(context.Background(), cfg.Inbound.InMem.URL)
@@ -35,7 +35,7 @@ func Topic(logger log.Logger, cfg *service.Config) (*pubsub.Topic, error) {
 	return nil, nil
 }
 
-func createKafkaTopic(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Topic, error) {
+func openKafkaTopic(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Topic, error) {
 	config := kafkapubsub.MinimalConfig()
 	config.Version = minKafkaVersion
 	config.Net.TLS.Enable = cfg.TLS
@@ -59,7 +59,7 @@ func createKafkaTopic(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Topi
 		Set("sasl.enable", log.Bool(config.Net.SASL.Enable)).
 		Set("sasl.user", log.String(cfg.Key)).
 		Set("topic", log.String(cfg.Topic)).
-		Log("setting up kafka topic")
+		Log("opening kafka topic")
 
 	return kafkapubsub.OpenTopic(cfg.Brokers, config, cfg.Topic, nil)
 }
