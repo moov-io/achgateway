@@ -46,6 +46,10 @@ Returns are Nacha defined Entry Detail records that have failed to post against 
 
 Notes: [Schema for `ReturnFile`](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/models#ReturnFile)
 
+# Further Considerations
+
+Kafka topics need to be created outside of ACHGateway. Consider your needs around partitions, retention, and checkpointing when creating topics.
+
 # Additional Links
 
 - [Nacha Dev Guide: How ACH Works](https://achdevguide.nacha.org/how-ach-works)

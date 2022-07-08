@@ -54,6 +54,8 @@ Submit `QueueACHFile` events:
 
 #### Notes
 
+Kafka topics need to be created outside of ACHGateway. Consider your needs around partitions, retention, and checkpointing when creating topics. 
+
 Make sure to understand the implications of enabling/disabling consumer groups with your kafka subscription and multiple instances of ACHGateway.
 
 ## Encryption
