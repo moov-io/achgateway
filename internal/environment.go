@@ -182,6 +182,7 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	// router
 	if env.PublicRouter == nil {
 		env.PublicRouter = mux.NewRouter()
+		env.PublicRouter.Path("/ping").Methods("GET").HandlerFunc(addPingRoute)
 
 		// append HTTP routes
 		web.NewFilesController(env.Config.Logger, env.Config.Inbound.HTTP, httpFiles).AppendRoutes(env.PublicRouter)
@@ -273,4 +274,9 @@ func initializeDatabase(logger log.Logger, config database.DatabaseConfig) (*sql
 	logger.Info().Log("finished initializing db")
 
 	return db, shutdown, err
+}
+
+func addPingRoute(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("PONG"))
 }

@@ -13,6 +13,10 @@ Custom configuration for this application may be specified via an environment va
 - [Default Configuration](https://github.com/moov-io/achgateway/tree/master/configs/config.default.yml)
 - [Config Source Code](https://github.com/moov-io/achgateway/blob/master/internal/service/model_config.go)
 
+### Endpoint
+
+ACHGateway has a [`GET :9494/config` endpoint](https://moov-io.github.io/achgateway/api/#get-/config) to return the full config object.
+
 ### General Configuration
 
 ```yaml

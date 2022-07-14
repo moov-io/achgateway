@@ -23,7 +23,10 @@ tags:
       of upload agents and schedules. This allows customization to match business and banking requirements. Identifiers can be random
       values (e.g. UUIDs) with shard names (e.g. testing, SD-live).
   - name: Operations
-    description: Endpoints for monitoring ACHGateway and triggering manual steps outside of the automated processes.
+    description: |
+      Endpoints for monitoring ACHGateway and triggering manual steps outside of the automated processes.
+
+      There are endpoints for liveness/readiness checks and Prometheus metrics. The [`admin` package from `moov-io/base` describes these endpoints](https://github.com/moov-io/base/tree/master/admin#endpoints).
 
 paths:
   /shards/{shardKey}/files/{fileID}:
@@ -266,6 +269,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Config'
+
+  /ping:
+    get:
+      description: PONG if the service is running.
+      tags: [ "Operations" ]
+      operationId: ping
+      summary: Ping ACHGateway
+      servers:
+        - url: http://localhost:8484
+          description: Business Logic
+      responses:
+        '200':
+          description: ACHGateway is running
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: PONG
 
   /trigger-cutoff:
     put:
