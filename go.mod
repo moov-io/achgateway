@@ -28,7 +28,7 @@ require (
 	github.com/minio/minio-go/v6 v6.0.57 // indirect
 	github.com/minio/sha256-simd v1.0.0 // indirect
 	github.com/moov-io/ach v1.18.2
-	github.com/moov-io/base v0.32.0
+	github.com/moov-io/base v0.33.0
 	github.com/moov-io/cryptfs v0.4.0
 	github.com/ory/dockertest/v3 v3.8.1
 	github.com/ory/mail/v3 v3.0.0
