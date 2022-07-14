@@ -138,3 +138,18 @@ func (s TestEnvironment) MakeCall(req *http.Request, body interface{}) *http.Res
 
 	return res
 }
+
+func TestEnvironment__Ping(t *testing.T) {
+	env, err := NewEnvironment(&Environment{
+		Logger: log.NewTestLogger(),
+	})
+	require.NoError(t, err)
+
+	req := httptest.NewRequest("GET", "/ping", nil)
+
+	w := httptest.NewRecorder()
+	env.PublicRouter.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusOK, w.Code)
+	require.Equal(t, "PONG", w.Body.String())
+}
