@@ -10,6 +10,8 @@ menubar: docs-menu
 
 ACHGateway emits Prometheus metrics on the admin HTTP server at `/metrics`. Typically [Alertmanager](https://github.com/prometheus/alertmanager) is set up to aggregate the metrics and alert teams.
 
+There is a [`GET :9494/metrics` endpoint](https://github.com/moov-io/base/tree/master/admin#endpoints) that serves all Prometheus metrics produced.
+
 ### HTTP Server
 
 - `http_response_duration_seconds`: Histogram representing the http response durations
