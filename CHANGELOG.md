@@ -6,6 +6,7 @@ ADDITIONS
 
 - alerting: added slack as a notifier
 - feat: add endpoint for canceling a file
+- feat: add ping route
 - feat: emit `IncomingFile` events
 - feat: support filtering ODFI files by their paths
 
@@ -15,6 +16,10 @@ IMPROVEMENTS
 - build: update moov-io/base to v0.32.0 and moov-io/ach to v1.18.2
 - fix: handle CancelACHFile inside the pipeline
 - incoming/web: clearly return 200 on successful file submission
+
+BUILD
+
+- build: update github.com/moov-io/base to v0.33.0
 
 ## v0.15.7 (Released 2022-06-16)
 
