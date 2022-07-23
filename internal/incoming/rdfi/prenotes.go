@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package odfi
+package rdfi
 
 import (
 	"fmt"
@@ -83,7 +83,7 @@ func (pc *prenoteEmitter) Handle(file File) error {
 			pc.logger.With(log.Fields{
 				"origin":      log.String(file.ACHFile.Header.ImmediateOrigin),
 				"destination": log.String(file.ACHFile.Header.ImmediateDestination),
-			}).Log(fmt.Sprintf("odfi: pre-notification traceNumber=%s", entries[j].TraceNumber))
+			}).Log(fmt.Sprintf("rdfi: pre-notification traceNumber=%s", entries[j].TraceNumber))
 
 			prenoteEntriesProcessed.With(
 				"origin", file.ACHFile.Header.ImmediateOrigin,

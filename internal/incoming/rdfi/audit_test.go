@@ -15,32 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package odfi
+package rdfi
 
 import (
-	"io/ioutil"
-	"path/filepath"
 	"testing"
 
-	"github.com/moov-io/achgateway/internal/audittrail"
+	"github.com/stretchr/testify/require"
 )
 
-func TestProcessor__process(t *testing.T) {
-	dir := t.TempDir()
-	if err := ioutil.WriteFile(filepath.Join(dir, "invalid.ach"), []byte("invalid-ach-file"), 0600); err != nil {
-		t.Fatal(err)
-	}
+func TestAuditSaver(t *testing.T) {
+	var saver *AuditSaver = nil
+	require.NoError(t, saver.save("foo.ach", nil))
 
-	processors := SetupProcessors(&MockProcessor{})
-	auditSaver := &AuditSaver{
-		storage:  &audittrail.MockStorage{},
-		hostname: "ftp.foo.com",
-	}
-
-	// By reading a file without ACH FileHeaders we still want to try and process
-	// Batches inside of it if any are found, so reading this kind of file shouldn't
-	// return an error from reading the file.
-	if err := processDir(dir, auditSaver, processors); err != nil {
-		t.Error(err)
-	}
+	saver = &AuditSaver{}
+	require.NoError(t, saver.save("foo.ach", nil))
 }

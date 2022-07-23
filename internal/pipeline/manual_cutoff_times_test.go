@@ -38,7 +38,7 @@ func TestManualCutoffs_filter(t *testing.T) {
 
 	require.True(t, exists(reqNames, cfgName))
 
-	reqNames = append(reqNames, "live-odfi")
+	reqNames = append(reqNames, "live-rdfi")
 	require.False(t, exists(reqNames, cfgName))
 
 	reqNames = append(reqNames, "testing")

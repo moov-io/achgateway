@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package odfi
+package rdfi
 
 import (
 	"errors"
@@ -87,7 +87,7 @@ func (pc *creditReconciliation) Handle(file File) error {
 	).Add(1)
 	pc.logger.With(log.Fields{
 		"filepath": log.String(file.Filepath),
-	}).Log("odfi: processing reconciliation file")
+	}).Log("rdfi: processing reconciliation file")
 
 	var recons []models.Batch
 
@@ -100,7 +100,7 @@ func (pc *creditReconciliation) Handle(file File) error {
 		for j := range entries {
 			pc.logger.With(log.Fields{
 				"traceNumber": log.String(entries[j].TraceNumber),
-			}).Log("odfi: received reconciliation entry")
+			}).Log("rdfi: received reconciliation entry")
 
 			// Save off event information
 			batch.Entries = append(batch.Entries, entries[j])

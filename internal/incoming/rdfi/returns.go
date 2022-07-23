@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package odfi
+package rdfi
 
 import (
 	"fmt"
@@ -32,39 +32,39 @@ import (
 )
 
 var (
-	correctionCodesProcessed = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
-		Name: "correction_codes_processed",
-		Help: "Counter of correction (COR/NOC) files processed",
+	returnEntriesProcessed = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Name: "return_entries_processed",
+		Help: "Counter of return EntryDetail records processed",
 	}, []string{"origin", "destination", "code"})
 )
 
-type correctionProcessor struct {
+type returnEmitter struct {
 	logger log.Logger
 	svc    events.Emitter
-	cfg    service.ODFICorrections
+	cfg    service.ODFIReturns
 }
 
-func CorrectionEmitter(logger log.Logger, cfg service.ODFICorrections, svc events.Emitter) *correctionProcessor {
+func ReturnEmitter(logger log.Logger, cfg service.ODFIReturns, svc events.Emitter) *returnEmitter {
 	if !cfg.Enabled {
 		return nil
 	}
-	return &correctionProcessor{
+	return &returnEmitter{
 		logger: logger,
 		svc:    svc,
 		cfg:    cfg,
 	}
 }
 
-func (pc *correctionProcessor) Type() string {
-	return "correction"
+func (pc *returnEmitter) Type() string {
+	return "return"
 }
 
-func isCorrectionFile(file File) bool {
-	return len(file.ACHFile.NotificationOfChange) >= 0
+func isReturnFile(file File) bool {
+	return len(file.ACHFile.ReturnEntries) >= 0
 }
 
-func (pc *correctionProcessor) Handle(file File) error {
-	if !isCorrectionFile(file) {
+func (pc *returnEmitter) Handle(file File) error {
+	if !isReturnFile(file) {
 		return nil
 	}
 
@@ -73,7 +73,7 @@ func (pc *correctionProcessor) Handle(file File) error {
 		return nil // skip the file
 	}
 
-	msg := models.CorrectionFile{
+	msg := models.ReturnFile{
 		Filename: filepath.Base(file.Filepath),
 		File:     file.ACHFile,
 	}
@@ -81,41 +81,41 @@ func (pc *correctionProcessor) Handle(file File) error {
 	pc.logger.With(log.Fields{
 		"origin":      log.String(file.ACHFile.Header.ImmediateOrigin),
 		"destination": log.String(file.ACHFile.Header.ImmediateDestination),
-	}).Log(fmt.Sprintf("inbound: correction for %d batches", len(file.ACHFile.NotificationOfChange)))
+	}).Log("rdfi: processing return file")
 
-	for i := range file.ACHFile.NotificationOfChange {
-		entries := file.ACHFile.NotificationOfChange[i].GetEntries()
-		msg.Corrections = append(msg.Corrections, models.Batch{
-			Header:  file.ACHFile.NotificationOfChange[i].GetHeader(),
+	for i := range file.ACHFile.ReturnEntries {
+		entries := file.ACHFile.ReturnEntries[i].GetEntries()
+		msg.Returns = append(msg.Returns, models.Batch{
+			Header:  file.ACHFile.ReturnEntries[i].GetHeader(),
 			Entries: entries,
 		})
-
 		for j := range entries {
-			if entries[j].Addenda98 == nil {
+			if entries[j].Addenda99 == nil {
 				continue
 			}
-			changeCode := entries[j].Addenda98.ChangeCodeField()
-			correctionCodesProcessed.With(
+
+			returnCode := entries[j].Addenda99.ReturnCodeField()
+			returnEntriesProcessed.With(
 				"origin", file.ACHFile.Header.ImmediateOrigin,
 				"destination", file.ACHFile.Header.ImmediateDestination,
-				"code", changeCode.Code,
+				"code", returnCode.Code,
 			).Add(1)
 
 			pc.logger.With(log.Fields{
 				"origin":      log.String(file.ACHFile.Header.ImmediateOrigin),
 				"destination": log.String(file.ACHFile.Header.ImmediateDestination),
-			}).Log(fmt.Sprintf("odfi: correction batch %d entry %d code %s", i, j, changeCode.Code))
+			}).Log(fmt.Sprintf("rdfi: return batch %d entry %d code %s", i, j, returnCode.Code))
 		}
 	}
 	pc.sendEvent(msg)
 	return nil
 }
 
-func (pc *correctionProcessor) sendEvent(event interface{}) {
+func (pc *returnEmitter) sendEvent(event interface{}) {
 	if pc.svc != nil {
 		err := pc.svc.Send(models.Event{Event: event})
 		if err != nil {
-			pc.logger.Logf("error sending correction event: %v", err)
+			pc.logger.Logf("error sending return event: %v", err)
 		}
 	}
 }

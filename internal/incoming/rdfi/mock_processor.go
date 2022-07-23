@@ -15,20 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package odfi
+package rdfi
 
-import (
-	"github.com/moov-io/base/admin"
-)
-
-type MockScheduler struct {
+type MockProcessor struct {
 	Err error
 }
 
-func (s *MockScheduler) Start() error {
-	return s.Err
+func (pc *MockProcessor) Type() string {
+	return "mock"
 }
 
-func (*MockScheduler) Shutdown() {}
-
-func (*MockScheduler) RegisterRoutes(_ *admin.Server) {}
+func (pc *MockProcessor) Handle(file File) error {
+	return pc.Err
+}

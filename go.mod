@@ -5,16 +5,13 @@ module github.com/moov-io/achgateway
 go 1.16
 
 require (
-	cloud.google.com/go/iam v0.3.0 // indirect
 	cloud.google.com/go/storage v1.22.1 // indirect
-	github.com/Azure/azure-pipeline-go v0.2.3 // indirect
 	github.com/Azure/go-autorest/autorest/azure/cli v0.4.3 // indirect
 	github.com/PagerDuty/go-pagerduty v1.4.3
 	github.com/ProtonMail/go-crypto v0.0.0-20220517143526-88bb52951d5b
 	github.com/Shopify/sarama v1.34.1
 	github.com/armon/go-metrics v0.4.0 // indirect
 	github.com/go-kit/kit v0.12.0
-	github.com/google/go-replayers/grpcreplay v1.1.0 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0 // indirect
@@ -40,8 +37,6 @@ require (
 	github.com/slack-go/slack v0.10.3
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.0
-	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
-	github.com/xdg/stringprep v1.0.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	gocloud.dev v0.25.0
 	gocloud.dev/pubsub/kafkapubsub v0.25.0

@@ -96,7 +96,7 @@ func TestAggregate_notifyAfterUpload(t *testing.T) {
 				ID:   "mock-agent",
 				Mock: &service.MockAgent{},
 				Paths: service.UploadPaths{
-					Outbound: "/outbound",
+					Outbound: "/RDFI",
 				},
 			},
 		},

@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package odfi
+package rdfi
 
 import (
 	"bytes"
@@ -152,7 +152,7 @@ func processFile(path string, auditSaver *AuditSaver, fileProcessors Processors)
 
 	// Persist the file if needed
 	if auditSaver != nil {
-		path := fmt.Sprintf("odfi/%s/%s/%s/%s", auditSaver.hostname, dir, time.Now().Format("2006-01-02"), filename)
+		path := fmt.Sprintf("RDFI/%s/%s/%s/%s", auditSaver.hostname, time.Now().Format("2006-01-02"), dir, filename)
 		err = auditSaver.save(path, bs)
 		if err != nil {
 			return fmt.Errorf("audittrail %s error: %v", path, err)

@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package odfi
+package rdfi
 
 import (
 	"testing"
@@ -27,11 +27,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestIncoming(t *testing.T) {
-	cfg := service.ODFIIncoming{
-		Enabled: true,
-	}
-	recon := service.ODFIReconciliation{
+func TestReturns(t *testing.T) {
+	cfg := service.ODFIReturns{
 		Enabled: true,
 	}
 	eventsService, err := events.NewEmitter(log.NewNopLogger(), &service.EventsConfig{
@@ -41,6 +38,6 @@ func TestIncoming(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	emitter := IncomingEmitter(log.NewNopLogger(), cfg, recon, eventsService)
+	emitter := ReturnEmitter(log.NewNopLogger(), cfg, eventsService)
 	require.NotNil(t, emitter)
 }

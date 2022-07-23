@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package odfi
+package rdfi
 
 import (
 	"context"
@@ -92,7 +92,7 @@ func (s *PeriodicScheduler) Shutdown() {
 	if s == nil {
 		return
 	}
-	s.logger.Info().Log("odfi: shutting down periodic scheduler")
+	s.logger.Info().Log("rdfi: shutting down periodic scheduler")
 	s.shutdownFunc()
 }
 
@@ -127,7 +127,7 @@ func (s *PeriodicScheduler) tickAll() error {
 		})
 
 		// Attempt to acquire leadership prior to processing
-		leaderKey := fmt.Sprintf("achgateway/odfi/%s", shardName)
+		leaderKey := fmt.Sprintf("achgateway/rdfi/%s", shardName)
 		s.logger.Logf("attempting to acquire ODFI leadership for %s", leaderKey)
 
 		// Acquire leadership for this shard
@@ -135,14 +135,14 @@ func (s *PeriodicScheduler) tickAll() error {
 		if err != nil {
 			logger.Info().Logf("skipping ODFI processing: %v", err)
 		} else {
-			s.logger.Info().Logf("starting odfi periodic processing for %s", shard.Name)
+			s.logger.Info().Logf("starting rdfi periodic processing for %s", shard.Name)
 			err := s.tick(shard)
 			if err != nil {
 				// Push this alert outside achgateway
 				s.alertOnError(err)
-				s.logger.Warn().Logf("error with odfi periodic processing: %v", err)
+				s.logger.Warn().Logf("error with rdfi periodic processing: %v", err)
 			} else {
-				s.logger.Info().Logf("finished odfi periodic processing for %s", shard.Name)
+				s.logger.Info().Logf("finished rdfi periodic processing for %s", shard.Name)
 			}
 		}
 	}

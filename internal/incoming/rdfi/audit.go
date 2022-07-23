@@ -15,16 +15,42 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package odfi
+package rdfi
 
-type MockProcessor struct {
-	Err error
+import (
+	"fmt"
+
+	"github.com/moov-io/achgateway/internal/audittrail"
+	"github.com/moov-io/achgateway/internal/service"
+)
+
+type AuditSaver struct {
+	storage  audittrail.Storage
+	hostname string
 }
 
-func (pc *MockProcessor) Type() string {
-	return "mock"
+func (as *AuditSaver) save(filepath string, data []byte) error {
+	if as == nil {
+		return nil
+	}
+	if len(data) == 0 {
+		return nil
+	}
+	return as.storage.SaveFile(filepath, data)
 }
 
-func (pc *MockProcessor) Handle(file File) error {
-	return pc.Err
+func newAuditSaver(hostname string, cfg *service.AuditTrail) (*AuditSaver, error) {
+	if cfg == nil {
+		return nil, nil
+	}
+
+	storage, err := audittrail.NewStorage(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("rdfi: audit: %v", err)
+	}
+
+	return &AuditSaver{
+		storage:  storage,
+		hostname: hostname,
+	}, nil
 }

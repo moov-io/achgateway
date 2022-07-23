@@ -15,18 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package odfi
+package rdfi
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/require"
+	"github.com/moov-io/base/admin"
 )
 
-func TestAuditSaver(t *testing.T) {
-	var saver *AuditSaver = nil
-	require.NoError(t, saver.save("foo.ach", nil))
-
-	saver = &AuditSaver{}
-	require.NoError(t, saver.save("foo.ach", nil))
+type MockScheduler struct {
+	Err error
 }
+
+func (s *MockScheduler) Start() error {
+	return s.Err
+}
+
+func (*MockScheduler) Shutdown() {}
+
+func (*MockScheduler) RegisterRoutes(_ *admin.Server) {}

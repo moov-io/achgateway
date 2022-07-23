@@ -15,42 +15,41 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package odfi
+package rdfi
 
 import (
-	"fmt"
+	"net/http"
 
-	"github.com/moov-io/achgateway/internal/audittrail"
-	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/base/admin"
+	moovhttp "github.com/moov-io/base/http"
 )
 
-type AuditSaver struct {
-	storage  audittrail.Storage
-	hostname string
+func (s *PeriodicScheduler) RegisterRoutes(svc *admin.Server) {
+	svc.AddHandler("/trigger-inbound", s.triggerInboundProcessing())
 }
 
-func (as *AuditSaver) save(filepath string, data []byte) error {
-	if as == nil {
-		return nil
-	}
-	if len(data) == 0 {
-		return nil
-	}
-	return as.storage.SaveFile(filepath, data)
+type manuallyTriggeredInbound struct {
+	C chan error
 }
 
-func newAuditSaver(hostname string, cfg *service.AuditTrail) (*AuditSaver, error) {
-	if cfg == nil {
-		return nil, nil
-	}
+func (s *PeriodicScheduler) triggerInboundProcessing() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 
-	storage, err := audittrail.NewStorage(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("odfi: audit: %v", err)
-	}
+		// send off the manual request
+		waiter := manuallyTriggeredInbound{
+			C: make(chan error, 1),
+		}
+		s.inboundTrigger <- waiter
 
-	return &AuditSaver{
-		storage:  storage,
-		hostname: hostname,
-	}, nil
+		if err := <-waiter.C; err != nil {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			moovhttp.Problem(w, err)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
+	}
 }

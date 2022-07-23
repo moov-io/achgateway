@@ -41,7 +41,7 @@ func (cfg Inbound) Validate() error {
 		return fmt.Errorf("kafka: %v", err)
 	}
 	if err := cfg.ODFI.Validate(); err != nil {
-		return fmt.Errorf("odfi: %v", err)
+		return fmt.Errorf("rdfi: %v", err)
 	}
 	return nil
 }

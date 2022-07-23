@@ -15,29 +15,32 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package odfi
+package rdfi
 
 import (
+	"io/ioutil"
+	"path/filepath"
 	"testing"
 
-	"github.com/moov-io/achgateway/internal/events"
-	"github.com/moov-io/achgateway/internal/service"
-	"github.com/moov-io/base/log"
-
-	"github.com/stretchr/testify/require"
+	"github.com/moov-io/achgateway/internal/audittrail"
 )
 
-func TestReturns(t *testing.T) {
-	cfg := service.ODFIReturns{
-		Enabled: true,
+func TestProcessor__process(t *testing.T) {
+	dir := t.TempDir()
+	if err := ioutil.WriteFile(filepath.Join(dir, "invalid.ach"), []byte("invalid-ach-file"), 0600); err != nil {
+		t.Fatal(err)
 	}
-	eventsService, err := events.NewEmitter(log.NewNopLogger(), &service.EventsConfig{
-		Webhook: &service.WebhookConfig{
-			Endpoint: "https://cb.moov.io/incoming",
-		},
-	})
-	require.NoError(t, err)
 
-	emitter := ReturnEmitter(log.NewNopLogger(), cfg, eventsService)
-	require.NotNil(t, emitter)
+	processors := SetupProcessors(&MockProcessor{})
+	auditSaver := &AuditSaver{
+		storage:  &audittrail.MockStorage{},
+		hostname: "ftp.foo.com",
+	}
+
+	// By reading a file without ACH FileHeaders we still want to try and process
+	// Batches inside of it if any are found, so reading this kind of file shouldn't
+	// return an error from reading the file.
+	if err := processDir(dir, auditSaver, processors); err != nil {
+		t.Error(err)
+	}
 }
