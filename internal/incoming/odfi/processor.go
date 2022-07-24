@@ -26,7 +26,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/moov-io/ach"
 	"github.com/moov-io/base"
 
 	"github.com/go-kit/kit/metrics/prometheus"
@@ -158,7 +157,7 @@ func processFile(path string, auditSaver *AuditSaver, fileProcessors Processors)
 	}
 	// Persist the file if needed
 	if auditSaver != nil {
-		path := fmt.Sprintf("%s/%s/%s/%s/%s", rdfiFolder, auditSaver.hostname, dir, time.Now().Format("2006-01-02"), filename)
+		path := fmt.Sprintf("%s/%s/%s/%s/%s", rdfiFolder, auditSaver.hostname, time.Now().Format("2006-01-02"), dir, filename)
 		err = auditSaver.save(path, bs)
 		if err != nil {
 			return fmt.Errorf("audittrail %s error: %v", path, err)
