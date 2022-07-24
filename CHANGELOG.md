@@ -2,6 +2,10 @@
 
 We've refreshed the [documentation site](https://moov-io.github.io/achgateway/) for ACHGateway with this release. We hope it helps to understand and operate ACHGateway. We've received a lot of community feedback that has improved the project and docs.
 
+BREAKING CHANGES
+
+- audittrail: The folder structure was made a consistent pattern: `{NAME}/{SFTP}/{DIRECTORY}/{DATE}/{FILE}`
+
 ADDITIONS
 
 - alerting: added slack as a notifier

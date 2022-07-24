@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -42,6 +43,7 @@ import (
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/stime"
+	"github.com/moov-io/base/strx"
 )
 
 type aggregator struct {
@@ -265,8 +267,11 @@ func (xfagg *aggregator) uploadFile(index int, agent upload.Agent, res *transfor
 		return fmt.Errorf("problem formatting output: %v", err)
 	}
 
+	// Allow an override of root path or use legacy path
+	folder := strx.Or(os.Getenv("ODFI_FOLDER"), "outbound")
+
 	// Record the file in our audit trail
-	path := fmt.Sprintf("outbound/%s/%s/%s", agent.Hostname(), time.Now().Format("2006-01-02"), filename)
+	path := fmt.Sprintf("%s/%s/%s/%s", folder, agent.Hostname(), time.Now().Format("2006-01-02"), filename)
 	if err := xfagg.auditStorage.SaveFile(path, buf.Bytes()); err != nil {
 		uploadFilesErrors.With().Add(1)
 		return fmt.Errorf("problem saving file in audit record: %v", err)
