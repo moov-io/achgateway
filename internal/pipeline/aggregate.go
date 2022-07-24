@@ -22,7 +22,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	ach_v1_18_5 "github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/alerting"
 	"github.com/moov-io/achgateway/internal/audittrail"
 	"github.com/moov-io/achgateway/internal/consul"
@@ -234,7 +233,7 @@ func (xfagg *aggregator) emitFilesUploaded(proc *processedFiles) error {
 	return el
 }
 
-func (xfagg *aggregator) runTransformers(index int, agent upload.Agent, outgoing *ach_v1_18_5.File) error {
+func (xfagg *aggregator) runTransformers(index int, agent upload.Agent, outgoing *ach.File) error {
 	result, err := transform.ForUpload(outgoing, xfagg.preuploadTransformers)
 	if err != nil {
 		return err
@@ -302,7 +301,7 @@ func prepareShardName(shardName string) string {
 	return strings.ToUpper(strings.ReplaceAll(shardName, " ", "-"))
 }
 
-func (xfagg *aggregator) notifyAfterUpload(filename string, file *ach_v1_18_5.File, agent upload.Agent, uploadErr error) error {
+func (xfagg *aggregator) notifyAfterUpload(filename string, file *ach.File, agent upload.Agent, uploadErr error) error {
 	msg := &notify.Message{
 		Direction: notify.Upload,
 		Filename:  filename,
