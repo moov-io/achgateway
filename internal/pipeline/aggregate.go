@@ -22,11 +22,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"strings"
-	"time"
-
-	"github.com/moov-io/ach"
+	ach_v1_18_5 "github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/alerting"
 	"github.com/moov-io/achgateway/internal/audittrail"
 	"github.com/moov-io/achgateway/internal/consul"
@@ -42,6 +38,10 @@ import (
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/stime"
+	"io/ioutil"
+	"os"
+	"strings"
+	"time"
 )
 
 type aggregator struct {
@@ -234,7 +234,7 @@ func (xfagg *aggregator) emitFilesUploaded(proc *processedFiles) error {
 	return el
 }
 
-func (xfagg *aggregator) runTransformers(index int, agent upload.Agent, outgoing *ach.File) error {
+func (xfagg *aggregator) runTransformers(index int, agent upload.Agent, outgoing *ach_v1_18_5.File) error {
 	result, err := transform.ForUpload(outgoing, xfagg.preuploadTransformers)
 	if err != nil {
 		return err
@@ -265,8 +265,13 @@ func (xfagg *aggregator) uploadFile(index int, agent upload.Agent, res *transfor
 		return fmt.Errorf("problem formatting output: %v", err)
 	}
 
+	// default to old file structure if no env variable is present
+	odfiFolder := "outbound"
+	if odf := os.Getenv("ODFI_FOLDER"); odf != "" {
+		odfiFolder = odf
+	}
 	// Record the file in our audit trail
-	path := fmt.Sprintf("outbound/%s/%s/%s", agent.Hostname(), time.Now().Format("2006-01-02"), filename)
+	path := fmt.Sprintf("%s/%s/%s/%s", odfiFolder, agent.Hostname(), time.Now().Format("2006-01-02"), filename)
 	if err := xfagg.auditStorage.SaveFile(path, buf.Bytes()); err != nil {
 		uploadFilesErrors.With().Add(1)
 		return fmt.Errorf("problem saving file in audit record: %v", err)
@@ -297,7 +302,7 @@ func prepareShardName(shardName string) string {
 	return strings.ToUpper(strings.ReplaceAll(shardName, " ", "-"))
 }
 
-func (xfagg *aggregator) notifyAfterUpload(filename string, file *ach.File, agent upload.Agent, uploadErr error) error {
+func (xfagg *aggregator) notifyAfterUpload(filename string, file *ach_v1_18_5.File, agent upload.Agent, uploadErr error) error {
 	msg := &notify.Message{
 		Direction: notify.Upload,
 		Filename:  filename,

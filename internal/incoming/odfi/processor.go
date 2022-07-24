@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 	"time"
@@ -150,9 +151,14 @@ func processFile(path string, auditSaver *AuditSaver, fileProcessors Processors)
 	dir, filename := filepath.Split(path)
 	dir = filepath.Base(dir)
 
+	// default to old file structure if no env variable is present
+	rdfiFolder := "odfi"
+	if rf := os.Getenv("RDFI_FOLDER"); rf != "" {
+		rdfiFolder = rf
+	}
 	// Persist the file if needed
 	if auditSaver != nil {
-		path := fmt.Sprintf("odfi/%s/%s/%s/%s", auditSaver.hostname, dir, time.Now().Format("2006-01-02"), filename)
+		path := fmt.Sprintf("%s/%s/%s/%s/%s", rdfiFolder, auditSaver.hostname, dir, time.Now().Format("2006-01-02"), filename)
 		err = auditSaver.save(path, bs)
 		if err != nil {
 			return fmt.Errorf("audittrail %s error: %v", path, err)
