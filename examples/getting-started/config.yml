@@ -1,6 +1,91 @@
 ACHGateway:
   Admin:
     BindAddress: ":9494"
+
+  # Database:
+  #   MySQL:
+  #     Address: "tcp(localhost:3306)"
+  #     User: ""
+  #     Password: ""
+  #   DatabaseName: "achgateway"
+
+  # Consul:
+  #   Address: "http://127.0.0.1:8500"
+  #   SessionPath: "/"
+
+  ODFI:
+    Origination:
+      Kafka:
+        Brokers:
+          - "kafk1:9092"
+        Key: "admin"
+        Secret: "secret"
+        Group: "achgateway" # Optional, allows multiple instances to consume separate partitions
+        TLS: false
+        Topic: "ach.odfi.outgoing-files"
+    Listen:
+      Processors:
+        Corrections:
+          Enabled: true
+        Prenotes:
+          Enabled: true
+        Returns:
+          Enabled: true
+      Interval: "30m"
+      ShardNames:
+        - testing
+      # Storage:
+      #   Directory: # TODO(adam): Is this relevant
+      Events:
+        # Kafka:
+        #   Brokers: [ ... ]
+        #   Topic: "ach.odfi.incoming-files"
+        Webhook:
+          Endpoint: "http://..."
+
+  RDFI:
+    Receive:
+      ShardNames:
+        - testing
+      Events:
+        # Kafka:
+        #   Brokers: [ ... ]
+        #   Topic: "ach.rdfi.incoming-files"
+        Webhook:
+          Endpoint: "http://..."
+    Reply:
+      Processors:
+        Incoming:
+          Enabled: true
+        Prenotes:
+          Enabled: true
+      # Kafka:
+      #   Brokers: [ ... ]
+      #   Topic: "ach.rdfi.incoming-files"
+
+  FileAgents:
+    Agents:
+      - id: "local-ftp"
+        ftp:
+          hostname: "ftp:2121"
+          username: "admin"
+          password: "123456"
+        paths:
+          inbound: "/returned/"
+          outbound: "/outbound/"
+          reconciliation: "/reconciliation/"
+          return: "/returned/"
+
+  Sharding:
+
+
+  Errors:
+
+
+  Notifications:
+
+
+
   Inbound:
     HTTP:
       BindAddress: ":8484"
@@ -60,15 +145,6 @@ ACHGateway:
     Default: "testing"
   Upload:
     agents:
-      - id: "local-ftp"
-        ftp:
-          hostname: "ftp:2121"
-          username: "admin"
-          password: "123456"
-        paths:
-          inbound: "/returned/"
-          outbound: "/outbound/"
-          reconciliation: "/reconciliation/"
-          return: "/returned/"
+
     merging:
       directory: "./storage/"

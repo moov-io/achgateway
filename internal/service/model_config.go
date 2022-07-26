@@ -33,32 +33,40 @@ type GlobalConfig struct {
 
 type Config struct {
 	Logger   log.Logger `json:"-"`
-	Clients  *ClientConfig
 	Database database.DatabaseConfig
 	Consul   *consul.Config
-	Admin    Admin
-	Inbound  Inbound
-	Events   *EventsConfig
-	Sharding Sharding
-	Upload   UploadAgents
-	Errors   ErrorAlerting
+
+	Admin Admin
+	HTTP  HTTPConfig
+
+	ODFI ODFIConfig
+	RDFI RDFIConfig
+
+	FileAgents FileAgentsConfig
+	Sharding   Sharding
+
+	Errors        ErrorAlerting
+	Notifications Notifications
 }
 
 func (cfg *Config) Validate() error {
 	if err := cfg.Admin.Validate(); err != nil {
 		return fmt.Errorf("admin: %v", err)
 	}
-	if err := cfg.Inbound.Validate(); err != nil {
+
+	if err := cfg.ODFI.Validate(); err != nil {
 		return fmt.Errorf("inbound: %v", err)
 	}
+	if err := cfg.RDFI.Validate(); err != nil {
+		return fmt.Errorf("inbound: %v", err)
+	}
+
+	if err := cfg.FileAgents.Validate(); err != nil {
+		return fmt.Errorf("file agents: %v", err)
+	}
+
 	if err := cfg.Events.Validate(); err != nil {
 		return fmt.Errorf("events: %v", err)
-	}
-	if err := cfg.Sharding.Validate(); err != nil {
-		return fmt.Errorf("sharding: %v", err)
-	}
-	if err := cfg.Upload.Validate(); err != nil {
-		return fmt.Errorf("upload: %v", err)
 	}
 	if err := cfg.Errors.Validate(); err != nil {
 		return fmt.Errorf("errors: %v", err)

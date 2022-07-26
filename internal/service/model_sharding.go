@@ -72,10 +72,10 @@ type Shard struct {
 	Cutoffs                  Cutoffs
 	PreUpload                *PreUpload
 	UploadAgent              string
-	Mergable                 MergableConfig
+	MergeSettings            MergeSettings
 	OutboundFilenameTemplate string
 	Output                   *Output
-	Notifications            *Notifications
+	Notifications            *ShardNotifications
 	Audit                    *AuditTrail
 }
 
@@ -141,7 +141,7 @@ func (cfg *PreUpload) Validate() error {
 	return nil
 }
 
-type MergableConfig struct {
+type MergeSettings struct {
 	Conditions     *ach.Conditions
 	FlattenBatches *FlattenBatches
 }
@@ -154,6 +154,12 @@ type Output struct {
 
 func (cfg *Output) Validate() error {
 	return nil
+}
+
+type ShardNotifications struct {
+	Email     []string
+	PagerDuty []string
+	Slack     []string
 }
 
 func (cfg *Shard) FilenameTemplate() string {

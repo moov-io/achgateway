@@ -15,8 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package service
-
 import (
 	"bytes"
 	"encoding/json"
@@ -25,39 +23,32 @@ import (
 	"time"
 
 	"github.com/moov-io/achgateway/internal/mask"
-	"github.com/moov-io/achgateway/internal/storage"
 )
 
-type UploadAgents struct {
-	Agents         []UploadAgent
-	Merging        Merging
-	Retry          *UploadRetry
+type FileAgentsConfig struct {
+	Agents         []FileAgent
 	DefaultAgentID string
+	Retry          *RetryConfig
 }
 
-func (ua UploadAgents) Find(id string) *UploadAgent {
-	for i := range ua.Agents {
-		if ua.Agents[i].ID == id {
-			return &ua.Agents[i]
+func (fa FileAgentsConfig) Find(id string) *FileAgent {
+	for i := range fa.Agents {
+		if fa.Agents[i].ID == id {
+			return &fa.Agents[i]
 		}
 	}
 	return nil
 }
 
-func (ua UploadAgents) Validate() error {
-	if err := ua.Retry.Validate(); err != nil {
-		return fmt.Errorf("retry: %v", err)
-	}
-	return nil
-}
+type FileAgent struct {
+	ID string
 
-type UploadAgent struct {
-	ID            string
-	FTP           *FTP
-	SFTP          *SFTP
-	Mock          *MockAgent
-	Paths         UploadPaths
-	Notifications *UploadNotifiers
+	FTP  *FTP
+	SFTP *SFTP
+	Mock *MockAgent
+
+	Path          string
+	Notifications FileAgentNotifiers
 
 	// AllowedIPs is a comma separated list of IP addresses and CIDR ranges
 	// where connections are allowed. If this value is non-empty remote servers
@@ -65,9 +56,9 @@ type UploadAgent struct {
 	AllowedIPs string
 }
 
-func (cfg *UploadAgent) SplitAllowedIPs() []string {
-	if cfg.AllowedIPs != "" {
-		return strings.Split(cfg.AllowedIPs, ",")
+func (fa *FileAgent) SplitAllowedIPs() []string {
+	if fa.AllowedIPs != "" {
+		return strings.Split(fa.AllowedIPs, ",")
 	}
 	return nil
 }
@@ -213,30 +204,18 @@ func (cfg *SFTP) String() string {
 
 type MockAgent struct{}
 
-type UploadPaths struct {
-	Inbound        string
-	Outbound       string
-	Reconciliation string
-	Return         string
-}
-
-type UploadNotifiers struct {
+type FileAgentNotifiers struct {
 	Email     []string
 	PagerDuty []string
 	Slack     []string
 }
 
-type Merging struct {
-	Storage   storage.Config
-	Directory string // fallback config for Storage.Filesystem.Directory
-}
-
-type UploadRetry struct {
+type RetryConfig struct {
 	Interval   time.Duration
 	MaxRetries uint64
 }
 
-func (cfg *UploadRetry) Validate() error {
+func (cfg *RetryConfig) Validate() error {
 	if cfg == nil {
 		return nil
 	}
