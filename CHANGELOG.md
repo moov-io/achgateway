@@ -1,3 +1,9 @@
+## v0.16.1 (Released 2022-08-03)
+
+IMPROVEMENTS
+
+- fix: don't assume pagerduty config was provided
+
 ## v0.16.0 (Released 2022-07-27)
 
 We've refreshed the [documentation site](https://moov-io.github.io/achgateway/) for ACHGateway with this release. We hope it helps to understand and operate ACHGateway. We've received a lot of community feedback that has improved the project and docs.
