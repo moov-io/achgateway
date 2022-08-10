@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -406,7 +405,7 @@ func (agent *SFTPTransferAgent) readFiles(dir string) ([]File, error) {
 		}
 		files = append(files, File{
 			Filename: infos[i].Name(),
-			Contents: ioutil.NopCloser(&buf),
+			Contents: io.NopCloser(&buf),
 		})
 	}
 	return files, nil

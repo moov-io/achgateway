@@ -8,8 +8,8 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/pem"
-	"io/ioutil"
 	"net"
+	"os"
 	"testing"
 	"time"
 
@@ -26,7 +26,7 @@ func GrabConnectionCertificates(t *testing.T, addr string) (string, error) {
 	}
 	defer conn.Close()
 
-	fd, err := ioutil.TempFile("", "conn-certs")
+	fd, err := os.CreateTemp("", "conn-certs")
 	require.NoError(t, err)
 
 	// Write x509 certs to disk
@@ -41,7 +41,7 @@ func GrabConnectionCertificates(t *testing.T, addr string) (string, error) {
 			t.Fatal(err)
 		}
 	}
-	if err := ioutil.WriteFile(fd.Name(), buf.Bytes(), 0600); err != nil {
+	if err := os.WriteFile(fd.Name(), buf.Bytes(), 0600); err != nil {
 		t.Fatal(err)
 	}
 	return fd.Name(), nil

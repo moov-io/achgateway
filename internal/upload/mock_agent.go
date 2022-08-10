@@ -6,7 +6,7 @@ package upload
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"sync"
 )
 
@@ -51,9 +51,9 @@ func (a *MockAgent) UploadFile(f File) error {
 	defer a.mu.Unlock()
 
 	// read f.contents before callers close the underlying os.Open file descriptor
-	bs, _ := ioutil.ReadAll(f.Contents)
+	bs, _ := io.ReadAll(f.Contents)
 	a.UploadedFile = &f
-	a.UploadedFile.Contents = ioutil.NopCloser(bytes.NewReader(bs))
+	a.UploadedFile.Contents = io.NopCloser(bytes.NewReader(bs))
 	return nil
 }
 

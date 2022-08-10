@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"encoding/base64"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -49,7 +49,7 @@ func TestSSHX__read(t *testing.T) {
 	// 		t.Logf("key=%#v", key)
 	// 	}
 
-	data, err := ioutil.ReadFile(filepath.Join("testdata", "rsa-2048.pub"))
+	data, err := os.ReadFile(filepath.Join("testdata", "rsa-2048.pub"))
 	require.NoError(t, err)
 	key, err := ReadPubKey(data)
 	require.NoError(t, err)
@@ -101,11 +101,11 @@ func TestSSHX_ReadPubKey(t *testing.T) {
 	}
 
 	// Keys generated with 'ssh-keygen -t rsa -b 2048 -f test' (or 4096)
-	data, err := ioutil.ReadFile(filepath.Join("testdata", "rsa-2048.pub"))
+	data, err := os.ReadFile(filepath.Join("testdata", "rsa-2048.pub"))
 	require.NoError(t, err)
 	check(t, data)
 
-	data, err = ioutil.ReadFile(filepath.Join("testdata", "rsa-4096.pub"))
+	data, err = os.ReadFile(filepath.Join("testdata", "rsa-4096.pub"))
 	require.NoError(t, err)
 	check(t, data)
 }

@@ -11,7 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -111,7 +111,7 @@ func tlsDialOption(caFilePath string) (*ftp.DialOption, error) {
 	if caFilePath == "" {
 		return nil, nil
 	}
-	bs, err := ioutil.ReadFile(caFilePath)
+	bs, err := os.ReadFile(caFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("tlsDialOption: failed to read %s: %v", caFilePath, err)
 	}
@@ -331,5 +331,5 @@ func (*FTPTransferAgent) readResponse(resp *ftp.Response) (io.ReadCloser, error)
 	if err != nil {
 		return nil, fmt.Errorf("n=%d error=%v", n, err)
 	}
-	return ioutil.NopCloser(&buf), nil
+	return io.NopCloser(&buf), nil
 }

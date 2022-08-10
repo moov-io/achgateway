@@ -9,7 +9,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/url"
 	"strconv"
@@ -42,7 +42,7 @@ type EmailTemplateData struct {
 
 var (
 	// Ensure the default template validates against our data struct
-	_ = service.DefaultEmailTemplate.Execute(ioutil.Discard, EmailTemplateData{})
+	_ = service.DefaultEmailTemplate.Execute(io.Discard, EmailTemplateData{})
 )
 
 func NewEmail(cfg *service.Email) (*Email, error) {

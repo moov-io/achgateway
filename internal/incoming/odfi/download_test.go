@@ -18,7 +18,6 @@
 package odfi
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -41,7 +40,7 @@ func TestDownloader__deleteFiles(t *testing.T) {
 
 	// write a file and expect it to be deleted
 	path := filepath.Join(dl.dir, agent.InboundPath(), "foo.ach")
-	if err := ioutil.WriteFile(path, []byte("testing"), 0600); err != nil {
+	if err := os.WriteFile(path, []byte("testing"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	if err := dl.deleteFiles(); err != nil {
@@ -49,7 +48,7 @@ func TestDownloader__deleteFiles(t *testing.T) {
 	}
 
 	// read files
-	fds, err := ioutil.ReadDir(dl.dir)
+	fds, err := os.ReadDir(dl.dir)
 	if !os.IsNotExist(err) {
 		t.Fatal(err)
 	}
@@ -70,7 +69,7 @@ func TestDownloader__deleteEmptyDirs(t *testing.T) {
 
 	// write a file and expect it to be deleted
 	path := filepath.Join(dl.dir, agent.InboundPath(), "foo.ach")
-	if err := ioutil.WriteFile(path, []byte("testing"), 0600); err != nil {
+	if err := os.WriteFile(path, []byte("testing"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	if err := dl.deleteEmptyDirs(agent); err != nil {
@@ -78,7 +77,7 @@ func TestDownloader__deleteEmptyDirs(t *testing.T) {
 	}
 
 	// read files
-	fds, err := ioutil.ReadDir(dl.dir)
+	fds, err := os.ReadDir(dl.dir)
 	require.NoError(t, err)
 	if len(fds) != 1 {
 		t.Fatalf("%d unexpected files", len(fds))

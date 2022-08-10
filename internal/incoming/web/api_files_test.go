@@ -20,9 +20,9 @@ package web
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -45,7 +45,7 @@ func TestCreateFileHandler(t *testing.T) {
 	controller.AppendRoutes(r)
 
 	// Send a file over HTTP
-	bs, _ := ioutil.ReadFile(filepath.Join("..", "..", "..", "testdata", "ppd-valid.json"))
+	bs, _ := os.ReadFile(filepath.Join("..", "..", "..", "testdata", "ppd-valid.json"))
 	req := httptest.NewRequest("POST", "/shards/s1/files/f1", bytes.NewReader(bs))
 
 	w := httptest.NewRecorder()

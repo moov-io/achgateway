@@ -6,7 +6,6 @@ package audittrail
 
 import (
 	"io"
-	"io/ioutil"
 	"strings"
 )
 
@@ -40,5 +39,5 @@ func (s *MockStorage) GetFile(_ string) (io.ReadCloser, error) {
 	if s.Err != nil {
 		return nil, s.Err
 	}
-	return ioutil.NopCloser(strings.NewReader(s.FileContents)), nil
+	return io.NopCloser(strings.NewReader(s.FileContents)), nil
 }

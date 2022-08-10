@@ -20,7 +20,6 @@ package pipeline
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -42,7 +41,7 @@ func TestMerging__getNonCanceledMatches(t *testing.T) {
 	require.NoError(t, os.Mkdir(filepath.Join(dir, "test-2021"), 0777))
 
 	write := func(filename string) string {
-		err := ioutil.WriteFile(filepath.Join(dir, "test-2021", filename), nil, 0600)
+		err := os.WriteFile(filepath.Join(dir, "test-2021", filename), nil, 0600)
 		if err != nil {
 			t.Fatal(err)
 		}
