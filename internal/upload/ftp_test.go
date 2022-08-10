@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -122,7 +122,7 @@ func TestFTP(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	bs, _ := ioutil.ReadAll(resp)
+	bs, _ := io.ReadAll(resp)
 	bs = bytes.TrimSpace(bs)
 	if !bytes.Equal(bs, []byte("Hello, World!")) {
 		t.Errorf("got %q", string(bs))
@@ -230,7 +230,7 @@ func TestFTP__getInboundFiles(t *testing.T) {
 	}
 	for i := range files {
 		if files[i].Filename == "iat-credit.ach" {
-			bs, _ := ioutil.ReadAll(files[i].Contents)
+			bs, _ := io.ReadAll(files[i].Contents)
 			bs = bytes.TrimSpace(bs)
 			if !strings.HasPrefix(string(bs), "101 121042882 2313801041812180000A094101Bank                   My Bank Name                   ") {
 				t.Errorf("got %v", string(bs))
@@ -270,7 +270,7 @@ func TestFTP__getReconciliationFiles(t *testing.T) {
 	}
 	for i := range files {
 		if files[i].Filename == "ppd-debit.ach" {
-			bs, _ := ioutil.ReadAll(files[i].Contents)
+			bs, _ := io.ReadAll(files[i].Contents)
 			bs = bytes.TrimSpace(bs)
 			if !strings.HasPrefix(string(bs), "5225companyname                         origid    PPDCHECKPAYMT000002080730   1076401250000001") {
 				t.Errorf("got %v", string(bs))
@@ -305,7 +305,7 @@ func TestFTP__getReturnFiles(t *testing.T) {
 	if files[0].Filename != "return-WEB.ach" {
 		t.Errorf("files[0]=%s", files[0])
 	}
-	bs, _ := ioutil.ReadAll(files[0].Contents)
+	bs, _ := io.ReadAll(files[0].Contents)
 	bs = bytes.TrimSpace(bs)
 	if !strings.HasPrefix(string(bs), "101 091400606 6910001341810170306A094101FIRST BANK & TRUST     ASF APPLICATION SUPERVI        ") {
 		t.Errorf("got %v", string(bs))
@@ -330,7 +330,7 @@ func TestFTP__uploadFile(t *testing.T) {
 	content := base.ID()
 	f := File{
 		Filename: base.ID(),
-		Contents: ioutil.NopCloser(strings.NewReader(content)), // random file contents
+		Contents: io.NopCloser(strings.NewReader(content)), // random file contents
 	}
 
 	// Create outbound directory
@@ -353,7 +353,7 @@ func TestFTP__uploadFile(t *testing.T) {
 	if r == nil {
 		t.Fatal("failed to read file")
 	}
-	bs, _ := ioutil.ReadAll(r)
+	bs, _ := io.ReadAll(r)
 	if !bytes.Equal(bs, []byte(content)) {
 		t.Errorf("got %q", string(bs))
 	}

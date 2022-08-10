@@ -20,7 +20,7 @@ package odfi
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 	"time"
@@ -82,24 +82,30 @@ func (pcs Processors) HandleAll(file File) error {
 
 func ProcessFiles(dl *downloadedFiles, auditSaver *AuditSaver, fileProcessors Processors) error {
 	var el base.ErrorList
-	dirs, err := ioutil.ReadDir(dl.dir)
+	entries, err := os.ReadDir(dl.dir)
 	if err != nil {
 		return fmt.Errorf("reading %s: %v", dl.dir, err)
 	}
-	for i := range dirs {
-		where := filepath.Join(dl.dir, dirs[i].Name())
+	for i := range entries {
+		where := filepath.Join(dl.dir, entries[i].Name())
 
-		if dirs[i].Mode().IsDir() {
+		info, err := entries[i].Info()
+		if err != nil {
+			el.Add(fmt.Errorf("processFiles: %v", err))
+			continue
+		}
+
+		if info.Mode().IsDir() {
 			err = processDir(where, auditSaver, fileProcessors)
 			if err != nil {
-				el.Add(fmt.Errorf("processDir %s: %v", dirs[i], err))
+				el.Add(fmt.Errorf("processDir %s: %v", info, err))
 				continue
 			}
 		}
-		if dirs[i].Mode().IsRegular() {
+		if info.Mode().IsRegular() {
 			err = processFile(where, auditSaver, fileProcessors)
 			if err != nil {
-				el.Add(fmt.Errorf("processfile - %s: %v", dirs[i], err))
+				el.Add(fmt.Errorf("processfile - %s: %v", info, err))
 				continue
 			}
 		}
@@ -111,7 +117,7 @@ func ProcessFiles(dl *downloadedFiles, auditSaver *AuditSaver, fileProcessors Pr
 }
 
 func processDir(dir string, auditSaver *AuditSaver, fileProcessors Processors) error {
-	infos, err := ioutil.ReadDir(dir)
+	infos, err := os.ReadDir(dir)
 	if err != nil {
 		return fmt.Errorf("reading %s: %v", dir, err)
 	}
@@ -132,7 +138,7 @@ func processDir(dir string, auditSaver *AuditSaver, fileProcessors Processors) e
 }
 
 func processFile(path string, auditSaver *AuditSaver, fileProcessors Processors) error {
-	bs, err := ioutil.ReadFile(path)
+	bs, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("problem opening %s: %v", path, err)
 	}

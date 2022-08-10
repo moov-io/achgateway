@@ -18,7 +18,7 @@
 package odfi
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -27,7 +27,7 @@ import (
 
 func TestProcessor__process(t *testing.T) {
 	dir := t.TempDir()
-	if err := ioutil.WriteFile(filepath.Join(dir, "invalid.ach"), []byte("invalid-ach-file"), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "invalid.ach"), []byte("invalid-ach-file"), 0600); err != nil {
 		t.Fatal(err)
 	}
 

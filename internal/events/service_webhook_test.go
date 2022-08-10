@@ -18,7 +18,7 @@
 package events
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -38,7 +38,7 @@ func TestWebhookService(t *testing.T) {
 
 	var body *models.FileUploaded
 	admin.AddHandler("/hook", func(w http.ResponseWriter, r *http.Request) {
-		bs, _ := ioutil.ReadAll(r.Body)
+		bs, _ := io.ReadAll(r.Body)
 
 		var wrapper models.FileUploaded
 		if err := models.ReadEvent(bs, &wrapper); err != nil {

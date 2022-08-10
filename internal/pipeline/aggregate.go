@@ -22,7 +22,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"strings"
 	"time"
 
@@ -275,7 +275,7 @@ func (xfagg *aggregator) uploadFile(index int, agent upload.Agent, res *transfor
 	// Upload our file
 	err = agent.UploadFile(upload.File{
 		Filename: filename,
-		Contents: ioutil.NopCloser(&buf),
+		Contents: io.NopCloser(&buf),
 	})
 
 	// Send Slack/PD or whatever notifications after the file is uploaded

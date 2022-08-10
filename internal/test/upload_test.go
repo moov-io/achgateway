@@ -23,7 +23,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -207,7 +206,7 @@ func TestUploads(t *testing.T) {
 }
 
 func setupTestDirectory(t *testing.T, cfg *service.Config) string {
-	dir, err := ioutil.TempDir(filepath.Join("..", "..", "testdata", "ftp-server"), "upload-test-*")
+	dir, err := os.MkdirTemp(filepath.Join("..", "..", "testdata", "ftp-server"), "upload-test-*")
 	require.NoError(t, err)
 	t.Cleanup(func() { os.RemoveAll(dir) })
 
@@ -220,13 +219,17 @@ func countFilenamePrefixes(t *testing.T, outboundPath string) map[string]int {
 
 	out := make(map[string]int)
 
-	fds, err := ioutil.ReadDir(outboundPath)
+	entries, err := os.ReadDir(outboundPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i := range fds {
-		if fds[i].Mode().IsRegular() {
-			parts := strings.Split(filepath.Base(fds[i].Name()), "-")
+	for i := range entries {
+		info, err := entries[i].Info()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if info.Mode().IsRegular() {
+			parts := strings.Split(filepath.Base(entries[i].Name()), "-")
 			out[parts[0]] += 1
 		}
 	}
@@ -262,7 +265,7 @@ func randomACHFile(t *testing.T) *ach.File {
 		return randomTraceNumbers(t, file)
 	}
 
-	bs, err := ioutil.ReadFile(filepath.Join("..", "..", "testdata", "ppd-valid.json"))
+	bs, err := os.ReadFile(filepath.Join("..", "..", "testdata", "ppd-valid.json"))
 	require.NoError(t, err)
 	file, err := ach.FileFromJSON(bs)
 	require.NoError(t, err)
@@ -270,7 +273,7 @@ func randomACHFile(t *testing.T) *ach.File {
 }
 
 func traceNumber(routingNumber string) string {
-	// nolint:gosec
+	//nolint:gosec
 	num := rand.Int63n(1e15)
 	v := fmt.Sprintf("%s%d", routingNumber, num)
 	if utf8.RuneCountInString(v) > 15 {
@@ -345,7 +348,7 @@ func maybeCancelFile(t *testing.T, r *mux.Router, shardKey, fileID string, file 
 func shouldCancelFile(t *testing.T) bool {
 	t.Helper()
 
-	return rand.Int63n(100)%10 == 0 // nolint:gosec
+	return rand.Int63n(100)%10 == 0 //nolint:gosec
 }
 
 func cancelFile(t *testing.T, r *mux.Router, shardKey, fileID string) {

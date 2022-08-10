@@ -6,8 +6,8 @@
 // to register implementations such as kafka or in-memory. Please refer to
 // specific documentation for each implementation.
 //
-//  - https://gocloud.dev/howto/pubsub/publish/
-//  - https://gocloud.dev/howto/pubsub/subscribe/
+//   - https://gocloud.dev/howto/pubsub/publish/
+//   - https://gocloud.dev/howto/pubsub/subscribe/
 //
 // This package is designed as one import to bring in extra dependencies without
 // requiring multiple projects to know what imports are needed.

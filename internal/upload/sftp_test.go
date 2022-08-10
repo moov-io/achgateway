@@ -11,7 +11,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -55,7 +54,8 @@ func (s *sftpDeployment) close(t *testing.T) {
 // spawnSFTP launches an SFTP Docker image
 //
 // You can verify this container launches with an ssh command like:
-//  $ ssh ssh://demo@127.0.0.1:33138 -s sftp
+//
+//	$ ssh ssh://demo@127.0.0.1:33138 -s sftp
 func spawnSFTP(t *testing.T) *sftpDeployment {
 	t.Helper()
 
@@ -111,7 +111,7 @@ func spawnSFTP(t *testing.T) *sftpDeployment {
 
 func mkdir(t *testing.T) (string, uint32, uint32) {
 	wd, _ := os.Getwd()
-	dir, err := ioutil.TempDir(wd, "sftp")
+	dir, err := os.MkdirTemp(wd, "sftp")
 	require.NoError(t, err)
 	fd, err := os.Stat(dir)
 	require.NoError(t, err)
@@ -169,7 +169,7 @@ func TestSFTP__password(t *testing.T) {
 
 	err := deployment.agent.UploadFile(File{
 		Filename: "upload.ach",
-		Contents: ioutil.NopCloser(strings.NewReader("test data")),
+		Contents: io.NopCloser(strings.NewReader("test data")),
 	})
 	require.NoError(t, err)
 
@@ -232,7 +232,7 @@ func TestSFTP__readFilesEmpty(t *testing.T) {
 	// Upload an empty file
 	err := deployment.agent.UploadFile(File{
 		Filename: "upload.ach",
-		Contents: ioutil.NopCloser(strings.NewReader("")),
+		Contents: io.NopCloser(strings.NewReader("")),
 	})
 	require.NoError(t, err)
 
@@ -287,7 +287,7 @@ func TestSFTP__uploadFile(t *testing.T) {
 	deployment.agent.cfg.Paths.Outbound = filepath.Join("upload", "foo")
 	err := deployment.agent.UploadFile(File{
 		Filename: "upload.ach",
-		Contents: ioutil.NopCloser(strings.NewReader("test data")),
+		Contents: io.NopCloser(strings.NewReader("test data")),
 	})
 	require.NoError(t, err)
 
@@ -295,7 +295,7 @@ func TestSFTP__uploadFile(t *testing.T) {
 	deployment.agent.cfg.Paths.Outbound = string(os.PathSeparator) + filepath.Join("home", "bad-path")
 	err = deployment.agent.UploadFile(File{
 		Filename: "upload.ach",
-		Contents: ioutil.NopCloser(strings.NewReader("test data")),
+		Contents: io.NopCloser(strings.NewReader("test data")),
 	})
 	if err == nil {
 		t.Fatal("expected error")

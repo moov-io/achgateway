@@ -5,7 +5,7 @@
 package upload
 
 import (
-	"io/ioutil"
+	"io"
 	"strings"
 	"testing"
 )
@@ -16,7 +16,7 @@ func TestFile__close(t *testing.T) {
 		t.Error(err)
 	}
 
-	f.Contents = ioutil.NopCloser(strings.NewReader("test"))
+	f.Contents = io.NopCloser(strings.NewReader("test"))
 	if err := f.Close(); err != nil {
 		t.Error(err)
 	}

@@ -2,7 +2,7 @@ package storage
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 
 	"github.com/moov-io/cryptfs"
 )
@@ -31,7 +31,7 @@ func (e *encrypted) Open(path string) (File, error) {
 		}
 	}()
 
-	bs, err := ioutil.ReadAll(file)
+	bs, err := io.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}

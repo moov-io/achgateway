@@ -6,7 +6,7 @@ package notify
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -22,7 +22,7 @@ import (
 func TestSlack(t *testing.T) {
 	handler := mux.NewRouter()
 	handler.Methods("POST").Path("/webhook").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		bs, _ := ioutil.ReadAll(r.Body)
+		bs, _ := io.ReadAll(r.Body)
 		if bytes.Contains(bs, []byte(`"text"`)) {
 			w.WriteHeader(http.StatusOK)
 		} else {

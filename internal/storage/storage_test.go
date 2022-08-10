@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -21,7 +21,7 @@ func testStorage(t *testing.T, chest Chest) {
 	file, err = chest.Open("foo/bar.txt")
 	require.NoError(t, err)
 
-	bs, err := ioutil.ReadAll(file)
+	bs, err := io.ReadAll(file)
 	require.NoError(t, err)
 	require.Equal(t, bs, []byte("hello, world"))
 	require.NoError(t, file.Close())
@@ -55,7 +55,7 @@ func readFinalContents(t *testing.T, chest Chest) string {
 		}
 	}()
 
-	bs, err := ioutil.ReadAll(file)
+	bs, err := io.ReadAll(file)
 	require.NoError(t, err)
 
 	return string(bs)

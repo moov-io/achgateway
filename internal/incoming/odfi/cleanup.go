@@ -19,7 +19,6 @@ package odfi
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -67,7 +66,7 @@ func CleanupEmptyFiles(logger log.Logger, agent upload.Agent, dl *downloadedFile
 // deleteFilesOnRemote deletes all files for a given directory
 func deleteFilesOnRemote(logger log.Logger, agent upload.Agent, localDir, suffix string) error {
 	baseDir := filepath.Join(localDir, suffix)
-	infos, err := ioutil.ReadDir(baseDir)
+	infos, err := os.ReadDir(baseDir)
 	if err != nil {
 		return fmt.Errorf("reading %s: %v", baseDir, err)
 	}
@@ -95,22 +94,28 @@ func deleteFilesOnRemote(logger log.Logger, agent upload.Agent, localDir, suffix
 // deleteEmptyFiles deletes all empty files that are older than after (time.Duration)
 func deleteEmptyFiles(logger log.Logger, agent upload.Agent, localDir, suffix string) error {
 	baseDir := filepath.Join(localDir, suffix)
-	infos, err := ioutil.ReadDir(baseDir)
+	entries, err := os.ReadDir(baseDir)
 	if err != nil {
 		return fmt.Errorf("reading %s: %v", baseDir, err)
 	}
 
 	var el base.ErrorList
-	for i := range infos {
-		path := filepath.Join(suffix, filepath.Base(infos[i].Name()))
+	for i := range entries {
+		path := filepath.Join(suffix, filepath.Base(entries[i].Name()))
 
-		if infos[i].Size() != 0 {
+		info, err := entries[i].Info()
+		if err != nil {
+			logger.LogError(err)
+			continue
+		}
+
+		if info.Size() != 0 {
 			logger.Logf("file %s not deleted", path)
 			continue
 		}
 
 		// Delete local file
-		os.Remove(infos[i].Name())
+		os.Remove(info.Name())
 
 		// Go ahead and delete the remote file
 		if err := agent.Delete(path); err != nil {

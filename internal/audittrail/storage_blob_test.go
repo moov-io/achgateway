@@ -6,7 +6,7 @@ package audittrail
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"path/filepath"
 	"testing"
 
@@ -38,7 +38,7 @@ func TestBlobStorage(t *testing.T) {
 	require.NoError(t, err)
 	defer r.Close()
 
-	bs, err := ioutil.ReadAll(r)
+	bs, err := io.ReadAll(r)
 	require.NoError(t, err)
 	if !bytes.Contains(bs, []byte("BEGIN PGP MESSAGE")) {
 		t.Errorf("unexpected blob\n%s", string(bs))
@@ -62,7 +62,7 @@ func TestBlobStorage__NoGPG(t *testing.T) {
 	require.NoError(t, err)
 	defer r.Close()
 
-	bs, err := ioutil.ReadAll(r)
+	bs, err := io.ReadAll(r)
 	require.NoError(t, err)
 	require.Equal(t, data, bs)
 }

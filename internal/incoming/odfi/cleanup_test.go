@@ -19,7 +19,6 @@ package odfi
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -35,7 +34,7 @@ func TestCleanupErr(t *testing.T) {
 		Err: errors.New("bad error"),
 	}
 
-	dir, _ := ioutil.TempDir("", "clenaup-testing")
+	dir, _ := os.MkdirTemp("", "clenaup-testing")
 	dl := &downloadedFiles{dir: dir}
 	defer dl.deleteFiles()
 
@@ -44,7 +43,7 @@ func TestCleanupErr(t *testing.T) {
 	if err := os.MkdirAll(path, 0777); err != nil {
 		t.Fatal(err)
 	}
-	if err := ioutil.WriteFile(filepath.Join(path, "file.ach"), []byte("data"), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(path, "file.ach"), []byte("data"), 0600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -61,7 +60,7 @@ func TestCleanupErr(t *testing.T) {
 func Test_CleanupEmptyFiles_InboundPath_Success(t *testing.T) {
 	agent := &upload.MockAgent{}
 
-	dir, _ := ioutil.TempDir("", "clenaup-testing")
+	dir, _ := os.MkdirTemp("", "clenaup-testing")
 	dl := &downloadedFiles{dir: dir}
 	defer dl.deleteFiles()
 
@@ -71,7 +70,7 @@ func Test_CleanupEmptyFiles_InboundPath_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(path, "empty_file.ach"), []byte(""), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(path, "empty_file.ach"), []byte(""), 0600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -86,7 +85,7 @@ func Test_CleanupEmptyFiles_InboundPath_Success(t *testing.T) {
 func Test_CleanupEmptyFiles_ReconciliationPath_Success(t *testing.T) {
 	agent := &upload.MockAgent{}
 
-	dir, _ := ioutil.TempDir("", "clenaup-testing")
+	dir, _ := os.MkdirTemp("", "clenaup-testing")
 	dl := &downloadedFiles{dir: dir}
 	defer dl.deleteFiles()
 
@@ -96,7 +95,7 @@ func Test_CleanupEmptyFiles_ReconciliationPath_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(path, "empty_file.ach"), []byte(""), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(path, "empty_file.ach"), []byte(""), 0600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -111,7 +110,7 @@ func Test_CleanupEmptyFiles_ReconciliationPath_Success(t *testing.T) {
 func Test_CleanupEmptyFiles_ReturnPath_Success(t *testing.T) {
 	agent := &upload.MockAgent{}
 
-	dir, _ := ioutil.TempDir("", "clenaup-testing")
+	dir, _ := os.MkdirTemp("", "clenaup-testing")
 	dl := &downloadedFiles{dir: dir}
 	defer dl.deleteFiles()
 
@@ -121,7 +120,7 @@ func Test_CleanupEmptyFiles_ReturnPath_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(path, "empty_file.ach"), []byte(""), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(path, "empty_file.ach"), []byte(""), 0600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -136,7 +135,7 @@ func Test_CleanupEmptyFiles_ReturnPath_Success(t *testing.T) {
 func Test_CleanupEmptyFiles_PopulatedFile(t *testing.T) {
 	agent := &upload.MockAgent{}
 
-	dir, _ := ioutil.TempDir("", "clenaup-testing")
+	dir, _ := os.MkdirTemp("", "clenaup-testing")
 	dl := &downloadedFiles{dir: dir}
 	defer dl.deleteFiles()
 
@@ -146,7 +145,7 @@ func Test_CleanupEmptyFiles_PopulatedFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(path, "file.ach"), []byte("sameple data"), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(path, "file.ach"), []byte("sameple data"), 0600); err != nil {
 		t.Fatal(err)
 	}
 

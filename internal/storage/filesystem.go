@@ -2,7 +2,6 @@ package storage
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -77,7 +76,7 @@ func (fs *filesystem) ReplaceFile(oldpath, newpath string) error {
 
 	// file doesn't exist, so write newpath
 	if _, err := os.Stat(oldpath); err != nil && os.IsNotExist(err) {
-		return ioutil.WriteFile(newpath, nil, 0600)
+		return os.WriteFile(newpath, nil, 0600)
 	}
 
 	// move the existing file
@@ -112,5 +111,5 @@ func (fs *filesystem) WriteFile(path string, contents []byte) error {
 		return err
 	}
 
-	return ioutil.WriteFile(filepath.Join(dir, path), contents, 0600)
+	return os.WriteFile(filepath.Join(dir, path), contents, 0600)
 }

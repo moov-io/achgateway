@@ -22,7 +22,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/moov-io/ach"
@@ -112,7 +111,7 @@ func (c *FilesController) readBody(req *http.Request) ([]byte, error) {
 	if c.cfg.MaxBodyBytes > 0 {
 		reader = io.LimitReader(reader, c.cfg.MaxBodyBytes)
 	}
-	bs, err := ioutil.ReadAll(reader)
+	bs, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}

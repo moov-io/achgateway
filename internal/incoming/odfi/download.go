@@ -20,7 +20,6 @@ package odfi
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -73,7 +72,7 @@ func (d *downloadedFiles) deleteFiles() error {
 
 func (d *downloadedFiles) deleteEmptyDirs(agent upload.Agent) error {
 	count := func(path string) int {
-		infos, err := ioutil.ReadDir(path)
+		infos, err := os.ReadDir(path)
 		if err != nil {
 			return -1
 		}
@@ -98,7 +97,7 @@ func (d *downloadedFiles) deleteEmptyDirs(agent upload.Agent) error {
 }
 
 func (dl *downloaderImpl) setup(agent upload.Agent) (*downloadedFiles, error) {
-	dir, err := ioutil.TempDir(dl.baseDir, "download")
+	dir, err := os.MkdirTemp(dl.baseDir, "download")
 	if err != nil {
 		return nil, err
 	}

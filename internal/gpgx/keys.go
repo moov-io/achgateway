@@ -7,14 +7,14 @@ package gpgx
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
+	"os"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 )
 
 // ReadArmoredKeyFile attempts to read the filepath and parses an armored GPG key
 func ReadArmoredKeyFile(path string) (openpgp.EntityList, error) {
-	bs, err := ioutil.ReadFile(path)
+	bs, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

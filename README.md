@@ -137,7 +137,7 @@ Twitter [@moov](https://twitter.com/moov)	| You can follow Moov.io's Twitter fee
 
 Yes please! Please review our [Contributing guide](CONTRIBUTING.md) and [Code of Conduct](https://github.com/moov-io/ach/blob/master/CODE_OF_CONDUCT.md) to get started! Checkout our [issues for first time contributors](https://github.com/moov-io/achgateway/contribute) for something to help out with.
 
-This project uses [Go Modules](https://github.com/golang/go/wiki/Modules) and uses Go 1.14 or higher. See [Golang's install instructions](https://golang.org/doc/install) for help setting up Go. You can download the source code and we offer [tagged and released versions](https://github.com/moov-io/achgateway/releases/latest) as well. We highly recommend you use a tagged release for production.
+This project uses [Go Modules](https://github.com/golang/go/wiki/Modules) and uses Go 1.19 or higher. See [Golang's install instructions](https://golang.org/doc/install) for help setting up Go. You can download the source code and we offer [tagged and released versions](https://github.com/moov-io/achgateway/releases/latest) as well. We highly recommend you use a tagged release for production.
 
 ### Test coverage
 
