@@ -1,3 +1,11 @@
+## v0.16.2 (Released 2022-08-11)
+
+IMPROVEMENTS
+
+- docs: mention ID on odfi events will be populated
+- feat: set fileID on incoming ODFI files
+- meta: upgrade to Go 1.19
+
 ## v0.16.1 (Released 2022-08-03)
 
 IMPROVEMENTS
