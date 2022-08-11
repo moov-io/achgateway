@@ -19,6 +19,7 @@ package odfi
 
 import (
 	"bytes"
+	"crypto/sha1" //nolint:gosec
 	"fmt"
 	"os"
 	"path/filepath"
@@ -153,6 +154,8 @@ func processFile(path string, auditSaver *AuditSaver, fileProcessors Processors)
 		}
 	}
 
+	file.ID = hash(bs)
+
 	dir, filename := filepath.Split(path)
 	dir = filepath.Base(dir)
 
@@ -175,4 +178,8 @@ func processFile(path string, auditSaver *AuditSaver, fileProcessors Processors)
 	}
 
 	return nil
+}
+
+func hash(data []byte) string {
+	return fmt.Sprintf("%x", sha1.Sum(data)) //nolint:gosec
 }
