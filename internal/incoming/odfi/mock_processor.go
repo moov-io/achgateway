@@ -18,7 +18,8 @@
 package odfi
 
 type MockProcessor struct {
-	Err error
+	HandledFile *File
+	Err         error
 }
 
 func (pc *MockProcessor) Type() string {
@@ -26,5 +27,6 @@ func (pc *MockProcessor) Type() string {
 }
 
 func (pc *MockProcessor) Handle(file File) error {
+	pc.HandledFile = &file
 	return pc.Err
 }

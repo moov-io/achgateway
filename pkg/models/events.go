@@ -101,6 +101,8 @@ type Batch struct {
 
 // CorrectionFile is an event for when an Addenda98 record is found within a file
 // from the ODFI. This is also called a "Notification of Change" (NOC).
+//
+// File.ID will be set to a hash of the Nacha contents.
 type CorrectionFile struct {
 	Filename    string    `json:"filename"`
 	File        *ach.File `json:"file"`
@@ -116,6 +118,8 @@ func (evt *CorrectionFile) SetValidation(opts *ach.ValidateOpts) {
 
 // IncomingFile is an event for when an ODFI receives an ACH file from another FI
 // signifying entries to process (e.g. another FI is debiting your account).
+//
+// File.ID will be set to a hash of the Nacha contents.
 type IncomingFile struct {
 	Filename string    `json:"filename"`
 	File     *ach.File `json:"file"`
@@ -130,6 +134,8 @@ func (evt *IncomingFile) SetValidation(opts *ach.ValidateOpts) {
 
 // PrenoteFile is an event for when an ODFI receives a "pre-notification" ACH file.
 // This type of file is used to validate accounts exist and are usable for ACH.
+//
+// File.ID will be set to a hash of the Nacha contents.
 type PrenoteFile struct {
 	Filename string    `json:"filename"`
 	File     *ach.File `json:"file"`
@@ -144,6 +150,8 @@ func (evt *PrenoteFile) SetValidation(opts *ach.ValidateOpts) {
 }
 
 // ReconciliationFile is a file whose entries match entries initiated with the ODFI.
+//
+// File.ID will be set to a hash of the Nacha contents.
 type ReconciliationFile struct {
 	Filename        string    `json:"filename"`
 	File            *ach.File `json:"file"`
@@ -159,6 +167,8 @@ func (evt *ReconciliationFile) SetValidation(opts *ach.ValidateOpts) {
 
 // ReturnFile is an event for when an Addenda99 record is found within a file
 // from the ODFI. This is also called a "return".
+//
+// File.ID will be set to a hash of the Nacha contents.
 type ReturnFile struct {
 	Filename string    `json:"filename"`
 	File     *ach.File `json:"file"`

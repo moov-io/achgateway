@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/moov-io/achgateway/internal/audittrail"
+	"github.com/stretchr/testify/require"
 )
 
 func TestProcessor__process(t *testing.T) {
@@ -31,7 +32,8 @@ func TestProcessor__process(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	processors := SetupProcessors(&MockProcessor{})
+	proc := &MockProcessor{}
+	processors := SetupProcessors(proc)
 	auditSaver := &AuditSaver{
 		storage:  &audittrail.MockStorage{},
 		hostname: "ftp.foo.com",
@@ -43,4 +45,8 @@ func TestProcessor__process(t *testing.T) {
 	if err := processDir(dir, auditSaver, processors); err != nil {
 		t.Error(err)
 	}
+
+	require.NotNil(t, proc.HandledFile)
+	require.NotNil(t, proc.HandledFile.ACHFile)
+	require.Equal(t, "7ffdca32898fc89e5e680d0a01e9e1c2a1cd2717", proc.HandledFile.ACHFile.ID)
 }
