@@ -148,6 +148,9 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 				if strings.Contains(err.Error(), "Subscription has been Shutdown") {
 					return
 				}
+				if strings.Contains(err.Error(), "connect: ") {
+					out <- err
+				}
 				fr.logger.LogErrorf("ERROR receiving message: %v", err)
 			}
 			receiver <- msg
