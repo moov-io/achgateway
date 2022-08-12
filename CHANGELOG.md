@@ -1,3 +1,9 @@
+## v0.16.3 (Released 2022-08-12)
+
+IMPROVEMENTS
+
+- fix: elevate connection errors inside handleMessage
+
 ## v0.16.2 (Released 2022-08-11)
 
 IMPROVEMENTS
