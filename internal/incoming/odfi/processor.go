@@ -153,8 +153,8 @@ func processFile(path string, auditSaver *AuditSaver, fileProcessors Processors)
 			return fmt.Errorf("problem parsing %s: %v", path, err)
 		}
 	}
-
 	file.ID = hash(bs)
+	populateHashes(&file)
 
 	dir, filename := filepath.Split(path)
 	dir = filepath.Base(dir)
@@ -178,6 +178,15 @@ func processFile(path string, auditSaver *AuditSaver, fileProcessors Processors)
 	}
 
 	return nil
+}
+
+func populateHashes(file *ach.File) {
+	for i := range file.Batches {
+		entries := file.Batches[i].GetEntries()
+		for j := range entries {
+			entries[i].ID = hash([]byte(entries[j].String()))
+		}
+	}
 }
 
 func hash(data []byte) string {
