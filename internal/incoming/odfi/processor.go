@@ -144,8 +144,13 @@ func processFile(path string, auditSaver *AuditSaver, fileProcessors Processors)
 		return fmt.Errorf("problem opening %s: %v", path, err)
 	}
 
-	// Parse the ACH file
-	file, err := ach.NewReader(bytes.NewReader(bs)).Read()
+	reader := ach.NewReader(bytes.NewReader(bs))
+	reader.SetValidation(&ach.ValidateOpts{
+		AllowMissingFileHeader:  true,
+		AllowMissingFileControl: true,
+	})
+
+	file, err := reader.Read()
 	if err != nil {
 		// Some return files don't contain FileHeader info, but can be processed as there
 		// are batches with entries. Let's continue to process those, but skip other errors.
