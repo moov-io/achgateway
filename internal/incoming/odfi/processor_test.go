@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/audittrail"
 	"github.com/stretchr/testify/require"
 )
@@ -49,4 +50,15 @@ func TestProcessor__process(t *testing.T) {
 	require.NotNil(t, proc.HandledFile)
 	require.NotNil(t, proc.HandledFile.ACHFile)
 	require.Equal(t, "7ffdca32898fc89e5e680d0a01e9e1c2a1cd2717", proc.HandledFile.ACHFile.ID)
+}
+
+func TestProcessor_populateHashes(t *testing.T) {
+	file, err := ach.ReadFile(filepath.Join("testdata", "forward.ach"))
+	require.ErrorContains(t, err, ach.ErrFileHeader.Error())
+
+	populateHashes(file)
+	require.Equal(t, "", file.Batches[0].ID())
+
+	entries := file.Batches[0].GetEntries()
+	require.Equal(t, "ef3195de4dcd127f820516ea7da92ff221bae6e5", entries[0].ID)
 }
