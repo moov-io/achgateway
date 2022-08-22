@@ -1,3 +1,11 @@
+## v0.16.4 (Released 2022-08-22)
+
+IMPROVEMENTS
+
+- build: update moov-io/base to v0.34.0 and moov-io/ach to v1.19.0
+- feat: populate EntryDetail ID's with hash of contents
+- fix: make incoming/odfi processor even more tolerant
+
 ## v0.16.3 (Released 2022-08-12)
 
 IMPROVEMENTS
