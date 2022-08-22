@@ -27,11 +27,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestProcessor__process(t *testing.T) {
+func TestProcessor(t *testing.T) {
 	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, "invalid.ach"), []byte("invalid-ach-file"), 0600); err != nil {
-		t.Fatal(err)
-	}
+	err := os.WriteFile(filepath.Join(dir, "invalid.ach"), []byte("invalid-ach-file"), 0600)
+	require.NoError(t, err)
 
 	proc := &MockProcessor{}
 	processors := SetupProcessors(proc)
@@ -43,9 +42,8 @@ func TestProcessor__process(t *testing.T) {
 	// By reading a file without ACH FileHeaders we still want to try and process
 	// Batches inside of it if any are found, so reading this kind of file shouldn't
 	// return an error from reading the file.
-	if err := processDir(dir, auditSaver, processors); err != nil {
-		t.Error(err)
-	}
+	err = processDir(dir, auditSaver, processors)
+	require.NoError(t, err)
 
 	require.NotNil(t, proc.HandledFile)
 	require.NotNil(t, proc.HandledFile.ACHFile)
