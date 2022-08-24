@@ -143,6 +143,7 @@ func processFile(path string, auditSaver *AuditSaver, fileProcessors Processors)
 	if err != nil {
 		return fmt.Errorf("problem opening %s: %v", path, err)
 	}
+	bs = bytes.TrimSpace(bs)
 
 	reader := ach.NewReader(bytes.NewReader(bs))
 	reader.SetValidation(&ach.ValidateOpts{
