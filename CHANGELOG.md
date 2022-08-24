@@ -1,3 +1,10 @@
+## v0.16.5 (Released 2022-08-24)
+
+IMPROVEMENTS
+
+- fix: use proper loop variables when hashing entries
+- incoming/odfi: trim spaces and newlines from files
+
 ## v0.16.4 (Released 2022-08-22)
 
 IMPROVEMENTS
