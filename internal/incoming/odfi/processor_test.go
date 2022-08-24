@@ -58,5 +58,5 @@ func TestProcessor_populateHashes(t *testing.T) {
 	require.Equal(t, "", file.Batches[0].ID())
 
 	entries := file.Batches[0].GetEntries()
-	require.Equal(t, "ef3195de4dcd127f820516ea7da92ff221bae6e5", entries[0].ID)
+	require.Equal(t, "389723d3a8293a802169b5db27f288d32e96b9c6", entries[0].ID)
 }

@@ -189,7 +189,7 @@ func populateHashes(file *ach.File) {
 	for i := range file.Batches {
 		entries := file.Batches[i].GetEntries()
 		for j := range entries {
-			entries[i].ID = hash([]byte(entries[j].String()))
+			entries[j].ID = hash([]byte(entries[j].String()))
 		}
 	}
 }
