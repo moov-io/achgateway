@@ -33,20 +33,21 @@ func (pd *PagerDuty) AlertError(e error) error {
 		return nil
 	}
 
-	details := make(map[string]string)
-
 	hostName, err := os.Hostname()
 	if err != nil {
 		return fmt.Errorf("getting host name: %v", err)
 	}
 
-	dedupKey := e.Error()
-	if _, file, line, ok := runtime.Caller(1); ok {
-		location := fmt.Sprintf("%s:%d", file, line)
-		details["location"] = location
-		dedupKey += location
+	details := make(map[string]string)
+	for i := 1; i < 5; i++ {
+		if _, file, line, ok := runtime.Caller(i); ok {
+			caller := fmt.Sprintf("%s:%d", file, line)
+			details[fmt.Sprintf("trace_%d", i)] = caller
+		}
 	}
 
+	dedupKey := e.Error()
+	details["dedupKey"] = dedupKey
 	errorHash := fmt.Sprintf("%x", sha256.Sum256([]byte(dedupKey)))
 
 	event := &pagerduty.V2Event{
@@ -60,6 +61,10 @@ func (pd *PagerDuty) AlertError(e error) error {
 			Timestamp: time.Now().Format(time.RFC3339),
 			Details:   details,
 		},
+	}
+
+	if pd.client == nil {
+		return errors.New("nil PD client")
 	}
 
 	_, err = pd.client.ManageEvent(event)
