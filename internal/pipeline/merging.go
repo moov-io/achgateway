@@ -270,7 +270,7 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 	// Grab our upload Agent
 	agent, err := upload.New(m.logger, m.cfg, m.shard.UploadAgent)
 	if err != nil {
-		return processed, fmt.Errorf("merging agent: %v", err)
+		return processed, fmt.Errorf("%s merging agent: %v", m.shard.Name, err)
 	}
 	logger.Logf("found %T agent", agent)
 

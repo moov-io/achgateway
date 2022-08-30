@@ -139,7 +139,7 @@ func (s *PeriodicScheduler) tickAll() error {
 			err := s.tick(shard)
 			if err != nil {
 				// Push this alert outside achgateway
-				s.alertOnError(err)
+				s.alertOnError(fmt.Errorf("%s %v", shardName, err))
 				logger.Warn().Logf("error with odfi periodic processing: %v", err)
 			} else {
 				logger.Info().Logf("finished odfi periodic processing for %s", shard.Name)
