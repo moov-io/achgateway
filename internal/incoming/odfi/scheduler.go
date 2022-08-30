@@ -116,33 +116,33 @@ func (s *PeriodicScheduler) Start() error {
 
 func (s *PeriodicScheduler) tickAll() error {
 	for _, shardName := range s.odfi.ShardNames {
-		shard := s.sharding.Find(shardName)
-		if shard == nil {
-			s.logger.Error().Logf("unable to find shard=%s", shardName)
-			continue
-		}
-
 		logger := s.logger.With(log.Fields{
 			"shard": log.String(shardName),
 		})
 
+		shard := s.sharding.Find(shardName)
+		if shard == nil {
+			logger.Error().Logf("unable to find shard=%s", shardName)
+			continue
+		}
+
 		// Attempt to acquire leadership prior to processing
 		leaderKey := fmt.Sprintf("achgateway/odfi/%s", shardName)
-		s.logger.Logf("attempting to acquire ODFI leadership for %s", leaderKey)
+		logger.Logf("attempting to acquire ODFI leadership for %s", leaderKey)
 
 		// Acquire leadership for this shard
 		err := consul.AcquireLock(logger, s.consul, leaderKey)
 		if err != nil {
 			logger.Info().Logf("skipping ODFI processing: %v", err)
 		} else {
-			s.logger.Info().Logf("starting odfi periodic processing for %s", shard.Name)
+			logger.Info().Logf("starting odfi periodic processing for %s", shard.Name)
 			err := s.tick(shard)
 			if err != nil {
 				// Push this alert outside achgateway
 				s.alertOnError(err)
-				s.logger.Warn().Logf("error with odfi periodic processing: %v", err)
+				logger.Warn().Logf("error with odfi periodic processing: %v", err)
 			} else {
-				s.logger.Info().Logf("finished odfi periodic processing for %s", shard.Name)
+				logger.Info().Logf("finished odfi periodic processing for %s", shard.Name)
 			}
 		}
 	}
@@ -150,11 +150,16 @@ func (s *PeriodicScheduler) tickAll() error {
 }
 
 func (s *PeriodicScheduler) tick(shard *service.Shard) error {
-	agent, err := upload.New(s.logger, s.uploadAgents, shard.UploadAgent)
+	logger := s.logger.With(log.Fields{
+		"shard": log.String(shard.Name),
+	})
+
+	agent, err := upload.New(logger, s.uploadAgents, shard.UploadAgent)
 	if err != nil {
 		return fmt.Errorf("agent: %v", err)
 	}
-	s.logger.Logf("start retrieving and processing of inbound files in %s", agent.Hostname())
+
+	logger.Logf("start retrieving and processing of inbound files in %s", agent.Hostname())
 
 	// Download and process files
 	dl, err := s.downloader.CopyFilesFromRemote(agent)
@@ -175,12 +180,12 @@ func (s *PeriodicScheduler) tick(shard *service.Shard) error {
 
 	// Start our cleanup routines
 	if !s.odfi.Storage.KeepRemoteFiles {
-		if err := Cleanup(s.logger, agent, dl); err != nil {
+		if err := Cleanup(logger, agent, dl); err != nil {
 			return fmt.Errorf("ERROR: deleting remote files: %v", err)
 		}
 	}
 	if s.odfi.Storage.RemoveZeroByteFiles {
-		if err := CleanupEmptyFiles(s.logger, agent, dl); err != nil {
+		if err := CleanupEmptyFiles(logger, agent, dl); err != nil {
 			return fmt.Errorf("ERROR: deleting zero byte files: %v", err)
 		}
 	}

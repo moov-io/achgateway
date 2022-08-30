@@ -17,10 +17,10 @@ import (
 	"sync"
 
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/base/log"
 
 	"github.com/go-kit/kit/metrics/prometheus"
 	"github.com/jlaffaye/ftp"
-	"github.com/moov-io/base/log"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 )
 
@@ -53,8 +53,11 @@ func newFTPTransferAgent(logger log.Logger, cfg *service.UploadAgent) (*FTPTrans
 	}
 
 	_, err := agent.connection() // initial connection
-
-	return agent, err
+	agent.record(err)
+	if err != nil {
+		return agent, fmt.Errorf("ftp connect: %v", err)
+	}
+	return agent, nil
 }
 
 func (agent *FTPTransferAgent) ID() string {
