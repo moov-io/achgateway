@@ -58,10 +58,11 @@ func newSFTPTransferAgent(logger log.Logger, cfg *service.UploadAgent) (*SFTPTra
 	}
 
 	_, err := agent.connection()
-
 	agent.record(err) // track up metric for remote server
-
-	return agent, err
+	if err != nil {
+		return agent, fmt.Errorf("sftp connect: %v", err)
+	}
+	return agent, nil
 }
 
 func (agent *SFTPTransferAgent) ID() string {
