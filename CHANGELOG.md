@@ -1,3 +1,10 @@
+## v0.16.6 (Released 2022-08-30)
+
+IMPROVEMENTS
+
+- feat: include shard on more ODFI logging
+- fix: cleanup stack trace within PD alerts
+
 ## v0.16.5 (Released 2022-08-24)
 
 IMPROVEMENTS
