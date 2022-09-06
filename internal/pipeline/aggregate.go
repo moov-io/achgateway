@@ -358,7 +358,7 @@ func (xfagg *aggregator) notifyAboutHoliday(day *schedule.Day) {
 				continue
 			}
 			err = ss.Info(&notify.Message{
-				Contents: "%s is a holiday -- skipping processing",
+				Contents: fmt.Sprintf("%s is a holiday -- skipping processing", day.Time.Format("Jan 02")),
 			})
 			if err != nil {
 				logger.Error().LogErrorf("ERROR sending holiday notification: %v", err)
