@@ -11,7 +11,7 @@ COPY . .
 RUN VERSION=${VERSION} make build
 
 FROM debian:stable-slim AS runtime
-LABEL maintainer="Moov <support@moov.io>"
+LABEL maintainer="Moov <oss@moov.io>"
 
 WORKDIR /
 
