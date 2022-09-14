@@ -51,9 +51,9 @@ func isRetryableError(err error) error {
 }
 
 func (rt *RetryAgent) newBackoff() (retry.Backoff, error) {
-	fib, err := retry.NewFibonacci(rt.cfg.Interval)
-	if err != nil {
-		return nil, fmt.Errorf("retry: problem creating fibonacci: %v", err)
+	fib := retry.NewFibonacci(rt.cfg.Interval)
+	if fib == nil {
+		return nil, fmt.Errorf("retry: problem creating %v as fibonacci", rt.cfg.Interval)
 	}
 	fib = retry.WithMaxRetries(rt.cfg.MaxRetries, fib)
 	return fib, nil

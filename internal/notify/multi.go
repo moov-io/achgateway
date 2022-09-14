@@ -66,9 +66,9 @@ func NewMultiSender(logger log.Logger, cfg *service.Notifications, notifiers *se
 }
 
 func setupBackoff(cfg *service.NotificationRetries) (retry.Backoff, error) {
-	fib, err := retry.NewFibonacci(cfg.Interval)
-	if err != nil {
-		return nil, fmt.Errorf("problem creating fibonacci: %v", err)
+	fib := retry.NewFibonacci(cfg.Interval)
+	if fib == nil {
+		return nil, fmt.Errorf("problem creating %v as fibonacci", cfg.Interval)
 	}
 	fib = retry.WithMaxRetries(cfg.MaxRetries, fib)
 	return fib, nil

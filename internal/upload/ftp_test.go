@@ -89,7 +89,10 @@ func TestFTPConfig__String(t *testing.T) {
 
 func createTestFTPConnection(t *testing.T, svc *server.Server) (*ftp.ServerConn, error) {
 	t.Helper()
-	conn, err := ftp.DialTimeout(fmt.Sprintf("localhost:%d", svc.Port), 10*time.Second)
+	conn, err := ftp.Dial(
+		fmt.Sprintf("localhost:%d", svc.Port),
+		ftp.DialWithTimeout(10*time.Second),
+	)
 	require.NoError(t, err)
 	if err := conn.Login("moov", "password"); err != nil {
 		t.Fatal(err)

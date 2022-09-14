@@ -1,6 +1,7 @@
 package alerting
 
 import (
+	"context"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -67,7 +68,8 @@ func (pd *PagerDuty) AlertError(e error) error {
 		return errors.New("nil PD client")
 	}
 
-	_, err = pd.client.ManageEvent(event)
+	ctx := context.Background()
+	_, err = pd.client.ManageEventWithContext(ctx, event)
 	if err != nil {
 		return fmt.Errorf("creating event in PagerDuty: %v", err)
 	}
@@ -81,7 +83,8 @@ func (pd *PagerDuty) ping() error {
 	}
 
 	// make a call and verify we don't error
-	resp, err := pd.client.ListAbilities()
+	ctx := context.Background()
+	resp, err := pd.client.ListAbilitiesWithContext(ctx)
 	if err != nil {
 		return fmt.Errorf("pagerduty list abilities: %v", err)
 	}

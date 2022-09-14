@@ -5,6 +5,7 @@
 package notify
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -37,7 +38,8 @@ func (pd *PagerDuty) Ping() error {
 	}
 
 	// make a call and verify we don't error
-	resp, err := pd.client.ListAbilities()
+	ctx := context.Background()
+	resp, err := pd.client.ListAbilitiesWithContext(ctx)
 	if err != nil {
 		return fmt.Errorf("pagerduty list abilities: %v", err)
 	}
@@ -74,6 +76,7 @@ func (pd *PagerDuty) Critical(msg *Message) error {
 }
 
 func (pd *PagerDuty) createIncident(opts *pagerduty.CreateIncidentOptions) error {
-	_, err := pd.client.CreateIncident(pd.from, opts)
+	ctx := context.Background()
+	_, err := pd.client.CreateIncidentWithContext(ctx, pd.from, opts)
 	return err
 }
