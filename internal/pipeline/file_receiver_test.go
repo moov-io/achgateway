@@ -19,12 +19,14 @@ package pipeline
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
 	"github.com/moov-io/achgateway/internal/shards"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFileReceiver(t *testing.T) {
@@ -45,4 +47,14 @@ func testFileReceiver(t *testing.T) *FileReceiver {
 	t.Cleanup(func() { fileRec.Shutdown() })
 
 	return fileRec
+}
+
+func TestFileReceiver__contains(t *testing.T) {
+	err := errors.New("pubsub (code=Unknown): write tcp 10.100.53.92:45360->12.132.211.32:2222: write: broken pipe")
+
+	require.True(t, contains(err, "write: "))
+	require.True(t, contains(err, "pubsub"))
+
+	require.False(t, contains(err, "connect: "))
+	require.False(t, contains(err, "EOF"))
 }

@@ -148,7 +148,8 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 				if strings.Contains(err.Error(), "Subscription has been Shutdown") {
 					return
 				}
-				if strings.Contains(err.Error(), "connect: ") {
+				// Bubble up some errors to alerting
+				if contains(err, "connect: ", "pubsub", "EOF") {
 					out <- err
 				}
 				fr.logger.LogErrorf("ERROR receiving message: %v", err)
@@ -172,6 +173,16 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 		}
 	}()
 	return out
+}
+
+func contains(err error, options ...string) bool {
+	es := err.Error()
+	for i := range options {
+		if strings.Contains(es, options[i]) {
+			return true
+		}
+	}
+	return false
 }
 
 func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
