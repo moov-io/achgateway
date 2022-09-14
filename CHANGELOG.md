@@ -1,3 +1,11 @@
+## v0.16.7 (Released 2022-09-14)
+
+IMPROVEMENTS
+
+- feat: include shard name with more error messages
+- fix: bubble up more errors from file processing
+- pipeline: fix interpolation of holiday message
+
 ## v0.16.6 (Released 2022-08-30)
 
 IMPROVEMENTS
