@@ -1,3 +1,25 @@
+## v0.16.8 (Released 2022-09-14)
+
+The release process of v0.16.7 failed due to some dependencies being out date.
+
+IMPROVEMENTS
+
+- build: require go 1.19.1
+- build: upgrade github.com/PagerDuty/go-pagerduty to v1.5.1
+- build: upgrade github.com/ProtonMail/go-crypto to v0.0.0-20220824120805-4b6e5c587895
+- build: upgrade github.com/Shopify/sarama to v1.36.0
+- build: upgrade github.com/hashicorp/consul/api to v1.14.0
+- build: upgrade github.com/hashicorp/go-retryablehttp to v0.7.1
+- build: upgrade github.com/jlaffaye/ftp to v0.1.0
+- build: upgrade github.com/moov-io/ach to v1.19.3
+- build: upgrade github.com/moov-io/base to v0.35.0
+- build: upgrade github.com/ory/dockertest/v3 to v3.9.1
+- build: upgrade github.com/pkg/sftp to v1.13.5
+- build: upgrade github.com/sethvargo/go-retry to v0.2.3
+- build: upgrade github.com/slack-go/slack to v0.11.3
+- build: upgrade github.com/spf13/viper to v1.13.0
+- build: upgrade golang.org/x/crypto to v0.0.0-20220829220503-c86fa9a7ed90
+
 ## v0.16.7 (Released 2022-09-14)
 
 IMPROVEMENTS
