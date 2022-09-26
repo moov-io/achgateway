@@ -20,6 +20,7 @@ package pipeline
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/moov-io/achgateway/internal/incoming"
@@ -229,8 +230,7 @@ func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 		return nil
 	}
 
-	fr.logger.Error().LogErrorf("unexpected %T event", event.Event)
-	return nil
+	return fmt.Errorf("unexpected %T event", event.Event)
 }
 
 func (fr *FileReceiver) getAggregator(shardKey string) *aggregator {
