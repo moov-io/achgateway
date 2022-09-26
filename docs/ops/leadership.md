@@ -16,6 +16,8 @@ An instance of ACHGateway will upload **all files** in the shard's directory (e.
 
 If ACHGateway is configured without a `Consul` block it will not perform leader election. At cutoff times it will merge and upload all files within the Shard's mergable directory of that ACHGateway instance.
 
+In this configuration mode it's advised for ACHGateway instances to **receive different files** from other instances. This is because every instance of ACHGateway will upload on cutoff times. You can deliver unique files to ACHGateway instances with a Kafka consumer group.
+
 ### Enabled
 
 When ACHGateway is configured with a `Consul` block it will perform leader election after merging pending files, but prior to upload.  The ACHGateway instance will attempt to elect itself for the triggered shard and upload only when it is returned as the leader. Only one instance will be the leader for a shard.
