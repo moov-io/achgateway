@@ -186,6 +186,7 @@ func contains(err error, options ...string) bool {
 }
 
 func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
+	msg.Ack()
 	data := msg.Body
 	var err error
 
@@ -208,7 +209,6 @@ func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 		if err != nil {
 			return err
 		}
-		msg.Ack()
 		return nil
 
 	case *models.QueueACHFile:
@@ -217,7 +217,6 @@ func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 		if err != nil {
 			return err
 		}
-		msg.Ack()
 		return nil
 
 	case *models.CancelACHFile:
@@ -225,7 +224,6 @@ func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 		if err != nil {
 			return err
 		}
-		msg.Ack()
 		return nil
 	}
 
