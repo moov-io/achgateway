@@ -20,9 +20,9 @@ package pipeline
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
+	"github.com/Shopify/sarama"
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/shards"
 	"github.com/moov-io/achgateway/pkg/compliance"
@@ -228,7 +228,33 @@ func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 		return nil
 	}
 
-	return fmt.Errorf("unexpected %T event", event.Event)
+	// Unhandled Message
+	msg.Ack()
+	return fr.logUnhandledMessage(msg)
+}
+
+func (fr *FileReceiver) logUnhandledMessage(msg *pubsub.Message) error {
+	if msg == nil {
+		return fr.logger.Error().LogErrorf("nil pubsub message").Err()
+	}
+
+	logger := fr.logger.With(log.Fields{
+		"loggableID": log.String(msg.LoggableID),
+		"length":     log.Int(len(msg.Body)),
+	})
+
+	var details *sarama.ConsumerMessage
+	ok := msg.As(details)
+	if ok && details != nil {
+		logger = logger.With(log.Fields{
+			"key":       log.String(string(details.Key)),
+			"topic":     log.String(details.Topic),
+			"partition": log.Int64(int64(details.Partition)),
+			"offset":    log.Int64(details.Offset),
+		})
+	}
+
+	return logger.Error().LogError(errors.New("unhandled message")).Err()
 }
 
 func (fr *FileReceiver) getAggregator(shardKey string) *aggregator {
