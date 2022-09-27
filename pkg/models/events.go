@@ -28,6 +28,8 @@ import (
 	"github.com/moov-io/achgateway/internal/incoming"
 )
 
+// Event is a wrapper for all events sent to or received from ACHGateway.
+// It's used to determine the underlying event type.
 type Event struct {
 	Event interface{} `json:"event"`
 	Type  string      `json:"type"`
@@ -103,6 +105,8 @@ type Batch struct {
 // from the ODFI. This is also called a "Notification of Change" (NOC).
 //
 // File.ID will be set to a hash of the Nacha contents.
+//
+// See the Event struct for wrapping steps.
 type CorrectionFile struct {
 	Filename    string    `json:"filename"`
 	File        *ach.File `json:"file"`
@@ -120,6 +124,8 @@ func (evt *CorrectionFile) SetValidation(opts *ach.ValidateOpts) {
 // signifying entries to process (e.g. another FI is debiting your account).
 //
 // File.ID will be set to a hash of the Nacha contents.
+//
+// See the Event struct for wrapping steps.
 type IncomingFile struct {
 	Filename string    `json:"filename"`
 	File     *ach.File `json:"file"`
@@ -136,6 +142,8 @@ func (evt *IncomingFile) SetValidation(opts *ach.ValidateOpts) {
 // This type of file is used to validate accounts exist and are usable for ACH.
 //
 // File.ID will be set to a hash of the Nacha contents.
+//
+// See the Event struct for wrapping steps.
 type PrenoteFile struct {
 	Filename string    `json:"filename"`
 	File     *ach.File `json:"file"`
@@ -152,6 +160,8 @@ func (evt *PrenoteFile) SetValidation(opts *ach.ValidateOpts) {
 // ReconciliationFile is a file whose entries match entries initiated with the ODFI.
 //
 // File.ID will be set to a hash of the Nacha contents.
+//
+// See the Event struct for wrapping steps.
 type ReconciliationFile struct {
 	Filename        string    `json:"filename"`
 	File            *ach.File `json:"file"`
@@ -169,6 +179,8 @@ func (evt *ReconciliationFile) SetValidation(opts *ach.ValidateOpts) {
 // from the ODFI. This is also called a "return".
 //
 // File.ID will be set to a hash of the Nacha contents.
+//
+// See the Event struct for wrapping steps.
 type ReturnFile struct {
 	Filename string    `json:"filename"`
 	File     *ach.File `json:"file"`
@@ -184,6 +196,8 @@ func (evt *ReturnFile) SetValidation(opts *ach.ValidateOpts) {
 
 // QueueACHFile is an event that achgateway receives to enqueue an ACH file for upload to the
 // ODFI at a later cutoff time.
+//
+// See the Event struct for wrapping steps.
 type QueueACHFile incoming.ACHFile
 
 func (evt *QueueACHFile) SetValidation(opts *ach.ValidateOpts) {
@@ -194,6 +208,8 @@ func (evt *QueueACHFile) SetValidation(opts *ach.ValidateOpts) {
 }
 
 // CancelACHFile is an event that achgateway receives to cancel uploading a file to the ODFI.
+//
+// See the Event struct for wrapping steps.
 type CancelACHFile incoming.CancelACHFile
 
 // FileUploaded is an event sent after a queued file has been uploaded to the ODFI.

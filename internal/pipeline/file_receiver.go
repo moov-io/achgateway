@@ -22,7 +22,6 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/Shopify/sarama"
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/shards"
 	"github.com/moov-io/achgateway/pkg/compliance"
@@ -30,6 +29,7 @@ import (
 	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/log"
 
+	"github.com/Shopify/sarama"
 	"gocloud.dev/pubsub"
 )
 

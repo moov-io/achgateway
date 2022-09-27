@@ -15,3 +15,28 @@ When submitting files to ACHGateway there may be requirements which break Nacha'
 Using the Go package in [achgateway's `models` package](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/models) each event has a method to set `ValidateOpts` on the file. This will be carried through the File for use during merge and upload. Submissions should contain the same `ValidateOpts` to ensure the merged files have the correct overrides.
 
 `func (Event) SetValidation(opts *ach.ValidateOpts)`
+
+#### Errors
+
+If you encounter the following errors you should verify that events sent to ACHGateway are wrapped properly. Try verifying the output of wrapping `pkg/models.Event`'s `MarshalJSON` around your specific events.
+
+```
+nil pubsub message
+```
+```
+unhandled message
+```
+
+Example:
+```
+{
+    "type": "QueueACHFile",
+    "event": {
+        "fileID": "uuid",
+        "shardKey": "uuid",
+        "file": {
+            ...
+        }
+    }
+}
+```
