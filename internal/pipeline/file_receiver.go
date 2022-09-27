@@ -20,6 +20,7 @@ package pipeline
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/moov-io/achgateway/internal/incoming"
@@ -188,27 +189,28 @@ func contains(err error, options ...string) bool {
 
 func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 	msg.Ack()
+
 	data := msg.Body
 	var err error
 
 	// Optionally decode and decrypt message
 	data, err = compliance.Reveal(fr.transformConfig, data)
 	if err != nil {
-		fr.logger.Error().LogErrorf("unable to reveal event: %v", err)
-		return nil
+		return fr.wrappedErrorLogger(msg).LogErrorf("unable to reveal event: %v", err).Err()
 	}
 
 	event, err := models.Read(data)
 	if err != nil {
-		fr.logger.Error().LogErrorf("unable to read event: %v", err)
-		return nil
+		return fr.wrappedErrorLogger(msg).LogErrorf("unable to read event: %v", err).Err()
 	}
 
 	switch evt := event.Event.(type) {
 	case incoming.ACHFile:
 		err = fr.processACHFile(evt)
 		if err != nil {
-			return err
+			return fr.wrappedErrorLogger(msg).With(log.Fields{
+				"type": log.String(fmt.Sprintf("%T", evt)),
+			}).LogError(err).Err()
 		}
 		return nil
 
@@ -216,28 +218,27 @@ func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 		file := incoming.ACHFile(*evt)
 		err = fr.processACHFile(file)
 		if err != nil {
-			return err
+			return fr.wrappedErrorLogger(msg).With(log.Fields{
+				"type": log.String(fmt.Sprintf("%T", evt)),
+			}).LogError(err).Err()
 		}
 		return nil
 
 	case *models.CancelACHFile:
 		err = fr.cancelACHFile(evt)
 		if err != nil {
-			return err
+			return fr.wrappedErrorLogger(msg).With(log.Fields{
+				"type": log.String(fmt.Sprintf("%T", evt)),
+			}).LogError(err).Err()
 		}
 		return nil
 	}
 
 	// Unhandled Message
-	msg.Ack()
-	return fr.logUnhandledMessage(msg)
+	return fr.wrappedErrorLogger(msg).LogError(errors.New("unhandled message")).Err()
 }
 
-func (fr *FileReceiver) logUnhandledMessage(msg *pubsub.Message) error {
-	if msg == nil {
-		return fr.logger.Error().LogErrorf("nil pubsub message").Err()
-	}
-
+func (fr *FileReceiver) wrappedErrorLogger(msg *pubsub.Message) log.Logger {
 	logger := fr.logger.With(log.Fields{
 		"loggableID": log.String(msg.LoggableID),
 		"length":     log.Int(len(msg.Body)),
@@ -254,7 +255,7 @@ func (fr *FileReceiver) logUnhandledMessage(msg *pubsub.Message) error {
 		})
 	}
 
-	return logger.Error().LogError(errors.New("unhandled message")).Err()
+	return logger.Error()
 }
 
 func (fr *FileReceiver) getAggregator(shardKey string) *aggregator {
