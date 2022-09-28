@@ -20,6 +20,7 @@ package pipeline
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/moov-io/achgateway/internal/incoming"
@@ -29,6 +30,7 @@ import (
 	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/log"
 
+	"github.com/Shopify/sarama"
 	"gocloud.dev/pubsub"
 )
 
@@ -186,51 +188,74 @@ func contains(err error, options ...string) bool {
 }
 
 func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
+	msg.Ack()
+
 	data := msg.Body
 	var err error
 
 	// Optionally decode and decrypt message
 	data, err = compliance.Reveal(fr.transformConfig, data)
 	if err != nil {
-		fr.logger.Error().LogErrorf("unable to reveal event: %v", err)
-		return nil
+		return fr.wrappedErrorLogger(msg).LogErrorf("unable to reveal event: %v", err).Err()
 	}
 
 	event, err := models.Read(data)
 	if err != nil {
-		fr.logger.Error().LogErrorf("unable to read event: %v", err)
-		return nil
+		return fr.wrappedErrorLogger(msg).LogErrorf("unable to read event: %v", err).Err()
 	}
 
 	switch evt := event.Event.(type) {
 	case incoming.ACHFile:
 		err = fr.processACHFile(evt)
 		if err != nil {
-			return err
+			return fr.wrappedErrorLogger(msg).With(log.Fields{
+				"type": log.String(fmt.Sprintf("%T", evt)),
+			}).LogError(err).Err()
 		}
-		msg.Ack()
 		return nil
 
 	case *models.QueueACHFile:
 		file := incoming.ACHFile(*evt)
 		err = fr.processACHFile(file)
 		if err != nil {
-			return err
+			return fr.wrappedErrorLogger(msg).With(log.Fields{
+				"type": log.String(fmt.Sprintf("%T", evt)),
+			}).LogError(err).Err()
 		}
-		msg.Ack()
 		return nil
 
 	case *models.CancelACHFile:
 		err = fr.cancelACHFile(evt)
 		if err != nil {
-			return err
+			return fr.wrappedErrorLogger(msg).With(log.Fields{
+				"type": log.String(fmt.Sprintf("%T", evt)),
+			}).LogError(err).Err()
 		}
-		msg.Ack()
 		return nil
 	}
 
-	fr.logger.Error().LogErrorf("unexpected %T event", event.Event)
-	return nil
+	// Unhandled Message
+	return fr.wrappedErrorLogger(msg).LogError(errors.New("unhandled message")).Err()
+}
+
+func (fr *FileReceiver) wrappedErrorLogger(msg *pubsub.Message) log.Logger {
+	logger := fr.logger.With(log.Fields{
+		"loggableID": log.String(msg.LoggableID),
+		"length":     log.Int(len(msg.Body)),
+	})
+
+	var details *sarama.ConsumerMessage
+	ok := msg.As(details)
+	if ok && details != nil {
+		logger = logger.With(log.Fields{
+			"key":       log.String(string(details.Key)),
+			"topic":     log.String(details.Topic),
+			"partition": log.Int64(int64(details.Partition)),
+			"offset":    log.Int64(details.Offset),
+		})
+	}
+
+	return logger.Error()
 }
 
 func (fr *FileReceiver) getAggregator(shardKey string) *aggregator {
