@@ -1,3 +1,9 @@
+## v0.16.10 (Released 2022-10-03)
+
+BUILD
+
+- build: upgrade github.com/hashicorp/consul/api to v1.15.2
+
 ## v0.16.9 (Released 2022-10-03)
 
 IMPROVEMENTS
