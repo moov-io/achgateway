@@ -1,3 +1,16 @@
+## v0.16.9 (Released 2022-10-03)
+
+IMPROVEMENTS
+
+- docs: help clarify leadership
+- docs: without leadership mention receiving unique files
+- pipeline: log and ack unhandled messages instead of getting stuck
+- pipeline: log kafka message details during failures
+
+BUILD
+
+- build: upgrade github.com/rickar/cal/v2 to v2.1.7
+
 ## v0.16.8 (Released 2022-09-14)
 
 The release process of v0.16.7 failed due to some dependencies being out date.
