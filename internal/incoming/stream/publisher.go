@@ -15,8 +15,8 @@ package stream
 
 import (
 	"context"
-	"github.com/moov-io/achgateway/pkg/kafka"
 
+	"github.com/moov-io/achgateway/internal/kafka"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
 
@@ -25,11 +25,11 @@ import (
 )
 
 func Topic(logger log.Logger, cfg *service.Config) (*pubsub.Topic, error) {
-	if cfg.Inbound.Kafka != nil {
-		return kafka.OpenKafkaTopic(logger, cfg.Inbound.Kafka)
-	}
 	if cfg.Inbound.InMem != nil {
 		return pubsub.OpenTopic(context.Background(), cfg.Inbound.InMem.URL)
+	}
+	if cfg.Inbound.Kafka != nil {
+		return kafka.OpenTopic(logger, cfg.Inbound.Kafka)
 	}
 	return nil, nil
 }

@@ -19,8 +19,9 @@ package stream
 
 import (
 	"context"
+
+	"github.com/moov-io/achgateway/internal/kafka"
 	"github.com/moov-io/achgateway/internal/service"
-	"github.com/moov-io/achgateway/pkg/kafka"
 	"github.com/moov-io/base/log"
 
 	"gocloud.dev/pubsub"
@@ -36,7 +37,7 @@ func Subscription(logger log.Logger, cfg *service.Config) (*pubsub.Subscription,
 		return sub, nil
 	}
 	if cfg.Inbound.Kafka != nil {
-		sub, err := kafka.CreateKafkaSubscription(logger, cfg.Inbound.Kafka)
+		sub, err := kafka.OpenSubscription(logger, cfg.Inbound.Kafka)
 		if err != nil {
 			return nil, err
 		}

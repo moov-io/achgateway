@@ -7,11 +7,13 @@ package notify
 import (
 	"context"
 	"fmt"
+
+	"github.com/moov-io/achgateway/internal/kafka"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/compliance"
-	"github.com/moov-io/achgateway/pkg/kafka"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
+
 	"gocloud.dev/pubsub"
 )
 
@@ -21,7 +23,7 @@ type Kafka struct {
 }
 
 func NewKafka(logger log.Logger, cfg *service.KafkaConfig) (*Kafka, error) {
-	publisher, err := kafka.OpenKafkaTopic(logger, cfg.Inbound.Kafka)
+	publisher, err := kafka.OpenTopic(logger, cfg)
 	if err != nil {
 		return nil, err
 	}
