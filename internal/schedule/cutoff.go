@@ -13,6 +13,7 @@ import (
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/stime"
 
+	"github.com/rickar/cal/v2"
 	"github.com/robfig/cron/v3"
 )
 
@@ -27,7 +28,8 @@ type CutoffTimes struct {
 }
 
 type Day struct {
-	Time time.Time
+	Time    time.Time
+	Holiday *cal.Holiday
 
 	IsBankingDay bool
 	IsHoliday    bool
@@ -73,6 +75,7 @@ func (ct *CutoffTimes) maybeTick(location *time.Location) {
 	if !now.IsWeekend() {
 		ct.C <- &Day{
 			Time:         now.Time,
+			Holiday:      now.GetHoliday(),
 			IsBankingDay: now.IsBankingDay(),
 			IsHoliday:    now.IsHoliday(),
 			IsWeekend:    now.IsWeekend(),

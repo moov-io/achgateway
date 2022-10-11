@@ -16,13 +16,14 @@ require (
 	github.com/jlaffaye/ftp v0.1.0
 	github.com/markbates/pkger v0.17.1
 	github.com/moov-io/ach v1.19.3
-	github.com/moov-io/base v0.35.0
+	github.com/moov-io/base v0.36.0
 	github.com/moov-io/cryptfs v0.4.0
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/ory/mail/v3 v3.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.13.5
 	github.com/prometheus/client_golang v1.13.0
+	github.com/rickar/cal/v2 v2.1.7
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sethvargo/go-retry v0.2.3
 	github.com/slack-go/slack v0.11.3
@@ -150,7 +151,6 @@ require (
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
-	github.com/rickar/cal/v2 v2.1.7 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect

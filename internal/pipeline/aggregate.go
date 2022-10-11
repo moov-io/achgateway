@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"time"
 
@@ -357,8 +358,9 @@ func (xfagg *aggregator) notifyAboutHoliday(day *schedule.Day) {
 				logger.Error().LogErrorf("ERROR creating slack holiday notifier: %v", err)
 				continue
 			}
+
 			err = ss.Info(&notify.Message{
-				Contents: fmt.Sprintf("%s is a holiday -- skipping processing", day.Time.Format("Jan 02")),
+				Contents: formatHolidayMessage(day),
 			})
 			if err != nil {
 				logger.Error().LogErrorf("ERROR sending holiday notification: %v", err)
@@ -367,6 +369,17 @@ func (xfagg *aggregator) notifyAboutHoliday(day *schedule.Day) {
 			}
 		}
 	}
+}
+
+func formatHolidayMessage(day *schedule.Day) string {
+	name := "is a holiday"
+	if day != nil && day.Holiday != nil {
+		name = fmt.Sprintf("(%s) is a holiday", day.Holiday.Name)
+	}
+
+	hostname, _ := os.Hostname()
+
+	return fmt.Sprintf("%s %s so %s will skip processing", day.Time.Format("Jan 02"), name, hostname)
 }
 
 func (xfagg *aggregator) alertOnError(err error) {
