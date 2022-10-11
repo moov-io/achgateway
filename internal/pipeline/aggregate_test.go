@@ -20,14 +20,19 @@ package pipeline
 import (
 	"context"
 	"errors"
+	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/incoming"
+	"github.com/moov-io/achgateway/internal/schedule"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/upload"
+	"github.com/moov-io/base"
 	"github.com/moov-io/base/log"
 
 	"github.com/stretchr/testify/require"
@@ -145,4 +150,22 @@ func TestAggregate_notifyAfterUploadErr(t *testing.T) {
 		err := xfagg.notifyAfterUpload("filename.txt", nil, mockAgent, errors.New("upload failed"))
 		require.NoError(t, err)
 	})
+}
+
+func TestHolidayMessage(t *testing.T) {
+	eastern, _ := time.LoadLocation("America/New_York")
+
+	when := base.NewTime(time.Date(2022, time.December, 25, 10, 30, 0, 0, eastern))
+	require.True(t, when.IsHoliday())
+
+	day := &schedule.Day{
+		Time:    when.Time,
+		Holiday: when.GetHoliday(),
+	}
+
+	hostname, _ := os.Hostname()
+	expected := fmt.Sprintf("Dec 25 (Christmas Day) is a holiday so %s will skip processing", hostname)
+
+	message := formatHolidayMessage(day)
+	require.Equal(t, expected, message)
 }

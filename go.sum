@@ -1192,8 +1192,8 @@ github.com/modocache/gover v0.0.0-20171022184752-b58185e213c5/go.mod h1:caMODM3P
 github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe/go.mod h1:wL8QJuTMNUDYhXwkmfOly8iTdp5TEcJFWZD2D7SIkUc=
 github.com/moov-io/ach v1.19.3 h1:h675/VJ6i6x3N1LTyidDuIAgMnClUwASfz1gfs0WE+E=
 github.com/moov-io/ach v1.19.3/go.mod h1:uy7VPetQgGUrwVgQ5oRh5TW1OplVkG+GSAugME+F0fc=
-github.com/moov-io/base v0.35.0 h1:24jZwU5WekI/Ukl9zirV06KwZ06SdAExLZGfDJXTdqs=
-github.com/moov-io/base v0.35.0/go.mod h1:Ej6hMuk94opovep+wCuYVFm7zXqS9T63EufmKB6wXTE=
+github.com/moov-io/base v0.36.0 h1:zfVHZAD8OC3B8E05M4TtXfvpnUsXIEw576/4xK33qpc=
+github.com/moov-io/base v0.36.0/go.mod h1:PWG3wJEs9hszZWn+1oZmXxnMIKzy85+qFETYbWBCK+k=
 github.com/moov-io/cryptfs v0.4.0 h1:ih9W1OAyBdvqSZucS7Uh/ooshaxh7+uu7TM0xe7WkMY=
 github.com/moov-io/cryptfs v0.4.0/go.mod h1:+T6ppUTJSqNh/GmS9iruwxaMb/oYq16LQXok7XjkhVs=
 github.com/morikuni/aec v1.0.0 h1:nP9CBfwrvYnBRgY6qfDQkygYDmYwOilePFkwzv4dU8A=
