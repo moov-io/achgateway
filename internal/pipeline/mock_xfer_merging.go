@@ -41,7 +41,7 @@ func (merge *MockXferMerging) HandleCancel(cancel incoming.CancelACHFile) error 
 	return merge.Err
 }
 
-func (merge *MockXferMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) error) (*processedFiles, error) {
+func (merge *MockXferMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) (string, error)) (*processedFiles, error) {
 	if merge.Err != nil {
 		return nil, merge.Err
 	}

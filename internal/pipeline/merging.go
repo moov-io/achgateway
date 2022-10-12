@@ -49,7 +49,7 @@ type XferMerging interface {
 	HandleXfer(xfer incoming.ACHFile) error
 	HandleCancel(cancel incoming.CancelACHFile) error
 
-	WithEachMerged(f func(int, upload.Agent, *ach.File) error) (*processedFiles, error)
+	WithEachMerged(f func(int, upload.Agent, *ach.File) (string, error)) (*processedFiles, error)
 }
 
 func NewMerging(logger log.Logger, consul *consul.Client, shard service.Shard, cfg service.UploadAgents) (XferMerging, error) {
@@ -164,20 +164,26 @@ func (m *filesystemMerging) getNonCanceledMatches(path string) ([]string, error)
 }
 
 type processedFiles struct {
+	Merges []mergedFile
+}
+
+type mergedFile struct {
+	filename string
 	shardKey string
 	fileIDs  []string
 }
 
-func newProcessedFiles(shardKey string, matches []string) *processedFiles {
-	processed := &processedFiles{shardKey: shardKey}
-
+func newMergedFile(filename, shardKey string, matches []string) mergedFile {
+	merged := mergedFile{
+		filename: filename,
+		shardKey: shardKey,
+	}
 	for i := range matches {
 		// each match follows $path/$fileID.ach
 		fileID := strings.TrimSuffix(filepath.Base(matches[i]), ".ach")
-		processed.fileIDs = append(processed.fileIDs, fileID)
+		merged.fileIDs = append(merged.fileIDs, fileID)
 	}
-
-	return processed
+	return merged
 }
 
 func (m *filesystemMerging) readFile(path string) (*ach.File, error) {
@@ -211,7 +217,7 @@ func (m *filesystemMerging) readFile(path string) (*ach.File, error) {
 	return &f, nil
 }
 
-func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) error) (*processedFiles, error) {
+func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) (string, error)) (*processedFiles, error) {
 	processed := &processedFiles{}
 
 	// move the current directory so it's isolated and easier to debug later on
@@ -276,6 +282,7 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 
 	// Write each file to our remote agent
 	successfulRemoteWrites := 0
+	var processedFiles processedFiles
 	for i := range files {
 		// Optionally Flatten Batches
 		if m.shard.Mergable.FlattenBatches != nil {
@@ -302,10 +309,17 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 		} else {
 			logger.Info().Log("we are the leader")
 
-			if err := f(i, agent, files[i]); err != nil {
+			filename, err := f(i, agent, files[i])
+			if err != nil {
 				el.Add(fmt.Errorf("problem from callback: %v", err))
 			} else {
 				successfulRemoteWrites++
+
+				processedFiles.Merges = append(processedFiles.Merges, newMergedFile(
+					filename,
+					m.shard.Name,
+					matches, // TODO(adam): shouldn't include all matches, but how to tell?
+				))
 			}
 		}
 	}
@@ -316,7 +330,7 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 		return nil, el
 	}
 
-	return newProcessedFiles(m.shard.Name, matches), nil
+	return &processedFiles, nil
 }
 
 func (m *filesystemMerging) saveMergedFile(dir string, file *ach.File) error {
