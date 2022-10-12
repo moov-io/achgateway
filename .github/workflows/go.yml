@@ -19,7 +19,7 @@ jobs:
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
       with:
-        go-version: ^1.19.1
+        go-version: '>= 1.19.2'
       id: go
 
     - name: Check out code into the Go module directory
@@ -60,11 +60,11 @@ jobs:
       run: bash <(curl -s https://codecov.io/bash)
 
     - name: Docker Build
-      if: runner.os == 'Linux'
+      if: runner.os == 'Linux' && github.repository == ‘moov-io/achgateway’
       run: make dev-docker
 
     - name: Docker Push
-      if: runner.os == 'Linux'
+      if: runner.os == 'Linux' && github.repository == ‘moov-io/achgateway’
       run: |+
           echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
           make dev-push

@@ -17,7 +17,7 @@ jobs:
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
       with:
-        go-version: ^1.19.1
+        go-version: '>= 1.19.2'
       id: go
 
     - name: Check out code into the Go module directory
@@ -69,7 +69,7 @@ jobs:
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
       with:
-        go-version: ^1.19.1
+        go-version: '>= 1.19.2'
       id: go
 
     - name: Check out code into the Go module directory
@@ -137,7 +137,7 @@ jobs:
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
       with:
-        go-version: ^1.19.1
+        go-version: '>= 1.19.2'
       id: go
 
     - name: Check out code into the Go module directory
@@ -150,6 +150,7 @@ jobs:
       run: make docker
 
     - name: Docker Push
+      if: github.repository == ‘moov-io/achgateway’
       run: |+
           echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
           make docker-push
