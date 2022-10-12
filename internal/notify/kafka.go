@@ -7,6 +7,7 @@ package notify
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/moov-io/achgateway/internal/kafka"
 	"github.com/moov-io/achgateway/internal/service"
@@ -31,7 +32,8 @@ func NewKafka(logger log.Logger, cfg *service.KafkaConfig) (*Kafka, error) {
 	return &Kafka{publisher: publisher, cfg: cfg}, nil
 }
 
-type event struct {
+type uploadedFile struct {
+	EventType    string       `json:"eventType"`
 	Direction    Direction    `json:"direction"`
 	FileName     string       `json:"fileName"`
 	Entries      int          `json:"entries"`
@@ -51,12 +53,13 @@ func (s *Kafka) Critical(msg *Message) error {
 	return s.send(event)
 }
 
-func marshalKafkaMessage(status uploadStatus, msg *Message) event {
+func marshalKafkaMessage(status uploadStatus, msg *Message) uploadedFile {
 	entries := countEntries(msg.File)
 	debitTotal := convertDollar(msg.File.Control.TotalDebitEntryDollarAmountInFile)
 	creditTotal := convertDollar(msg.File.Control.TotalCreditEntryDollarAmountInFile)
 
-	return event{
+	return uploadedFile{
+		EventType:    "UploadedFile",
 		UploadStatus: status,
 		Direction:    msg.Direction,
 		FileName:     msg.Filename,
@@ -67,16 +70,17 @@ func marshalKafkaMessage(status uploadStatus, msg *Message) event {
 	}
 }
 
-func (s *Kafka) send(evt event) error {
-	bs, err := compliance.Protect(s.cfg.Transform, models.Event{
-		Type:  "",
+func (s *Kafka) send(evt uploadedFile) error {
+	bs, err := compliance.Protect(s.cfg.Transform, models.Event{ // TODO(adam): This won't populate Type properly..
 		Event: evt,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to protect notifer kafka event: %v", err)
 	}
 
-	return s.publisher.Send(context.Background(), &pubsub.Message{
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	err = s.publisher.Send(ctx, &pubsub.Message{
 		Body: bs,
 	})
+	return err
 }

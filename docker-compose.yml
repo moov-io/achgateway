@@ -58,14 +58,20 @@ services:
     depends_on:
       - zookeeper
     ports:
-      - "9092:9092"
+      - "9093:9093"
     environment:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CREATE_TOPICS: test1:1:1
-      PORT_COMMAND: "docker port $$(hostname) 9092/tcp | cut -d: -f2"
-      HOSTNAME_COMMAND: "route -n | awk '/UG[ \t]/{print $$2}'"
+      KAFKA_CREATE_TOPICS: notify.kafka.v1:1:1,test1:1:1
+      KAFKA_LISTENERS: SASL_PLAINTEXT://:9093
+      KAFKA_ADVERTISED_LISTENERS: SASL_PLAINTEXT://localhost.:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: SASL_PLAINTEXT:SASL_PLAINTEXT
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/opt/kafka/kafka_server_jaas.conf"
+      KAFKA_INTER_BROKER_LISTENER_NAME: SASL_PLAINTEXT
+      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./testdata/kafka/kafka_server_jaas.conf:/opt/kafka/kafka_server_jaas.conf
     tmpfs: # Run this mysql in memory as its used for testing
       - /tmp/kafka-logs
 
