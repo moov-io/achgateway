@@ -68,7 +68,7 @@ func marshalSlackMessage(status uploadStatus, msg *Message) string {
 	entries := countEntries(msg.File)
 	debitTotal := convertDollar(msg.File.Control.TotalDebitEntryDollarAmountInFile)
 	creditTotal := convertDollar(msg.File.Control.TotalCreditEntryDollarAmountInFile)
-	slackMsg += fmt.Sprintf("%d entries | Debits: %s | Credits: %s", entries, debitTotal, creditTotal)
+	slackMsg += fmt.Sprintf("%d Entries | Debits: %s | Credits: %s", entries, debitTotal, creditTotal)
 
 	return slackMsg
 }

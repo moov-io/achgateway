@@ -72,7 +72,7 @@ func TestSlack__marshal(t *testing.T) {
 			},
 			shouldContain: []string{
 				"SUCCESSFUL upload of myfile.txt to ftp.mybank.com:1234",
-				"0 entries | Debits: 0.00 | Credits: 0.00",
+				"0 Entries | Debits: 0.00 | Credits: 0.00",
 			},
 		},
 		{
