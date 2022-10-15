@@ -100,3 +100,10 @@ ifeq ($(OS),Windows_NT)
 else
 	CGO_ENABLED=1 GOOS=$(PLATFORM) go build -o bin/achgateway-$(PLATFORM)-amd64 cmd/achgateway/*
 endif
+
+.PHONY: regen-dev-certs
+regen-dev-certs:
+	pushd "${PWD}/dev/consul/certs/" &&\
+		cfssl gencsr -key dc1-server-consul-0-key.pem -cert dc1-server-consul-0.pem | cfssljson -bare tmp &&\
+		cfssl sign -ca consul-agent-ca.pem -ca-key consul-agent-ca-key.pem tmp.csr | cfssljson -bare dc1-server-consul-0 &&\
+		rm tmp* dc1-server-consul-0.csr
