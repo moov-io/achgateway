@@ -41,6 +41,9 @@ ACHGateway:
       [ TLSCAFile: <string> ]
       [ InsecureSkipVerify: <boolean> | default = false ]
       [ VerifyCAFile: <boolean> | default = false]
+      TLSClientCerts:
+        - CertFilePath: <string>
+          KeyFilePath: <string>
     SQLite:
       Path: <string>
     DatabaseName: <string>
