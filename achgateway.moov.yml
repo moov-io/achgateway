@@ -11,7 +11,7 @@ Project:
     An extensible, highly available, distributed, and fault tolerant ACH uploader and downloader.
     ACH Gateway creates events for outside services and transforms files prior to upload to fit real-world
     requirements of production systems.
-  CodeOwners: "@adamdecaf @darwinz @alexjplant"
+  CodeOwners: "@adamdecaf"
   OpenSource: true
 
 MySQL:
