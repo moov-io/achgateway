@@ -12,8 +12,6 @@
   dropdown:
     - name: Moov ACH
       link: https://moov-io.github.io/ach/
-    - name: Moov ACHGateway
-      link: https://moov-io.github.io/achgateway/
     - name: Moov ACH Test Harness
       link: https://github.com/moov-io/ach-test-harness
     - name: Moov Fed
