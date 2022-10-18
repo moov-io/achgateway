@@ -8,13 +8,13 @@ menubar: docs-menu
 
 # Pending Files and Merging
 
-When a shard is triggered (either by [cutoff time](../cutoffs/) or manual) the instance of ACHGateway that [is the leader](../leadership/) performs merging and uploading of the pending files to a remote server. This optimizes network usage and billing costs from your ACH partner.
+ACHGateway is designed to accept ACH files to batch and merge for upload to a remote FTP/SFTP server. This allows operators to send multiple files over time that can be consolidated into fewer files when uploaded. The design also works without a database required. Pending files can be marked as canceled and encrypted at rest.
 
-## Encryption
-
-ACHGateway supports encrypting pending and merged files in the filesystem used for staging. This uses the [moov-io/cryptfs](https://github.com/moov-io/cryptfs) library and can be configured to use AES and encoded in base64 on disk.
+By persisting files to disk ACHGateway is able to survive restarts without losing data or needing to reconsume events. This helps handle higher volumes of files and allows operators access into the pending data. Filenames can be arbitrary strings (e.g. UUID's) to help identify files or objects. Merged files optimize network usage and billing costs from your ACH partner.
 
 ## Merging
+
+When a shard is triggered ACHGateway will perform a series of steps to merge and upload the pending files.
 
 1. Rename the existing directory of pending files from `storage/merging/{shardKey}/` to a timestamp version (e.g. `storage/merging/{shardKey}-$timestamp/`).
 1. Merge pending files (inside `storage/merging/{shardKey}-$timestamp/*.ach`) that do not contain a `*.canceled` file.
@@ -24,6 +24,10 @@ ACHGateway supports encrypting pending and merged files in the filesystem used f
 1. Save file to `uploaded/*.ach` inside of our `storage/merging/{shardKey}-$timestamp/` directory
 
 ACH transfers are merged (grouped) according to their file header values using [`ach.MergeFiles`](https://godoc.org/github.com/moov-io/ach#MergeFiles). EntryDetail records are not modified as part of the merging process. Merging is done primarily to reduce the fees charged by your ODFI or The Federal Reserve.
+
+## Encryption
+
+ACHGateway supports encrypting pending and merged files in the filesystem used for staging. This uses the [moov-io/cryptfs](https://github.com/moov-io/cryptfs) library and can be configured to use AES and encoded in base64 on disk.
 
 ### Options
 
