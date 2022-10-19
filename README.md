@@ -2,7 +2,7 @@
 [![Moov Banner Logo](https://user-images.githubusercontent.com/20115216/104214617-885b3c80-53ec-11eb-8ce0-9fc745fb5bfc.png)](https://github.com/moov-io)
 
 <p align="center">
-  <a href="https://github.com/moov-io/achgateway/blob/master/docs/README.md">Project Documentation</a>
+  <a href="https://moov-io.github.io/achgateway/">Project Documentation</a>
   ·
   <a href="https://moov.io/blog/education/ach-gateway-guide/">Quickstart Guide</a>
   ·
@@ -27,7 +27,7 @@ If you believe you have identified a security vulnerability please responsibly r
 
 ## Getting started
 
-Read through the [project docs](docs/README.md) to gain an understanding of this project's purpose and how to run it.
+Read through the [project docs](https://moov-io.github.io/achgateway/) to gain an understanding of this project's purpose and how to run it.
 
 We publish a [public Docker image `moov/achgateway`](https://hub.docker.com/r/moov/achgateway/) from Docker Hub or use this repository. No configuration is required to serve on `:8484` and metrics at `:9494/metrics` in Prometheus format.
 
@@ -124,7 +124,7 @@ This project is used in production at multiple companies and has reached a stabl
 
  channel | info
  ------- | -------
-[Project Documentation](./docs/README.md) | Our project documentation available online.
+[Project Documentation](https://moov-io.github.io/achgateway/) | Our project documentation available online.
 Twitter [@moov](https://twitter.com/moov)	| You can follow Moov.io's Twitter feed to get updates on our project(s). You can also tweet us questions or just share blogs or stories.
 [GitHub Issue](https://github.com/moov-io/achgateway/issues) | If you are able to reproduce a problem please open a GitHub Issue under the specific project that caused the error.
 [moov-io slack](https://slack.moov.io/) | Join our slack channel (`#ach`) to have an interactive discussion about the development of the project.
