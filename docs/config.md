@@ -227,6 +227,13 @@ ACHGateway:
           Retry:
             Interval: <duration>
             MaxRetries: <integer>
+    Mappings:
+      <label>:
+        # Could be random value (UUID, fixed string)
+        ShardKey: <string>
+        # Maps to Sharding.Shards[_].name
+        ShardName: <string>
+    [ Default: <string> ]
 ```
 
 ### Upload Agents
