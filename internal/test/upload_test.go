@@ -306,7 +306,7 @@ func randomTraceNumbers(t *testing.T, file *ach.File) *ach.File {
 	return file
 }
 
-func setupShards(t *testing.T, repo *shards.MockRepository) []string {
+func setupShards(t *testing.T, repo *shards.InMemoryRepository) []string {
 	var out []string
 	for i := 0; i < 10; i++ {
 		shardKey := base.ID()

@@ -33,7 +33,7 @@ type Repository interface {
 
 func NewRepository(db *sql.DB, static map[string]service.ShardMapping) Repository {
 	if db == nil {
-		return &MockRepository{Shards: static}
+		return &InMemoryRepository{Shards: static}
 	}
 	return &sqlRepository{db: db}
 }
