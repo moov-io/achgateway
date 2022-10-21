@@ -23,24 +23,24 @@ import (
 	"github.com/moov-io/base/database"
 )
 
-type MockRepository struct {
+type InMemoryRepository struct {
 	Shards map[string]service.ShardMapping
 }
 
-func NewMockRepository() *MockRepository {
-	return &MockRepository{
+func NewMockRepository() *InMemoryRepository {
+	return &InMemoryRepository{
 		Shards: make(map[string]service.ShardMapping),
 	}
 }
 
-func (r *MockRepository) Lookup(shardKey string) (string, error) {
+func (r *InMemoryRepository) Lookup(shardKey string) (string, error) {
 	if shard, exists := r.Shards[shardKey]; exists {
 		return shard.ShardName, nil
 	}
 	return "", fmt.Errorf("unknown shardKey=%s", shardKey)
 }
 
-func (r *MockRepository) List() ([]service.ShardMapping, error) {
+func (r *InMemoryRepository) List() ([]service.ShardMapping, error) {
 	list := make([]service.ShardMapping, 0, len(r.Shards))
 	for _, shard := range r.Shards {
 		list = append(list, shard)
@@ -48,7 +48,7 @@ func (r *MockRepository) List() ([]service.ShardMapping, error) {
 	return list, nil
 }
 
-func (r *MockRepository) Add(create service.ShardMapping, run database.RunInTx) error {
+func (r *InMemoryRepository) Add(create service.ShardMapping, run database.RunInTx) error {
 	r.Shards[create.ShardKey] = create
 	return nil
 }
