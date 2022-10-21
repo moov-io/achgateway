@@ -34,9 +34,12 @@ func NewMockRepository() *InMemoryRepository {
 }
 
 func (r *InMemoryRepository) Lookup(shardKey string) (string, error) {
-	if shard, exists := r.Shards[shardKey]; exists {
-		return shard.ShardName, nil
+	for _, mapping := range r.Shards {
+		if mapping.ShardKey == shardKey {
+			return mapping.ShardName, nil
+		}
 	}
+
 	return "", fmt.Errorf("unknown shardKey=%s", shardKey)
 }
 
