@@ -40,7 +40,7 @@ var (
 
 type Sharding struct {
 	Shards   []Shard
-	Mappings map[string]ShardMapping
+	Mappings []ShardMapping
 	Default  string
 }
 

@@ -5,16 +5,18 @@ package shards_test
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/gorilla/mux"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/moov-io/achgateway/internal"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/shards"
 	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/stime"
+
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 type TestEnvironment struct {
@@ -65,7 +67,7 @@ func ShardMappingTestSetup(t *testing.T) ShardMappingTestScope {
 	router := mux.NewRouter()
 	testEnv := NewTestEnvironment(t, router)
 
-	repository := shards.NewMockRepository()
+	repository := shards.NewInMemoryRepository()
 	service, err := shards.NewShardMappingService(testEnv.TimeService, testEnv.Logger, repository)
 	if err != nil {
 		t.Error(err)

@@ -19,36 +19,37 @@ package shards
 
 import (
 	"fmt"
+
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/database"
 )
 
 type InMemoryRepository struct {
-	Shards map[string]service.ShardMapping
+	Shards []service.ShardMapping
 }
 
-func NewMockRepository() *InMemoryRepository {
-	return &InMemoryRepository{
-		Shards: make(map[string]service.ShardMapping),
-	}
+func NewInMemoryRepository(shards ...service.ShardMapping) *InMemoryRepository {
+	repo := &InMemoryRepository{}
+	repo.Shards = append(repo.Shards, shards...)
+	return repo
 }
 
 func (r *InMemoryRepository) Lookup(shardKey string) (string, error) {
-	if shard, exists := r.Shards[shardKey]; exists {
-		return shard.ShardName, nil
+	for i := range r.Shards {
+		if r.Shards[i].ShardKey == shardKey {
+			return r.Shards[i].ShardName, nil
+		}
 	}
 	return "", fmt.Errorf("unknown shardKey=%s", shardKey)
 }
 
 func (r *InMemoryRepository) List() ([]service.ShardMapping, error) {
 	list := make([]service.ShardMapping, 0, len(r.Shards))
-	for _, shard := range r.Shards {
-		list = append(list, shard)
-	}
+	list = append(list, r.Shards...)
 	return list, nil
 }
 
-func (r *InMemoryRepository) Add(create service.ShardMapping, run database.RunInTx) error {
-	r.Shards[create.ShardKey] = create
+func (r *InMemoryRepository) Add(create service.ShardMapping, _ database.RunInTx) error {
+	r.Shards = append(r.Shards, create)
 	return nil
 }

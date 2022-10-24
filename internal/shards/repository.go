@@ -20,8 +20,10 @@ package shards
 import (
 	"database/sql"
 	"fmt"
+
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/database"
+
 	"github.com/pkg/errors"
 )
 
@@ -31,7 +33,7 @@ type Repository interface {
 	Add(create service.ShardMapping, run database.RunInTx) error
 }
 
-func NewRepository(db *sql.DB, static map[string]service.ShardMapping) Repository {
+func NewRepository(db *sql.DB, static []service.ShardMapping) Repository {
 	if db == nil {
 		return &InMemoryRepository{Shards: static}
 	}
