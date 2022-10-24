@@ -148,7 +148,7 @@ func TestUploads(t *testing.T) {
 	consulClient, err := consul.NewConsulClient(logger, cfg.Consul)
 	require.NoError(t, err)
 
-	shardRepo := shards.NewMockRepository()
+	shardRepo := shards.NewInMemoryRepository()
 	shardKeys := setupShards(t, shardRepo)
 
 	httpPub, httpSub := streamtest.InmemStream(t)
@@ -311,9 +311,9 @@ func setupShards(t *testing.T, repo *shards.InMemoryRepository) []string {
 	for i := 0; i < 10; i++ {
 		shardKey := base.ID()
 		if i%2 == 0 {
-			repo.Shards[shardKey] = service.ShardMapping{ShardKey: shardKey, ShardName: "prod"}
+			repo.Add(service.ShardMapping{ShardKey: shardKey, ShardName: "prod"}, database.NopInTx)
 		} else {
-			repo.Shards[shardKey] = service.ShardMapping{ShardKey: shardKey, ShardName: "beta"}
+			repo.Add(service.ShardMapping{ShardKey: shardKey, ShardName: "beta"}, database.NopInTx)
 		}
 		out = append(out, shardKey)
 	}

@@ -36,7 +36,7 @@ func TestFileReceiver(t *testing.T) {
 func testFileReceiver(t *testing.T) *FileReceiver {
 	logger := log.NewNopLogger()
 	shard := "testing"
-	shardRepo := shards.NewMockRepository()
+	shardRepo := shards.NewInMemoryRepository()
 	shardAggregators := make(map[string]*aggregator)
 	_, httpFiles := streamtest.InmemStream(t)
 	_, streamFiles := streamtest.InmemStream(t)
