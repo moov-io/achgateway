@@ -52,7 +52,9 @@ func TestProcessor(t *testing.T) {
 	// Real world file
 	path := filepath.Join("..", "..", "..", "testdata", "HMBRAD_ACHEXPORT_1001_08_19_2022_09_10")
 	err = processFile(path, auditSaver, processors)
-	require.ErrorContains(t, err, "record:FileHeader *ach.FieldError FileCreationDate  is a mandatory field")
+	if err != nil {
+		require.ErrorContains(t, err, "record:FileHeader *ach.FieldError FileCreationDate  is a mandatory field")
+	}
 }
 
 func TestProcessor_populateHashes(t *testing.T) {
