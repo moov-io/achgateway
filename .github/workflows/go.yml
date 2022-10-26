@@ -60,11 +60,11 @@ jobs:
       run: bash <(curl -s https://codecov.io/bash)
 
     - name: Docker Build
-      if: runner.os == 'Linux' && github.repository == ‘moov-io/achgateway’
+      if: runner.os == 'Linux' && github.repository == 'moov-io/achgateway'
       run: make dev-docker
 
     - name: Docker Push
-      if: runner.os == 'Linux' && github.repository == ‘moov-io/achgateway’
+      if: runner.os == 'Linux' && github.repository == 'moov-io/achgateway'
       run: |+
           echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
           make dev-push
