@@ -1,4 +1,4 @@
-## v0.17.1 (Released 2022-10-26)
+## v0.17.2 (Released 2022-10-26)
 
 IMPROVEMENTS
 
