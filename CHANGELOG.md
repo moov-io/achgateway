@@ -1,4 +1,4 @@
-## v0.17.0 (Released 2022-10-26)
+## v0.17.1 (Released 2022-10-26)
 
 IMPROVEMENTS
 
@@ -9,6 +9,7 @@ IMPROVEMENTS
 
 BUILD
 
+- build: fix quotes in release script
 - build: update moov-io base, ach and /x/text
 - docs: include mappings and default shard
 - meta: cleanup codeowners, require go 1.19.2, only push on moov-io
