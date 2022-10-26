@@ -1,3 +1,19 @@
+## v0.17.0 (Released 2022-10-26)
+
+IMPROVEMENTS
+
+- models: remove Filename from FileUploaded event
+- pipeline: include holiday name and host in message
+- pipeline: skip uploading files after caching fails
+- shards: simplify config file mapping syntax
+
+BUILD
+
+- build: update moov-io base, ach and /x/text
+- docs: include mappings and default shard
+- meta: cleanup codeowners, require go 1.19.2, only push on moov-io
+- test: Regenerate Consul Certs
+
 ## v0.16.10 (Released 2022-10-03)
 
 BUILD
