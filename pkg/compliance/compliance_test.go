@@ -48,7 +48,6 @@ func TestCompliance(t *testing.T) {
 		Event: models.FileUploaded{
 			FileID:     fileID,
 			ShardKey:   shardKey,
-			Filename:   "20210709-0001.ach",
 			UploadedAt: time.Now(),
 		},
 	}
@@ -65,5 +64,4 @@ func TestCompliance(t *testing.T) {
 	require.NoError(t, models.ReadEvent(decrypted, &uploaded))
 	require.Equal(t, fileID, uploaded.FileID)
 	require.Equal(t, shardKey, uploaded.ShardKey)
-	require.Equal(t, "20210709-0001.ach", uploaded.Filename)
 }
