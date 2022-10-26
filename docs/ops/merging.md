@@ -8,9 +8,15 @@ menubar: docs-menu
 
 # Pending Files and Merging
 
-ACHGateway is designed to accept ACH files to batch and merge for upload to a remote FTP/SFTP server. This allows operators to send multiple files over time that can be consolidated into fewer files when uploaded. The design also works without a database required. Pending files can be marked as canceled and encrypted at rest.
+ACHGateway is designed to accept ACH files to batch and merge for upload to a remote FTP/SFTP server. This allows operators to send multiple files over time that can be consolidated into fewer files when uploaded. The design also works without a database being required.
 
-By persisting files to disk ACHGateway is able to survive restarts without losing data or needing to reconsume events. This helps handle higher volumes of files and allows operators access into the pending data. Filenames can be arbitrary strings (e.g. UUID's) to help identify files or objects. Merged files optimize network usage and billing costs from your ACH partner.
+By persisting files to disk ACHGateway is able to survive restarts without losing data or needing to reconsume events. This helps handle higher volumes of files and allows operators access into the pending data. Filenames can be arbitrary strings (e.g. UUID's) to help identify files or objects. Pending files can be marked as canceled. Merged files optimize network usage and billing costs from your ACH partner.
+
+ACHGateway aims to upload all possible files and accumulates errors for alerting later. If files cannot be merged they'll be uploaded individually and if a merged file cannot be flattened it'll be uploaded unflattened. However, if we are unable to cache a file in `uploaded/` it won't be uploaded. When `Consul` is enabled but a lock cannot be obtained no upload will occur for that shard.
+
+## Encryption
+
+ACHGateway supports encrypting pending and merged files in the filesystem used for staging. This uses the [moov-io/cryptfs](https://github.com/moov-io/cryptfs) library and can be configured to use AES and encoded in base64 on disk.
 
 ## Merging
 
@@ -20,8 +26,8 @@ When a shard is triggered ACHGateway will perform a series of steps to merge and
 1. Merge pending files (inside `storage/merging/{shardKey}-$timestamp/*.ach`) that do not contain a `*.canceled` file.
    1. With moov-io/ach's `MergeFiles(...)` function (and optional `ach.Conditions` for max dollar amounts in a file, etc)
 1. Optionally `FlattenBatches()` on files and encrypt file contents (e.g. GPG)
-1. Render filename from template, prepare output formatting
 1. Save file to `uploaded/*.ach` inside of our `storage/merging/{shardKey}-$timestamp/` directory
+1. Render filename from template, prepare output formatting
 
 ACH transfers are merged (grouped) according to their file header values using [`ach.MergeFiles`](https://godoc.org/github.com/moov-io/ach#MergeFiles). EntryDetail records are not modified as part of the merging process. Merging is done primarily to reduce the fees charged by your ODFI or The Federal Reserve.
 
