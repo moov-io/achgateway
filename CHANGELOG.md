@@ -1,3 +1,9 @@
+## v0.17.3 (Released 2022-11-02)
+
+IMPROVEMENTS
+
+- pipeline: fix calling of uploadFilesErrors metric
+
 ## v0.17.2 (Released 2022-10-26)
 
 IMPROVEMENTS
