@@ -67,3 +67,7 @@ func init() {
 	httpFileProcessingErrors.With().Add(0)
 	streamFileProcessingErrors.With().Add(0)
 }
+
+func recordFileUploadError(shard string) {
+	uploadFilesErrors.With("shard", shard).Add(1)
+}

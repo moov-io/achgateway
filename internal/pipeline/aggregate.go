@@ -256,20 +256,20 @@ func (xfagg *aggregator) uploadFile(index int, agent upload.Agent, res *transfor
 	}
 	filename, err := upload.RenderACHFilename(xfagg.shard.FilenameTemplate(), data)
 	if err != nil {
-		uploadFilesErrors.With().Add(1)
+		recordFileUploadError(xfagg.shard.Name)
 		return fmt.Errorf("problem rendering filename template: %v", err)
 	}
 
 	var buf bytes.Buffer
 	if err := xfagg.outputFormatter.Format(&buf, res); err != nil {
-		uploadFilesErrors.With().Add(1)
+		recordFileUploadError(xfagg.shard.Name)
 		return fmt.Errorf("problem formatting output: %v", err)
 	}
 
 	// Record the file in our audit trail
 	path := fmt.Sprintf("outbound/%s/%s/%s", agent.Hostname(), time.Now().Format("2006-01-02"), filename)
 	if err := xfagg.auditStorage.SaveFile(path, buf.Bytes()); err != nil {
-		uploadFilesErrors.With().Add(1)
+		recordFileUploadError(xfagg.shard.Name)
 		return fmt.Errorf("problem saving file in audit record: %v", err)
 	}
 
@@ -286,7 +286,7 @@ func (xfagg *aggregator) uploadFile(index int, agent upload.Agent, res *transfor
 
 	// record our upload metrics
 	if err != nil {
-		uploadFilesErrors.With("shard", xfagg.shard.Name).Add(1)
+		recordFileUploadError(xfagg.shard.Name)
 	} else {
 		uploadedFilesCounter.With("shard", xfagg.shard.Name).Add(1)
 	}
