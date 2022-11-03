@@ -295,14 +295,20 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 
 		// Perform the file upload if we are the shard leader
 		leaderKey := fmt.Sprintf("achgateway/outbound/%s", m.shard.Name)
-		logger.Logf("attempting to acquire outbound leadership for %s", leaderKey)
+		if m.consul != nil {
+			logger.Logf("attempting to acquire outbound leadership for %s", leaderKey)
+		}
 
 		// Acquire leadership for this shard
 		err := consul.AcquireLock(logger, m.consul, leaderKey)
 		if err != nil {
 			logger.Warn().Logf("skipping file upload: %v", err)
 		} else {
-			logger.Info().Log("we are the leader")
+			if m.consul != nil {
+				logger.Info().Log("we are the leader")
+			} else {
+				logger.Info().Log("running leaderless")
+			}
 
 			// Upload the file
 			if err := f(i, agent, files[i]); err != nil {
