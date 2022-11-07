@@ -1,3 +1,10 @@
+## v0.17.4 (Released 2022-11-07)
+
+IMPROVEMENTS
+
+- fix: improve logging around consul election
+- pipeline: log when requested shard isn't found
+
 ## v0.17.3 (Released 2022-11-02)
 
 IMPROVEMENTS
