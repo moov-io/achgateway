@@ -267,6 +267,11 @@ func (fr *FileReceiver) getAggregator(shardKey string) *aggregator {
 
 	agg, exists := fr.shardAggregators[shardName]
 	if !exists {
+		fr.logger.Warn().With(log.Fields{
+			"shard_key":  log.String(shardKey),
+			"shard_name": log.String(shardName),
+		}).Log("found no shard so using default shard")
+
 		agg, exists = fr.shardAggregators[fr.defaultShardName]
 		if !exists {
 			filesMissingShardAggregators.With("shard", shardName).Add(1)
