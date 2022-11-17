@@ -124,11 +124,16 @@ func processDir(dir string, auditSaver *AuditSaver, fileProcessors Processors) e
 	}
 
 	var el base.ErrorList
-	for i := range infos {
-		where := filepath.Join(dir, infos[i].Name())
-
-		if err := processFile(where, auditSaver, fileProcessors); err != nil {
-			el.Add(err)
+	for _, info := range infos {
+		where := filepath.Join(dir, info.Name())
+		if info.IsDir() {
+			if err := processDir(where, auditSaver, fileProcessors); err != nil {
+				el.Add(err)
+			}
+		} else {
+			if err := processFile(where, auditSaver, fileProcessors); err != nil {
+				el.Add(err)
+			}
 		}
 	}
 
