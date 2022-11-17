@@ -15,6 +15,7 @@ package stream
 
 import (
 	"context"
+	"github.com/moov-io/achgateway/internal/awssqs"
 
 	"github.com/moov-io/achgateway/internal/kafka"
 	"github.com/moov-io/achgateway/internal/service"
@@ -30,6 +31,9 @@ func Topic(logger log.Logger, cfg *service.Config) (*pubsub.Topic, error) {
 	}
 	if cfg.Inbound.Kafka != nil {
 		return kafka.OpenTopic(logger, cfg.Inbound.Kafka)
+	}
+	if cfg.Inbound.SQS != nil {
+		return awssqs.OpenTopic(logger, cfg.Inbound.SQS)
 	}
 	return nil, nil
 }

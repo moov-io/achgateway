@@ -19,11 +19,10 @@ package stream
 
 import (
 	"context"
-
+	"github.com/moov-io/achgateway/internal/awssqs"
 	"github.com/moov-io/achgateway/internal/kafka"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
-
 	"gocloud.dev/pubsub"
 )
 
@@ -42,6 +41,14 @@ func Subscription(logger log.Logger, cfg *service.Config) (*pubsub.Subscription,
 			return nil, err
 		}
 		logger.Info().Logf("setup %T kafka subscription", sub)
+		return sub, nil
+	}
+	if cfg.Inbound.SQS != nil {
+		sub, err := awssqs.OpenSubscription(logger, cfg.Inbound.SQS)
+		if err != nil {
+			return nil, err
+		}
+		logger.Info().Logf("setup %T sqs subscription", sub)
 		return sub, nil
 	}
 	return nil, nil

@@ -20,6 +20,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
 	"time"
 
 	"github.com/moov-io/achgateway/pkg/models"
@@ -31,6 +32,7 @@ type Inbound struct {
 	Kafka *KafkaConfig
 	ODFI  *ODFIFiles
 	Audit *AuditTrail
+	SQS   *SQSConfig
 }
 
 func (cfg Inbound) Validate() error {
@@ -39,6 +41,9 @@ func (cfg Inbound) Validate() error {
 	}
 	if err := cfg.Kafka.Validate(); err != nil {
 		return fmt.Errorf("kafka: %v", err)
+	}
+	if err := cfg.SQS.Validate(); err != nil {
+		return fmt.Errorf("sqs: %v", err)
 	}
 	if err := cfg.ODFI.Validate(); err != nil {
 		return fmt.Errorf("odfi: %v", err)
@@ -175,4 +180,21 @@ type ODFIStorage struct {
 
 	// RemoveZeroByteFiles determines if we should delete files that are zero bytes
 	RemoveZeroByteFiles bool
+}
+
+type SQSConfig struct {
+	Session  aws.Config
+	TopicARN string
+}
+
+func (cfg *SQSConfig) Validate() error {
+	if cfg == nil {
+		return nil
+	}
+
+	if cfg.TopicARN == "" {
+		return errors.New("missing topic arn")
+	}
+
+	return nil
 }
