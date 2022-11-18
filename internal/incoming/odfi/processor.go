@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/moov-io/ach"
+	"github.com/moov-io/achgateway/internal/upload"
 	"github.com/moov-io/base"
 
 	"github.com/go-kit/kit/metrics/prometheus"
@@ -81,36 +82,16 @@ func (pcs Processors) HandleAll(file File) error {
 	return el
 }
 
-func ProcessFiles(dl *downloadedFiles, auditSaver *AuditSaver, fileProcessors Processors) error {
+func ProcessFiles(dl *downloadedFiles, auditSaver *AuditSaver, fileProcessors Processors, agent upload.Agent) error {
 	var el base.ErrorList
-	entries, err := os.ReadDir(dl.dir)
-	if err != nil {
-		return fmt.Errorf("reading %s: %v", dl.dir, err)
-	}
-	for i := range entries {
-		where := filepath.Join(dl.dir, entries[i].Name())
 
-		info, err := entries[i].Info()
-		if err != nil {
-			el.Add(fmt.Errorf("processFiles: %v", err))
-			continue
-		}
-
-		if info.Mode().IsDir() {
-			err = processDir(where, auditSaver, fileProcessors)
-			if err != nil {
-				el.Add(fmt.Errorf("processDir %s: %v", info, err))
-				continue
-			}
-		}
-		if info.Mode().IsRegular() {
-			err = processFile(where, auditSaver, fileProcessors)
-			if err != nil {
-				el.Add(fmt.Errorf("processfile - %s: %v", info, err))
-				continue
-			}
+	for _, processingPath := range []string{agent.InboundPath(), agent.ReconciliationPath(), agent.ReturnPath()} {
+		where := filepath.Join(dl.dir, processingPath)
+		if err := processDir(where, auditSaver, fileProcessors); err != nil {
+			el.Add(fmt.Errorf("processDir %s: %v", where, err))
 		}
 	}
+
 	if el.Empty() {
 		return nil
 	}
@@ -126,14 +107,9 @@ func processDir(dir string, auditSaver *AuditSaver, fileProcessors Processors) e
 	var el base.ErrorList
 	for _, info := range infos {
 		where := filepath.Join(dir, info.Name())
-		if info.IsDir() {
-			if err := processDir(where, auditSaver, fileProcessors); err != nil {
-				el.Add(err)
-			}
-		} else {
-			if err := processFile(where, auditSaver, fileProcessors); err != nil {
-				el.Add(err)
-			}
+
+		if err := processFile(where, auditSaver, fileProcessors); err != nil {
+			el.Add(err)
 		}
 	}
 
