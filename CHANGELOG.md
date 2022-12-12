@@ -1,3 +1,22 @@
+## v0.17.5 (Released 2022-12-12)
+
+BUILD
+
+- fix(build): update module github.com/PagerDuty/go-pagerduty to v1.6.0
+- fix(build): update module github.com/ProtonMail/go-crypto to v0.0.0-20221026131551-cf6655e29de4
+- fix(build): update module github.com/Shopify/sarama to v1.37.2
+- fix(build): update module github.com/hashicorp/consul/api to v1.18.0
+- fix(build): update module github.com/moov-io/ach to v1.26.1
+- fix(build): update module github.com/moov-io/base to v0.37.0
+- fix(build): update module github.com/prometheus/client_golang to v1.14.0
+- fix(build): update module github.com/rickar/cal/v2 to v2.1.9
+- fix(build): update module github.com/slack-go/slack to v0.11.4
+- fix(build): update module github.com/spf13/viper to v1.14.0
+- fix(build): update module gocloud.dev to v0.26.0
+- fix(build): update module gocloud.dev/pubsub/kafkapubsub to v0.26.0
+- fix(build): update module golang.org/x/crypto to v0.4.0
+- fix(build): update module golang.org/x/text to v0.5.0
+
 ## v0.17.4 (Released 2022-11-07)
 
 IMPROVEMENTS
