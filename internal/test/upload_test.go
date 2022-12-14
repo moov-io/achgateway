@@ -36,6 +36,7 @@ import (
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/consul"
+	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
 	"github.com/moov-io/achgateway/internal/incoming/web"
 	"github.com/moov-io/achgateway/internal/pipeline"
@@ -67,7 +68,9 @@ var (
 			SessionPath: "achgateway/upload-test/",
 		},
 		Inbound: service.Inbound{
-			InMem: &service.InMemory{},
+			InMem: &service.InMemory{
+				URL: "mem://upload-test",
+			},
 		},
 		Sharding: service.Sharding{
 			Shards: []service.Shard{
@@ -152,14 +155,16 @@ func TestUploads(t *testing.T) {
 	shardKeys := setupShards(t, shardRepo)
 
 	httpPub, httpSub := streamtest.InmemStream(t)
-	_, streamSub := streamtest.InmemStream(t)
+	streamTopic, err := stream.Topic(logger, cfg)
+	require.NoError(t, err)
+	defer streamTopic.Shutdown(context.Background())
 
 	fileController := web.NewFilesController(logger, service.HTTPConfig{}, httpPub)
 	r := mux.NewRouter()
 	fileController.AppendRoutes(r)
 
 	outboundPath := setupTestDirectory(t, cfg)
-	fileReceiver, err := pipeline.Start(ctx, logger, cfg, consulClient, shardRepo, httpSub, streamSub)
+	fileReceiver, err := pipeline.Start(ctx, logger, cfg, consulClient, shardRepo, httpSub)
 	require.NoError(t, err)
 	t.Cleanup(func() { fileReceiver.Shutdown() })
 

@@ -37,7 +37,8 @@ func Start(
 	cfg *service.Config,
 	consul *consul.Client,
 	shardRepository shards.Repository,
-	httpFiles, streamFiles *pubsub.Subscription) (*FileReceiver, error) {
+	httpFiles *pubsub.Subscription,
+) (*FileReceiver, error) {
 
 	eventEmitter, err := events.NewEmitter(logger, cfg.Events)
 	if err != nil {
@@ -62,7 +63,10 @@ func Start(
 	if cfg.Inbound.Kafka != nil && cfg.Inbound.Kafka.Transform != nil {
 		transformConfig = cfg.Inbound.Kafka.Transform
 	}
-	receiver := newFileReceiver(logger, cfg.Sharding.Default, shardRepository, shardAggregators, httpFiles, streamFiles, transformConfig)
+	receiver, err := newFileReceiver(logger, cfg, shardRepository, shardAggregators, httpFiles, transformConfig)
+	if err != nil {
+		return nil, err
+	}
 	go receiver.Start(ctx)
 
 	return receiver, nil

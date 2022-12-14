@@ -167,13 +167,9 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	if err != nil {
 		return env, fmt.Errorf("unable to create http files subscription: %v", err)
 	}
-	streamSub, err := stream.Subscription(env.Logger, env.Config)
-	if err != nil {
-		return env, fmt.Errorf("unable to create stream files subscription: %v", err)
-	}
 
 	shardRepository := shards.NewRepository(env.DB, env.Config.Sharding.Mappings)
-	fileReceiver, err := pipeline.Start(ctx, env.Logger, env.Config, env.Consul, shardRepository, httpSub, streamSub)
+	fileReceiver, err := pipeline.Start(ctx, env.Logger, env.Config, env.Consul, shardRepository, httpSub)
 	if err != nil {
 		return env, fmt.Errorf("unable to create file pipeline: %v", err)
 	}
