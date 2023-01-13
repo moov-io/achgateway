@@ -18,7 +18,9 @@
 package compliance
 
 import (
+	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/moov-io/achgateway/pkg/models"
 
@@ -38,4 +40,29 @@ func TestCoder(t *testing.T) {
 	dec, err := ec.Decode(enc)
 	require.NoError(t, err)
 	require.Equal(t, "hello, world", string(dec))
+}
+
+func TestGzipCoder(t *testing.T) {
+	ec, err := newCoder(&models.EncodingConfig{
+		Compress: true,
+	})
+	require.NoError(t, err)
+
+	input := strings.Repeat("1234567890", 21)
+	expectedLength := utf8.RuneCountInString(input)
+
+	encoded, err := ec.Encode([]byte(input))
+	require.NoError(t, err)
+	require.Len(t, encoded, 37)
+
+	decoded, err := ec.Decode(encoded)
+	require.NoError(t, err)
+	require.Len(t, decoded, expectedLength)
+	require.Equal(t, input, string(decoded))
+
+	// .Decode should skip gzip if the input isn't compressed
+	decoded, err = ec.Decode([]byte(input))
+	require.NoError(t, err)
+	require.Len(t, string(decoded), expectedLength)
+	require.Equal(t, input, string(decoded))
 }
