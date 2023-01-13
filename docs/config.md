@@ -78,6 +78,7 @@ ACHGateway:
       Transform:
         Encoding:
           [ Base64: <boolean> | default = false ]
+          [ Compress: <boolean> | default = false ]
         Encryption:
           AES:
             [ Key: <string> | default = "" ]
@@ -95,6 +96,7 @@ ACHGateway:
       Transform:
         Encoding:
           [ Base64: <boolean> | default = false ]
+          [ Compress: <boolean> | default = false ]
         Encryption:
           AES:
             [ Key: <string> | default = "" ]
