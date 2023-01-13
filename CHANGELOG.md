@@ -1,4 +1,8 @@
-## v0.17.5 (Released 2022-12-12)
+## v0.17.5 (Released 2023-01-13)
+
+IMPROVEMENTS
+
+- feat: support gzip compression with Transforms
 
 BUILD
 
