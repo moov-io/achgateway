@@ -15,8 +15,8 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.1
 	github.com/jlaffaye/ftp v0.1.0
 	github.com/markbates/pkger v0.17.1
-	github.com/moov-io/ach v1.26.1
-	github.com/moov-io/base v0.37.0
+	github.com/moov-io/ach v1.28.0
+	github.com/moov-io/base v0.38.1
 	github.com/moov-io/cryptfs v0.4.0
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/ory/mail/v3 v3.0.0
@@ -33,7 +33,7 @@ require (
 	gocloud.dev/pubsub/kafkapubsub v0.26.0
 	goftp.io/server v0.4.1
 	golang.org/x/crypto v0.4.0
-	golang.org/x/text v0.5.0
+	golang.org/x/text v0.6.0
 )
 
 require (
@@ -130,7 +130,7 @@ require (
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-ieproxy v0.0.1 // indirect
-	github.com/mattn/go-isatty v0.0.16 // indirect
+	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/minio-go/v6 v6.0.57 // indirect
@@ -165,7 +165,7 @@ require (
 	golang.org/x/net v0.4.0 // indirect
 	golang.org/x/oauth2 v0.3.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.3.0 // indirect
+	golang.org/x/sys v0.4.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/api v0.104.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
