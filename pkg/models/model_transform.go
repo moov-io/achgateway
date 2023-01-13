@@ -29,7 +29,8 @@ type TransformConfig struct {
 }
 
 type EncodingConfig struct {
-	Base64 bool
+	Base64   bool
+	Compress bool
 }
 
 type EncryptionConfig struct {
