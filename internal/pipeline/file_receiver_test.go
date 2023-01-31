@@ -23,9 +23,11 @@ import (
 	"testing"
 
 	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
+	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/shards"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,14 +37,19 @@ func TestFileReceiver(t *testing.T) {
 
 func testFileReceiver(t *testing.T) *FileReceiver {
 	logger := log.NewNopLogger()
-	shard := "testing"
+	conf := &service.Config{
+		Sharding: service.Sharding{
+			Default: "testing",
+		},
+	}
 	shardRepo := shards.NewInMemoryRepository()
 	shardAggregators := make(map[string]*aggregator)
 	_, httpFiles := streamtest.InmemStream(t)
-	_, streamFiles := streamtest.InmemStream(t)
 	cfg := &models.TransformConfig{}
 
-	fileRec := newFileReceiver(logger, shard, shardRepo, shardAggregators, httpFiles, streamFiles, cfg)
+	fileRec, err := newFileReceiver(logger, conf, shardRepo, shardAggregators, httpFiles, cfg)
+	require.NoError(t, err)
+
 	go fileRec.Start(context.Background())
 	t.Cleanup(func() { fileRec.Shutdown() })
 

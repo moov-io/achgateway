@@ -24,6 +24,8 @@ import (
 	"strings"
 
 	"github.com/moov-io/achgateway/internal/incoming"
+	"github.com/moov-io/achgateway/internal/incoming/stream"
+	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/shards"
 	"github.com/moov-io/achgateway/pkg/compliance"
 	"github.com/moov-io/achgateway/pkg/models"
@@ -37,7 +39,9 @@ import (
 // FileReceiver accepts an ACH file from a number of pubsub Subscriptions and
 // finds the appropriate aggregator for the shardKey.
 type FileReceiver struct {
-	logger           log.Logger
+	logger log.Logger
+	cfg    *service.Config
+
 	defaultShardName string
 
 	shardRepository  shards.Repository
@@ -51,22 +55,41 @@ type FileReceiver struct {
 
 func newFileReceiver(
 	logger log.Logger,
-	defaultShardName string,
+	cfg *service.Config,
 	shardRepository shards.Repository,
 	shardAggregators map[string]*aggregator,
 	httpFiles *pubsub.Subscription,
-	streamFiles *pubsub.Subscription,
 	transformConfig *models.TransformConfig,
-) *FileReceiver {
-	return &FileReceiver{
+) (*FileReceiver, error) {
+	// Create FileReceiver and connect streamFiles
+	fr := &FileReceiver{
 		logger:           logger,
-		defaultShardName: defaultShardName,
+		cfg:              cfg,
+		defaultShardName: cfg.Sharding.Default,
 		shardRepository:  shardRepository,
 		shardAggregators: shardAggregators,
 		httpFiles:        httpFiles,
-		streamFiles:      streamFiles,
 		transformConfig:  transformConfig,
 	}
+	err := fr.reconnect()
+	if err != nil {
+		return nil, err
+	}
+	return fr, nil
+}
+
+func (fr *FileReceiver) reconnect() error {
+	if fr.streamFiles != nil {
+		fr.streamFiles.Shutdown(context.Background())
+	}
+
+	streamSub, err := stream.Subscription(fr.logger, fr.cfg)
+	if err != nil {
+		return fmt.Errorf("creating stream subscription: %v", err)
+	}
+	fr.streamFiles = streamSub
+
+	return nil
 }
 
 func (fr *FileReceiver) Start(ctx context.Context) {
@@ -87,6 +110,14 @@ func (fr *FileReceiver) Start(ctx context.Context) {
 			if err != nil {
 				streamFileProcessingErrors.With().Add(1)
 				fr.logger.LogErrorf("error handling stream file: %v", err)
+
+				// Attempt to reconnect under some conditions
+				if contains(err, "write: broken pipe") {
+					fr.logger.Info().Log("attempt to reconnect to stream subscription")
+					if err := fr.reconnect(); err != nil {
+						fr.logger.LogErrorf("unable to reconnect stream subscription: %v", err)
+					}
+				}
 			}
 
 		case <-ctx.Done():
