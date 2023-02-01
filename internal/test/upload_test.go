@@ -198,7 +198,10 @@ func TestUploads(t *testing.T) {
 	require.Greater(t, canceledEntries, 0)
 	time.Sleep(5 * time.Second)
 
-	req, _ := http.NewRequest("PUT", "http://"+adminServer.BindAddr()+"/trigger-cutoff", nil)
+	var buf bytes.Buffer
+	buf.WriteString(`{"shardNames":["prod", "beta"]}`)
+
+	req, _ := http.NewRequest("PUT", "http://"+adminServer.BindAddr()+"/trigger-cutoff", &buf)
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
