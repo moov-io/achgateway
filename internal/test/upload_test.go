@@ -174,17 +174,15 @@ func TestUploads(t *testing.T) {
 	defer adminServer.Shutdown()
 	fileReceiver.RegisterAdminRoutes(adminServer)
 
+	// Force the stream subscription to fail
 	flakeySub := streamtest.FailingSubscription(errors.New("write: broken pipe"))
+	fileReceiver.ReplaceStreamFiles(flakeySub)
+	require.Contains(t, fmt.Sprintf("%#v", fileReceiver), "streamFiles:(*streamtest.FailedSubscription)")
 
 	// Upload our files
 	createdEntries := 0
 	canceledEntries := 0
 	for i := 0; i < 1000; i++ {
-		// Every few connections introduce a broken stream
-		if i%197 == 0 {
-			fileReceiver.ReplaceStreamFiles(flakeySub)
-		}
-
 		shardKey := shardKeys[i%10]
 		fileID := base.ID()
 		file := randomACHFile(t)
@@ -194,7 +192,6 @@ func TestUploads(t *testing.T) {
 
 		canceledEntries += maybeCancelFile(t, r, shardKey, fileID, file)
 	}
-	require.Greater(t, flakeySub.N, 0)
 
 	t.Logf("created %d entries and canceled %d entries", createdEntries, canceledEntries)
 	require.Greater(t, createdEntries, 0)

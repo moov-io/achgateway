@@ -55,11 +55,9 @@ func InmemStream(t *testing.T) (*pubsub.Topic, stream.Subscription) {
 
 type FailedSubscription struct {
 	Err error
-	N   int
 }
 
 func (s *FailedSubscription) Receive(ctx context.Context) (*pubsub.Message, error) {
-	s.N++
 	return nil, s.Err
 }
 

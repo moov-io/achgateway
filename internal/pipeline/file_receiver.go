@@ -94,6 +94,10 @@ func (fr *FileReceiver) reconnect() error {
 }
 
 func (fr *FileReceiver) ReplaceStreamFiles(sub stream.Subscription) {
+	// Close an existing stream subscription
+	if fr.streamFiles != nil {
+		fr.streamFiles.Shutdown(context.Background())
+	}
 	fr.streamFiles = sub
 }
 
