@@ -39,7 +39,7 @@ achgateway_1  | ts=2021-06-18T23:38:16Z msg="finished handling ACHFile=f4" level
 
 Initiate cutoff time processing (aka upload to your ODFI):
 ```
-$ curl -XPUT "http://localhost:9494/trigger-cutoff"
+$ curl -XPUT "http://localhost:9494/trigger-cutoff" --data '{"shardNames":["foo"]}'
 achgateway_1  | ts=2021-06-18T23:38:20Z msg="starting manual cutoff window processing" level=info app=achgateway version=v0.4.1
 achgateway_1  | ts=2021-06-18T23:38:20Z msg="processing mergable directory foo" level=info app=achgateway version=v0.4.1 shardKey=foo
 achgateway_1  | ts=2021-06-18T23:38:20Z msg="found *upload.FTPTransferAgent agent" version=v0.4.1 shardKey=foo level=info app=achgateway

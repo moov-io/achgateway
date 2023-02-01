@@ -301,7 +301,7 @@ paths:
       requestBody:
         description: |
           List of shards to trigger cutoff processing for. If no shards are specified then all configured shards will be processed.
-        required: false
+        required: true
         content:
           application/json:
             schema:
@@ -415,13 +415,15 @@ components:
 
     TriggerRequest:
       properties:
-        ShardNames:
+        shardNames:
           type: array
           items:
             type: string
           example:
             - "SD-live"
             - "ND-live"
+      required:
+        - shardNames
 
     TriggerResponse:
       properties:

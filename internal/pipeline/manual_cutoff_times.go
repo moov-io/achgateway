@@ -19,6 +19,7 @@ package pipeline
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/moov-io/achgateway/internal/service"
@@ -55,6 +56,12 @@ func (fr *FileReceiver) triggerManualCutoff() http.HandlerFunc {
 
 		var body manualCutoffBody
 		json.NewDecoder(r.Body).Decode(&body)
+
+		// Reject the request if no shards are specified
+		if len(body.ShardNames) == 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 
 		responses := shardResponses{
 			Shards: make(map[string]*string),
@@ -102,7 +109,7 @@ func (fr *FileReceiver) triggerManualCutoff() http.HandlerFunc {
 
 func processManualCutoff(logger log.Logger, shardNames []string, shard service.Shard, xfagg *aggregator) (*manuallyTriggeredCutoff, error) {
 	if !exists(shardNames, shard.Name) {
-		return nil, nil
+		return nil, fmt.Errorf("unknown shard %s", shard.Name)
 	}
 
 	logger.Info().Log("found shard to manually trigger")
@@ -115,9 +122,6 @@ func processManualCutoff(logger log.Logger, shardNames []string, shard service.S
 }
 
 func exists(names []string, shardName string) bool {
-	if len(names) == 0 {
-		return true
-	}
 	for i := range names {
 		if names[i] == shardName {
 			return true

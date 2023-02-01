@@ -18,6 +18,7 @@
 package pipeline
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -36,7 +37,7 @@ func TestManualCutoffs_filter(t *testing.T) {
 	var reqNames []string
 	cfgName := "testing"
 
-	require.True(t, exists(reqNames, cfgName))
+	require.False(t, exists(reqNames, cfgName))
 
 	reqNames = append(reqNames, "live-odfi")
 	require.False(t, exists(reqNames, cfgName))
@@ -51,8 +52,11 @@ func TestFileReceiver__ManualCutoff(t *testing.T) {
 	router := mux.NewRouter()
 	router.Path("/trigger-cutoff").HandlerFunc(fr.triggerManualCutoff())
 
+	var buf bytes.Buffer
+	buf.WriteString(`{"shardNames":["testing"]}`)
+
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest("PUT", "/trigger-cutoff", nil)
+	req := httptest.NewRequest("PUT", "/trigger-cutoff", &buf)
 	router.ServeHTTP(w, req)
 
 	wg.Wait()
@@ -74,8 +78,11 @@ func TestFileReceiver__ManualCutoffErr(t *testing.T) {
 	router := mux.NewRouter()
 	router.Path("/trigger-cutoff").HandlerFunc(fr.triggerManualCutoff())
 
+	var buf bytes.Buffer
+	buf.WriteString(`{"shardNames":["testing"]}`)
+
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest("PUT", "/trigger-cutoff", nil)
+	req := httptest.NewRequest("PUT", "/trigger-cutoff", &buf)
 	router.ServeHTTP(w, req)
 
 	wg.Wait()
