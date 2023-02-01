@@ -93,6 +93,10 @@ func (fr *FileReceiver) reconnect() error {
 	return nil
 }
 
+func (fr *FileReceiver) ReplaceStreamFiles(sub stream.Subscription) {
+	fr.streamFiles = sub
+}
+
 func (fr *FileReceiver) Start(ctx context.Context) {
 	for {
 		// Create a context that will be shutdown by its parent or after a read iteration
@@ -183,7 +187,7 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub stream.Subscripti
 					return
 				}
 				// Bubble up some errors to alerting
-				if contains(err, "connect: ", "pubsub", "EOF") {
+				if contains(err, "connect: ", "write:", "broken pipe", "pubsub", "EOF") {
 					out <- err
 				}
 				fr.logger.LogErrorf("ERROR receiving message: %v", err)
