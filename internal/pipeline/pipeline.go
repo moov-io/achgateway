@@ -23,12 +23,11 @@ import (
 
 	"github.com/moov-io/achgateway/internal/consul"
 	"github.com/moov-io/achgateway/internal/events"
+	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/shards"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
-
-	"gocloud.dev/pubsub"
 )
 
 func Start(
@@ -37,7 +36,7 @@ func Start(
 	cfg *service.Config,
 	consul *consul.Client,
 	shardRepository shards.Repository,
-	httpFiles *pubsub.Subscription,
+	httpFiles stream.Subscription,
 ) (*FileReceiver, error) {
 
 	eventEmitter, err := events.NewEmitter(logger, cfg.Events)

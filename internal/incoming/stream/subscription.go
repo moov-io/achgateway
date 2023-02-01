@@ -27,7 +27,12 @@ import (
 	"gocloud.dev/pubsub"
 )
 
-func Subscription(logger log.Logger, cfg *service.Config) (*pubsub.Subscription, error) {
+type Subscription interface {
+	Receive(ctx context.Context) (*pubsub.Message, error)
+	Shutdown(ctx context.Context) error
+}
+
+func OpenSubscription(logger log.Logger, cfg *service.Config) (Subscription, error) {
 	if cfg.Inbound.InMem != nil {
 		sub, err := pubsub.OpenSubscription(context.Background(), cfg.Inbound.InMem.URL)
 		if err != nil {
