@@ -163,7 +163,7 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	}
 
 	// file pipeline
-	httpSub, err := stream.Subscription(env.Logger, inmemConfig)
+	httpSub, err := stream.OpenSubscription(env.Logger, inmemConfig)
 	if err != nil {
 		return env, fmt.Errorf("unable to create http files subscription: %v", err)
 	}

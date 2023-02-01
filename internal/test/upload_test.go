@@ -22,6 +22,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -172,6 +173,11 @@ func TestUploads(t *testing.T) {
 	go adminServer.Listen()
 	defer adminServer.Shutdown()
 	fileReceiver.RegisterAdminRoutes(adminServer)
+
+	// Force the stream subscription to fail
+	flakeySub := streamtest.FailingSubscription(errors.New("write: broken pipe"))
+	fileReceiver.ReplaceStreamFiles(flakeySub)
+	require.Contains(t, fmt.Sprintf("%#v", fileReceiver), "streamFiles:(*streamtest.FailedSubscription)")
 
 	// Upload our files
 	createdEntries := 0

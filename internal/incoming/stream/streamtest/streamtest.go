@@ -32,7 +32,7 @@ import (
 	"gocloud.dev/pubsub"
 )
 
-func InmemStream(t *testing.T) (*pubsub.Topic, *pubsub.Subscription) {
+func InmemStream(t *testing.T) (*pubsub.Topic, stream.Subscription) {
 	t.Helper()
 
 	n, _ := rand.Int(rand.Reader, big.NewInt(10000))
@@ -46,9 +46,25 @@ func InmemStream(t *testing.T) (*pubsub.Topic, *pubsub.Subscription) {
 	topic, err := stream.Topic(log.NewNopLogger(), conf)
 	require.NoError(t, err)
 
-	sub, err := stream.Subscription(log.NewNopLogger(), conf)
+	sub, err := stream.OpenSubscription(log.NewNopLogger(), conf)
 	require.NoError(t, err)
 	t.Cleanup(func() { sub.Shutdown(context.Background()) })
 
 	return topic, sub
+}
+
+type FailedSubscription struct {
+	Err error
+}
+
+func (s *FailedSubscription) Receive(ctx context.Context) (*pubsub.Message, error) {
+	return nil, s.Err
+}
+
+func (s *FailedSubscription) Shutdown(ctx context.Context) error {
+	return nil
+}
+
+func FailingSubscription(err error) *FailedSubscription {
+	return &FailedSubscription{Err: err}
 }

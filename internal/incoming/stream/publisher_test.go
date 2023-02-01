@@ -29,7 +29,7 @@ func TestStream(t *testing.T) {
 	require.NoError(t, err)
 	defer topic.Shutdown(ctx)
 
-	sub, err := Subscription(log.NewNopLogger(), cfg)
+	sub, err := OpenSubscription(log.NewNopLogger(), cfg)
 	require.NoError(t, err)
 	defer sub.Shutdown(ctx)
 
@@ -53,7 +53,7 @@ func send(ctx context.Context, t *pubsub.Topic, body string) *pubsub.Message {
 	return msg
 }
 
-func receive(ctx context.Context, t *pubsub.Subscription) (string, error) {
+func receive(ctx context.Context, t Subscription) (string, error) {
 	msg, err := t.Receive(ctx)
 	if err != nil {
 		return "", err

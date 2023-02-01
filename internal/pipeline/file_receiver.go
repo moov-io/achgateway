@@ -47,8 +47,8 @@ type FileReceiver struct {
 	shardRepository  shards.Repository
 	shardAggregators map[string]*aggregator
 
-	httpFiles   *pubsub.Subscription
-	streamFiles *pubsub.Subscription
+	httpFiles   stream.Subscription
+	streamFiles stream.Subscription
 
 	transformConfig *models.TransformConfig
 }
@@ -58,7 +58,7 @@ func newFileReceiver(
 	cfg *service.Config,
 	shardRepository shards.Repository,
 	shardAggregators map[string]*aggregator,
-	httpFiles *pubsub.Subscription,
+	httpFiles stream.Subscription,
 	transformConfig *models.TransformConfig,
 ) (*FileReceiver, error) {
 	// Create FileReceiver and connect streamFiles
@@ -79,17 +79,26 @@ func newFileReceiver(
 }
 
 func (fr *FileReceiver) reconnect() error {
+	// Close any existing subscription
 	if fr.streamFiles != nil {
 		fr.streamFiles.Shutdown(context.Background())
 	}
 
-	streamSub, err := stream.Subscription(fr.logger, fr.cfg)
+	streamSub, err := stream.OpenSubscription(fr.logger, fr.cfg)
 	if err != nil {
 		return fmt.Errorf("creating stream subscription: %v", err)
 	}
 	fr.streamFiles = streamSub
 
 	return nil
+}
+
+func (fr *FileReceiver) ReplaceStreamFiles(sub stream.Subscription) {
+	// Close an existing stream subscription
+	if fr.streamFiles != nil {
+		fr.streamFiles.Shutdown(context.Background())
+	}
+	fr.streamFiles = sub
 }
 
 func (fr *FileReceiver) Start(ctx context.Context) {
@@ -162,7 +171,7 @@ func (fr *FileReceiver) RegisterAdminRoutes(r *admin.Server) {
 
 // handleMessage will listen for an incoming.ACHFile to pass off to an aggregator for the shard
 // responsible. It does so with a database lookup and the fixed set of Shards from the file config.
-func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscription) chan error {
+func (fr *FileReceiver) handleMessage(ctx context.Context, sub stream.Subscription) chan error {
 	out := make(chan error, 1)
 	if sub == nil {
 		return out
@@ -182,7 +191,7 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub *pubsub.Subscript
 					return
 				}
 				// Bubble up some errors to alerting
-				if contains(err, "connect: ", "pubsub", "EOF") {
+				if contains(err, "connect: ", "write:", "broken pipe", "pubsub", "EOF") {
 					out <- err
 				}
 				fr.logger.LogErrorf("ERROR receiving message: %v", err)
