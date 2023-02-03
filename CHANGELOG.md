@@ -1,3 +1,15 @@
+## v0.17.7 (Released 2023-02-03)
+
+IMPROVEMENTS
+
+- pipeline: require shardNames when manually triggering cutoff windows
+- pipeline: attempt to reconnect stream subscriptions on network errors
+- test: verify we reconnect from flakey subscriptions
+
+BUILD
+
+- build: upgrade golang to 1.20
+
 ## v0.17.6 (Released 2023-01-13)
 
 Note: moov-io/ach version v1.28.0 does not preserve spaces in fields like `DFIAccountNumber`. Enable `PreserveSpaces: true` to restore this behavior.
