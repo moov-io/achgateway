@@ -132,7 +132,7 @@ func (xfagg *aggregator) Start(ctx context.Context) {
 			// Run our regular routines
 			if day.IsBankingDay {
 				if err := xfagg.withEachFile(day.Time); err != nil {
-					err = xfagg.logger.LogErrorf("merging files: %v", err).Err()
+					err = xfagg.logger.Error().LogErrorf("merging files: %v", err).Err()
 					xfagg.alertOnError(err)
 				}
 			}
