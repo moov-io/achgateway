@@ -54,7 +54,9 @@ func Start(
 
 		go xfagg.Start(ctx)
 
-		shardAggregators[cfg.Sharding.Shards[i].Name] = xfagg
+		shardName := cfg.Sharding.Shards[i].Name
+		shardAggregators[shardName] = xfagg
+		initializeShardMetrics(shardName)
 	}
 
 	// register our fileReceiver and start it

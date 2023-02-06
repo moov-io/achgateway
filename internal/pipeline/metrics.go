@@ -68,6 +68,15 @@ func init() {
 	streamFileProcessingErrors.With().Add(0)
 }
 
-func recordFileUploadError(shard string) {
-	uploadFilesErrors.With("shard", shard).Add(1)
+func recordFileUploadError(shardName string) {
+	uploadFilesErrors.With("shard", shardName).Add(1)
+}
+
+func initializeShardMetrics(shardName string) {
+	pendingFiles.With("shard", shardName).Add(0)
+	filesMissingShardAggregators.With("shard", shardName).Add(0)
+
+	uploadedFilesCounter.With("shard", shardName).Add(0)
+	uploadFilesErrors.With("shard", shardName).Add(0)
+
 }
