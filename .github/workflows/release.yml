@@ -150,7 +150,6 @@ jobs:
       run: make docker
 
     - name: Docker Push
-      if: github.repository == 'moov-io/achgateway'
       run: |+
           echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
           make docker-push
