@@ -228,7 +228,16 @@ func contains(err error, options ...string) bool {
 }
 
 func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
-	msg.Ack()
+	// AutoCommit is a setting which will acknowledge messages with the pubsub service
+	// immediately after receiving it. With this disabled messages are committed after
+	// successful processing.
+	//
+	// Uncommitted messages will be redelivered and reprocessed, which can delay or
+	// pause processing.
+	committed := fr.shouldAutocommit()
+	if committed {
+		msg.Ack()
+	}
 
 	data := msg.Body
 	var err error
@@ -252,6 +261,9 @@ func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 				"type": log.String(fmt.Sprintf("%T", evt)),
 			}).LogError(err).Err()
 		}
+		if !committed {
+			msg.Ack()
+		}
 		return nil
 
 	case *models.QueueACHFile:
@@ -262,6 +274,9 @@ func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 				"type": log.String(fmt.Sprintf("%T", evt)),
 			}).LogError(err).Err()
 		}
+		if !committed {
+			msg.Ack()
+		}
 		return nil
 
 	case *models.CancelACHFile:
@@ -271,11 +286,22 @@ func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 				"type": log.String(fmt.Sprintf("%T", evt)),
 			}).LogError(err).Err()
 		}
+		if !committed {
+			msg.Ack()
+		}
 		return nil
 	}
 
 	// Unhandled Message
 	return fr.wrappedErrorLogger(msg).LogError(errors.New("unhandled message")).Err()
+}
+
+func (fr *FileReceiver) shouldAutocommit() bool {
+	kafkaConfig := fr.cfg.Inbound.Kafka
+	if kafkaConfig == nil {
+		return false
+	}
+	return kafkaConfig.AutoCommit
 }
 
 func (fr *FileReceiver) wrappedErrorLogger(msg *pubsub.Message) log.Logger {
