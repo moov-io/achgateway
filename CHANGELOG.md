@@ -1,3 +1,31 @@
+## v0.18.0 (Released 2023-03-09)
+
+This release of achgateway uses the `.AutoCommit` configuration option to determine when messages are acknowledged.
+When enabled messages are acknowledged before processing. When disabled only successful messages are acknowledged.
+
+IMPROVEMENTS
+
+- pipeline: initialize shard metrics on startup
+- pipeline: error log merge errors
+- pipeline: Let .Autocommit determine when messages are committed
+
+BUILD
+
+- build: require Go 1.20.2 or newer in CI
+- build: remove docker push from standard Go build
+- update github.com/ProtonMail/go-crypto to v0.0.0-20230217124315-7d5c6f04bbb8
+- update github.com/Shopify/sarama to v1.38.1
+- update github.com/hashicorp/go-retryablehttp to v0.7.2
+- update github.com/moov-io/ach to v1.29.2
+- update github.com/moov-io/base to v0.39.0
+- update github.com/moov-io/cryptfs to v0.4.1
+- update github.com/rickar/cal/v2 to v2.1.12
+- update github.com/sethvargo/go-retry to v0.2.4
+- update github.com/slack-go/slack to v0.12.1
+- update github.com/stretchr/testify to v1.8.2
+- update golang.org/x/crypto to v0.7.0
+- update golang.org/x/text to v0.8.0
+
 ## v0.17.7 (Released 2023-02-03)
 
 IMPROVEMENTS
