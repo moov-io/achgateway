@@ -56,6 +56,24 @@ func testFileReceiver(t *testing.T) *FileReceiver {
 	return fileRec
 }
 
+func TestFileReceiver__shouldAutocommit(t *testing.T) {
+	fr := testFileReceiver(t)
+
+	// Ensure the setup is as we expect
+	require.Nil(t, fr.cfg.Inbound.Kafka)
+	require.False(t, fr.shouldAutocommit())
+
+	// Set a config with AutoCommit disabled
+	fr.cfg.Inbound.Kafka = &service.KafkaConfig{
+		AutoCommit: false,
+	}
+	require.False(t, fr.shouldAutocommit())
+
+	// Set .AutoCommit to true
+	fr.cfg.Inbound.Kafka.AutoCommit = true
+	require.True(t, fr.shouldAutocommit())
+}
+
 func TestFileReceiver__contains(t *testing.T) {
 	err := errors.New("pubsub (code=Unknown): write tcp 10.100.53.92:45360->12.132.211.32:2222: write: broken pipe")
 
