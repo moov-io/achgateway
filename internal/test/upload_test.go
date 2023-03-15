@@ -70,7 +70,7 @@ var (
 		},
 		Inbound: service.Inbound{
 			InMem: &service.InMemory{
-				URL: "mem://upload-test",
+				URL: "mem://upload-test?ackdeadline=1s",
 			},
 		},
 		Sharding: service.Sharding{
