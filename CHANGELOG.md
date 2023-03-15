@@ -1,3 +1,11 @@
+## v0.18.1 (Released 2023-03-15)
+
+IMPROVEMENTS
+
+- pipeline: cleanup "found %d matching ACH files" logs
+- pipeline: consistently check and reconnect on network errors
+- test: pass through ackdeadline for mem pubsub
+
 ## v0.18.0 (Released 2023-03-09)
 
 This release of achgateway uses the `.AutoCommit` configuration option to determine when messages are acknowledged.
