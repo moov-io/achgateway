@@ -36,6 +36,8 @@ import (
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/strx"
+
+	"golang.org/x/exp/maps"
 )
 
 // XferMerging represents logic for accepting ACH files to be merged together.
@@ -226,7 +228,9 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 	}
 
 	logger := m.logger.Set("shardName", log.String(m.shard.Name))
-	logger.Logf("found %d matching ACH files: %#v", len(matches), matches)
+
+	dirNames := strings.Join(directoryNames(matches), ", ")
+	logger.Logf("found %d matching ACH files in %v", len(matches), dirNames)
 
 	var files []*ach.File
 	var el base.ErrorList
@@ -326,6 +330,15 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 	}
 
 	return newProcessedFiles(m.shard.Name, matches), nil
+}
+
+func directoryNames(matches []string) []string {
+	out := make(map[string]int)
+	for i := range matches {
+		dir, _ := filepath.Split(matches[i])
+		out[dir] += 1
+	}
+	return maps.Keys(out)
 }
 
 func (m *filesystemMerging) saveMergedFile(dir string, file *ach.File) error {

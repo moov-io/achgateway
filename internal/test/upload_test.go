@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -70,7 +71,7 @@ var (
 		},
 		Inbound: service.Inbound{
 			InMem: &service.InMemory{
-				URL: "mem://upload-test",
+				URL: "mem://upload-test?ackdeadline=1s",
 			},
 		},
 		Sharding: service.Sharding{
@@ -182,6 +183,7 @@ func TestUploads(t *testing.T) {
 	// Upload our files
 	createdEntries := 0
 	canceledEntries := 0
+	erroredSubscriptions := 0
 	for i := 0; i < 1000; i++ {
 		shardKey := shardKeys[i%10]
 		fileID := base.ID()
@@ -191,6 +193,13 @@ func TestUploads(t *testing.T) {
 		require.Equal(t, http.StatusOK, w.Code)
 
 		canceledEntries += maybeCancelFile(t, r, shardKey, fileID, file)
+
+		// Force the subscription to fail sometimes
+		if err := causeSubscriptionFailure(t); err != nil {
+			flakeySub := streamtest.FailingSubscription(err)
+			fileReceiver.ReplaceStreamFiles(flakeySub)
+			erroredSubscriptions += 1
+		}
 	}
 
 	t.Logf("created %d entries and canceled %d entries", createdEntries, canceledEntries)
@@ -215,7 +224,7 @@ func TestUploads(t *testing.T) {
 
 	expected := createdEntries - canceledEntries
 	found := countAllEntries(createdFiles)
-	t.Logf("found %d entries of %d expected (%d canceled)", found, expected, canceledEntries)
+	t.Logf("found %d entries of %d expected (%d canceled) (%d errored)", found, expected, canceledEntries, erroredSubscriptions)
 	require.Equal(t, found, expected)
 }
 
@@ -380,4 +389,21 @@ func cancelFile(t *testing.T, r *mux.Router, shardKey, fileID string) {
 	r.ServeHTTP(w, req)
 
 	require.Equal(t, http.StatusOK, w.Code)
+}
+
+var subscriptionFailures = []error{
+	io.EOF,
+	errors.New("write: broken pipe"),
+	errors.New("contains: pubsub error"),
+}
+
+func causeSubscriptionFailure(t *testing.T) error {
+	t.Helper()
+
+	n := rand.Int63n(100) //nolint:gosec
+	if n%25 == 0 {
+		idx := (len(subscriptionFailures) - 1) % (int(n) + 1)
+		return subscriptionFailures[idx]
+	}
+	return nil
 }
