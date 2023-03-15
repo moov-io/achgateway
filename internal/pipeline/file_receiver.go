@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/incoming/stream"
@@ -41,6 +42,7 @@ import (
 type FileReceiver struct {
 	logger log.Logger
 	cfg    *service.Config
+	mu     sync.RWMutex
 
 	defaultShardName string
 
@@ -79,6 +81,9 @@ func newFileReceiver(
 }
 
 func (fr *FileReceiver) reconnect() error {
+	fr.mu.Lock()
+	defer fr.mu.Unlock()
+
 	// Close any existing subscription
 	if fr.streamFiles != nil {
 		fr.streamFiles.Shutdown(context.Background())
@@ -94,6 +99,9 @@ func (fr *FileReceiver) reconnect() error {
 }
 
 func (fr *FileReceiver) ReplaceStreamFiles(sub stream.Subscription) {
+	fr.mu.Lock()
+	defer fr.mu.Unlock()
+
 	// Close an existing stream subscription
 	if fr.streamFiles != nil {
 		fr.streamFiles.Shutdown(context.Background())
@@ -121,7 +129,7 @@ func (fr *FileReceiver) Start(ctx context.Context) {
 				fr.logger.LogErrorf("error handling stream file: %v", err)
 
 				// Attempt to reconnect under some conditions
-				if contains(err, "write: broken pipe") {
+				if isNetworkError(err) {
 					fr.logger.Info().Log("attempt to reconnect to stream subscription")
 					if err := fr.reconnect(); err != nil {
 						fr.logger.LogErrorf("unable to reconnect stream subscription: %v", err)
@@ -172,6 +180,9 @@ func (fr *FileReceiver) RegisterAdminRoutes(r *admin.Server) {
 // handleMessage will listen for an incoming.ACHFile to pass off to an aggregator for the shard
 // responsible. It does so with a database lookup and the fixed set of Shards from the file config.
 func (fr *FileReceiver) handleMessage(ctx context.Context, sub stream.Subscription) chan error {
+	fr.mu.RLock()
+	defer fr.mu.RUnlock()
+
 	out := make(chan error, 1)
 	if sub == nil {
 		return out
@@ -191,8 +202,9 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub stream.Subscripti
 					return
 				}
 				// Bubble up some errors to alerting
-				if contains(err, "connect: ", "write:", "broken pipe", "pubsub", "EOF") {
+				if isNetworkError(err) {
 					out <- err
+					return
 				}
 				fr.logger.LogErrorf("ERROR receiving message: %v", err)
 			}
@@ -215,6 +227,10 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub stream.Subscripti
 		}
 	}()
 	return out
+}
+
+func isNetworkError(err error) bool {
+	return contains(err, "connect: ", "write:", "broken pipe", "pubsub", "EOF")
 }
 
 func contains(err error, options ...string) bool {
