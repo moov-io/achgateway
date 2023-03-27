@@ -174,7 +174,7 @@ func (s *PeriodicScheduler) tick(shard *service.Shard) error {
 	}
 
 	// Run each processor over the files
-	if err := ProcessFiles(dl, auditSaver, s.processors); err != nil {
+	if err := ProcessFiles(dl, auditSaver, s.processors, agent); err != nil {
 		return fmt.Errorf("ERROR: processing files: %v", err)
 	}
 
