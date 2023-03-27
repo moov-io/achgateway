@@ -1,3 +1,11 @@
+## v0.18.2 (Released 2023-03-27)
+
+IMPROVEMENTS
+
+- docs: mention using absolute paths for upload agents
+- fix: support nested inbound directory structures
+- fix: adjusting implementation to be more explicit about supported folder processing
+
 ## v0.18.1 (Released 2023-03-15)
 
 IMPROVEMENTS
