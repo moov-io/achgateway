@@ -20,7 +20,7 @@ Specify the `Transform.Encryption` config on [Inbound files](../../config/#inbou
 
 ## Upload Agents
 
-Use TLS when connecting to upload agents. Use strong passwords and/or keys with remote FTP/SFTP servers. Verfiy DNS records resolve to expected IPs.
+Use TLS when connecting to upload agents. Use strong passwords and/or keys with remote FTP/SFTP servers. Verify DNS records resolve to expected IPs. Absolute filesystem paths are recommended over relative paths.
 
 ## Audit Trail
 

@@ -266,6 +266,8 @@ ACHGateway:
         [ SkipDirectoryCreation: <boolean> | default = false ]
       Paths:
         # These paths point to directories on the remote FTP/SFTP server.
+        # It is recommended to use absolute paths (e.g. /home/user/outbound/)
+        # where possible to correctly identify filesystem locations.
         Inbound: <filename>
         Outbound: <filename>
         Reconciliation: <filename>
