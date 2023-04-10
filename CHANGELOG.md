@@ -1,3 +1,17 @@
+## v0.19.0 (Released 2023-04-10)
+
+IMPROVEMENTS
+
+- events: allow inmem stream for emitter
+- feat: add models.ReadWithOpts for events
+- test: verify odfi processor handles files with mixed returns and corrections
+
+BUILD
+
+- chore: update github.com/moov-io/ach to v1.30.0
+- chore: update github.com/moov-io/base to v0.40.1
+- chore: update github.com/rickar/cal/v2 to v2.1.13
+
 ## v0.18.2 (Released 2023-03-27)
 
 IMPROVEMENTS
