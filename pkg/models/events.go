@@ -53,40 +53,65 @@ func (evt Event) MarshalJSON() ([]byte, error) {
 
 // Read will unmarshal an event and return the wrapper for it.
 func Read(data []byte) (*Event, error) {
+	return ReadWithOpts(data, &ach.ValidateOpts{})
+}
+
+// ReadWithOpts will unmarshal an event with ACH Validation Options
+func ReadWithOpts(data []byte, opts *ach.ValidateOpts) (*Event, error) {
 	var eventType struct {
-		Type string `json:"type"`
+		Type  string          `json:"type"`
+		Event json.RawMessage `json:"event"`
 	}
 	err := json.Unmarshal(data, &eventType)
 	if err != nil {
 		return nil, fmt.Errorf("reading type: %v", err)
 	}
 
-	var evt interface{}
-	switch eventType.Type {
-	case "CorrectionFile":
-		evt = &CorrectionFile{}
-	case "IncomingFile":
-		evt = &IncomingFile{}
-	case "PrenoteFile":
-		evt = &PrenoteFile{}
-	case "ReconciliationFile":
-		evt = &ReconciliationFile{}
-	case "ReturnFile":
-		evt = &ReturnFile{}
-	case "ACHFile", "QueueACHFile":
-		evt = &QueueACHFile{}
-	case "CancelACHFile":
-		evt = &CancelACHFile{}
+	event := &Event{
+		Type: eventType.Type,
 	}
 
-	err = ReadEvent(data, evt)
-	if err != nil {
-		return nil, fmt.Errorf("reading event: %v", err)
+	switch eventType.Type {
+	case "CorrectionFile":
+		var file CorrectionFile
+		file.SetValidation(opts)
+		event.Event = &file
+
+	case "IncomingFile":
+		var file IncomingFile
+		file.SetValidation(opts)
+		event.Event = &file
+
+	case "PrenoteFile":
+		var file PrenoteFile
+		file.SetValidation(opts)
+		event.Event = &file
+
+	case "ReconciliationFile":
+		var file ReconciliationFile
+		file.SetValidation(opts)
+		event.Event = &file
+
+	case "ReturnFile":
+		var file ReturnFile
+		file.SetValidation(opts)
+		event.Event = &file
+
+	case "ACHFile", "QueueACHFile":
+		var file QueueACHFile
+		file.SetValidation(opts)
+		event.Event = &file
+
+	case "CancelACHFile":
+		var file CancelACHFile
+		event.Event = &file
 	}
-	return &Event{
-		Event: evt,
-		Type:  eventType.Type,
-	}, nil
+
+	err = json.Unmarshal(eventType.Event, event.Event)
+	if err != nil {
+		err = fmt.Errorf("reading %s failed: %w", eventType.Type, err)
+	}
+	return event, err
 }
 
 // ReadEvent will unmarshal the event, but assumes the event type is known by the caller.
