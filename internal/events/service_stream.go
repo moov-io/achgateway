@@ -19,6 +19,7 @@ package events
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/moov-io/achgateway/internal/incoming/stream"
@@ -35,14 +36,24 @@ type streamService struct {
 	topic           *pubsub.Topic
 }
 
-func newStreamService(logger log.Logger, transformConfig *models.TransformConfig, cfg *service.KafkaConfig) (*streamService, error) {
-	topic, err := stream.Topic(logger, &service.Config{
-		Inbound: service.Inbound{
-			Kafka: cfg,
-		},
-	})
+func newStreamService(logger log.Logger, transformConfig *models.TransformConfig, cfg *service.EventsStream) (*streamService, error) {
+	if cfg == nil {
+		return nil, errors.New("nil EventsStream config")
+	}
+
+	topicConf := &service.Config{
+		Inbound: service.Inbound{},
+	}
+	if cfg.InMem != nil {
+		topicConf.Inbound.InMem = cfg.InMem
+	}
+	if cfg.Kafka != nil {
+		topicConf.Inbound.Kafka = cfg.Kafka
+	}
+
+	topic, err := stream.Topic(logger, topicConf)
 	if err != nil {
-		return nil, fmt.Errorf("events stream: %v", err)
+		return nil, fmt.Errorf("%T events stream: %v", topicConf.Inbound, err)
 	}
 	return &streamService{
 		topic:           topic,
