@@ -34,9 +34,7 @@ func NewEmitter(logger log.Logger, cfg *service.EventsConfig) (Emitter, error) {
 		return &MockEmitter{}, nil
 	}
 	if cfg.Stream != nil {
-		if cfg.Stream.Kafka != nil {
-			return newStreamService(logger, cfg.Transform, cfg.Stream.Kafka)
-		}
+		return newStreamService(logger, cfg.Transform, cfg.Stream)
 	}
 	if cfg.Webhook != nil {
 		return newWebhookService(logger, cfg.Transform, cfg.Webhook)

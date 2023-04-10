@@ -43,6 +43,7 @@ func (cfg *EventsConfig) Validate() error {
 }
 
 type EventsStream struct {
+	InMem *InMemory
 	Kafka *KafkaConfig
 }
 
