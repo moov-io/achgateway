@@ -18,13 +18,20 @@
 package odfi
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/audittrail"
+	"github.com/moov-io/achgateway/internal/events"
+	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/pkg/models"
+	"github.com/moov-io/base/log"
+
 	"github.com/stretchr/testify/require"
+	"gocloud.dev/pubsub"
 )
 
 func TestProcessor(t *testing.T) {
@@ -66,4 +73,84 @@ func TestProcessor_populateHashes(t *testing.T) {
 
 	entries := file.Batches[0].GetEntries()
 	require.Equal(t, "389723d3a8293a802169b5db27f288d32e96b9c6", entries[0].ID)
+}
+
+func TestProcessor_MultiReturnCorrection(t *testing.T) {
+	cfg := service.ODFIFiles{
+		Processors: service.ODFIProcessors{
+			Corrections: service.ODFICorrections{
+				Enabled: true,
+			},
+			Returns: service.ODFIReturns{
+				Enabled: true,
+			},
+		},
+	}
+	logger := log.NewTestLogger()
+	eventsConfig := &service.EventsConfig{
+		Stream: &service.EventsStream{
+			InMem: &service.InMemory{
+				URL: "mem://odfi-multi-ret-cor",
+			},
+		},
+	}
+	emitter, err := events.NewEmitter(logger, eventsConfig)
+	require.NoError(t, err)
+
+	processors := SetupProcessors(
+		ReturnEmitter(logger, cfg.Processors.Returns, emitter),
+		CorrectionEmitter(logger, cfg.Processors.Corrections, emitter),
+	)
+
+	file, err := ach.ReadFile(filepath.Join("testdata", "return-no-batch-controls.ach"))
+	require.ErrorContains(t, err, ach.ErrFileHeader.Error())
+	require.Len(t, file.Batches, 2)
+
+	// Setup consumer prior to sending messages
+	ctx := context.Background()
+	sub, err := pubsub.OpenSubscription(ctx, eventsConfig.Stream.InMem.URL)
+	require.NoError(t, err)
+
+	// Process ACH file
+	err = processors.HandleAll(File{
+		ACHFile: file,
+	})
+	require.NoError(t, err)
+
+	// Consume events
+	var correction *models.CorrectionFile
+	var returned *models.ReturnFile
+	for i := 0; i < 2; i++ {
+		msg, err := sub.Receive(ctx)
+		require.NoError(t, err)
+
+		evt, _ := models.ReadWithOpts(msg.Body, &ach.ValidateOpts{
+			AllowMissingFileHeader:  true,
+			AllowMissingFileControl: true,
+		})
+		require.NotNil(t, evt)
+
+		switch e := evt.Event.(type) {
+		case *models.CorrectionFile:
+			correction = e
+		case *models.ReturnFile:
+			returned = e
+		}
+	}
+
+	require.NotNil(t, correction)
+	require.Len(t, correction.Corrections, 1)
+	cor := correction.Corrections[0]
+	require.Equal(t, "121042882", cor.Header.CompanyIdentification)
+	require.Len(t, cor.Entries, 1)
+	require.NotNil(t, cor.Entries[0].Addenda98)
+	require.Nil(t, cor.Entries[0].Addenda99)
+
+	require.NotNil(t, returned)
+	require.Len(t, returned.Returns, 1)
+	ret := returned.Returns[0]
+	require.Equal(t, "123456789", ret.Header.CompanyIdentification)
+	require.Len(t, ret.Entries, 1)
+	require.Nil(t, ret.Entries[0].Addenda98)
+	require.NotNil(t, ret.Entries[0].Addenda99)
 }
