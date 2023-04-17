@@ -128,8 +128,9 @@ func processFile(path string, auditSaver *AuditSaver, fileProcessors Processors)
 
 	reader := ach.NewReader(bytes.NewReader(bs))
 	reader.SetValidation(&ach.ValidateOpts{
-		AllowMissingFileHeader:  true,
-		AllowMissingFileControl: true,
+		AllowMissingFileControl:    true,
+		AllowMissingFileHeader:     true,
+		AllowUnorderedBatchNumbers: true,
 	})
 
 	file, err := reader.Read()
