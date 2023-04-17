@@ -25,13 +25,9 @@ func OpenTopic(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Topic, erro
 	config.Net.SASL.User = cfg.Key
 	config.Net.SASL.Password = cfg.Secret
 
-	// AutoCommit in Sarama refers to "automated publishing of consumer offsets
-	// to the broker" rather than a Kafka broker's meaning of "commit consumer
-	// offsets on read" which leads to "at-most-once" delivery.
-	config.Consumer.Offsets.AutoCommit.Enable = cfg.AutoCommit
-
-	config.Consumer.Offsets.Initial = sarama.OffsetNewest
-	config.Consumer.IsolationLevel = sarama.ReadCommitted
+	if cfg.Producer.MaxMessageBytes > 0 {
+		config.Producer.MaxMessageBytes = cfg.Producer.MaxMessageBytes
+	}
 
 	logger.Info().
 		Set("tls", log.Bool(cfg.TLS)).

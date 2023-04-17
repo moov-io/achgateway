@@ -100,6 +100,9 @@ ACHGateway:
         Encryption:
           AES:
             [ Key: <string> | default = "" ]
+      Consumer: {}
+      Producer:
+        [ MaxMessageBytes: <number> | default = 1000000 ]
     ODFI:
       Audit:
         ID: <string>
