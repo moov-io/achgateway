@@ -30,6 +30,7 @@ import (
 
 	"github.com/go-kit/kit/metrics/prometheus"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -93,22 +94,27 @@ func (pc *prenoteEmitter) Handle(file File) error {
 		}
 	}
 	if len(batches) > 0 {
-		pc.sendEvent(models.PrenoteFile{
-			Filename: filepath.Base(file.Filepath),
-			File:     file.ACHFile,
-			Batches:  batches,
+		g := new(errgroup.Group)
+		g.Go(func() error {
+			return pc.sendEvent(models.PrenoteFile{
+				Filename: filepath.Base(file.Filepath),
+				File:     file.ACHFile,
+				Batches:  batches,
+			})
 		})
+		return g.Wait()
 	}
 	return nil
 }
 
-func (pc *prenoteEmitter) sendEvent(event interface{}) {
+func (pc *prenoteEmitter) sendEvent(event interface{}) error {
 	if pc.svc != nil {
 		err := pc.svc.Send(models.Event{Event: event})
 		if err != nil {
-			pc.logger.Logf("error sending pre-note event: %v", err)
+			return fmt.Errorf("sending pre-note event: %w", err)
 		}
 	}
+	return nil
 }
 
 func isPrenoteFile(file File) bool {

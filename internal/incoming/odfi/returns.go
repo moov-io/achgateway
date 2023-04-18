@@ -107,15 +107,15 @@ func (pc *returnEmitter) Handle(file File) error {
 			}).Log(fmt.Sprintf("odfi: return batch %d entry %d code %s", i, j, returnCode.Code))
 		}
 	}
-	pc.sendEvent(msg)
-	return nil
+	return pc.sendEvent(msg)
 }
 
-func (pc *returnEmitter) sendEvent(event interface{}) {
+func (pc *returnEmitter) sendEvent(event interface{}) error {
 	if pc.svc != nil {
 		err := pc.svc.Send(models.Event{Event: event})
 		if err != nil {
-			pc.logger.Logf("error sending return event: %v", err)
+			return fmt.Errorf("sending return event: %w", err)
 		}
 	}
+	return nil
 }

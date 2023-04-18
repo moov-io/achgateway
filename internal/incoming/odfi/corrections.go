@@ -107,15 +107,15 @@ func (pc *correctionProcessor) Handle(file File) error {
 			}).Log(fmt.Sprintf("odfi: correction batch %d entry %d code %s", i, j, changeCode.Code))
 		}
 	}
-	pc.sendEvent(msg)
-	return nil
+	return pc.sendEvent(msg)
 }
 
-func (pc *correctionProcessor) sendEvent(event interface{}) {
+func (pc *correctionProcessor) sendEvent(event interface{}) error {
 	if pc.svc != nil {
 		err := pc.svc.Send(models.Event{Event: event})
 		if err != nil {
-			pc.logger.Logf("error sending correction event: %v", err)
+			return fmt.Errorf("sending correction event: %w", err)
 		}
 	}
+	return nil
 }
