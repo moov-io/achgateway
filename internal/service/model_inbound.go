@@ -78,7 +78,20 @@ type KafkaConfig struct {
 	// offsets on read" which leads to "at-most-once" delivery.
 	AutoCommit bool
 
+	Consumer KafkaConsumerConfig
+	Producer KafkaProducerConfig
+
 	Transform *models.TransformConfig
+}
+
+// KafkaConsumerConfig represents config options from sarama's Config.Consumer type.
+// When these fields are non-zero values they will be set on the pubsub Subscription
+type KafkaConsumerConfig struct{}
+
+// KafkaProducerConfig represents config options from sarama's Config.Producer type.
+// When these fields are non-zero values they will be set on the pubsub Topic
+type KafkaProducerConfig struct {
+	MaxMessageBytes int
 }
 
 func (cfg *KafkaConfig) Validate() error {
