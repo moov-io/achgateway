@@ -1,3 +1,15 @@
+## v0.20.0 (Released 2023-04-18)
+
+IMPROVEMENTS
+
+- build: update github.com/moov-io/ach to v1.31.0
+- feat: start supporting more kafka producer options
+- odfi: allow unordered batches
+
+BUILD
+
+- docs: update gems
+
 ## v0.19.0 (Released 2023-04-10)
 
 IMPROVEMENTS
