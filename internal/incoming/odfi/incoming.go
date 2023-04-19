@@ -18,6 +18,7 @@
 package odfi
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -75,19 +76,19 @@ func (pc *incomingEmitter) Handle(file File) error {
 		"filepath": log.String(file.Filepath),
 	}).Log("emitting IncomingFile event")
 
-	pc.sendEvent(models.IncomingFile{
+	err := pc.sendEvent(models.IncomingFile{
 		Filename: filepath.Base(file.Filepath),
 		File:     file.ACHFile,
 	})
-
-	return nil
+	return err
 }
 
-func (pc *incomingEmitter) sendEvent(event interface{}) {
+func (pc *incomingEmitter) sendEvent(event interface{}) error {
 	if pc.svc != nil {
 		err := pc.svc.Send(models.Event{Event: event})
 		if err != nil {
-			pc.logger.Logf("error sending pre-note event: %v", err)
+			return fmt.Errorf("sending incoming file event: %w", err)
 		}
 	}
+	return nil
 }

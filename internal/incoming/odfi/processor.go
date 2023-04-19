@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/moov-io/ach"
+	"github.com/moov-io/achgateway/internal/alerting"
 	"github.com/moov-io/achgateway/internal/upload"
 	"github.com/moov-io/base"
 
@@ -82,12 +83,12 @@ func (pcs Processors) HandleAll(file File) error {
 	return el
 }
 
-func ProcessFiles(dl *downloadedFiles, auditSaver *AuditSaver, fileProcessors Processors, agent upload.Agent) error {
+func ProcessFiles(dl *downloadedFiles, alerters alerting.Alerters, auditSaver *AuditSaver, fileProcessors Processors, agent upload.Agent) error {
 	var el base.ErrorList
 
 	for _, processingPath := range []string{agent.InboundPath(), agent.ReconciliationPath(), agent.ReturnPath()} {
 		where := filepath.Join(dl.dir, processingPath)
-		if err := processDir(where, auditSaver, fileProcessors); err != nil {
+		if err := processDir(where, alerters, auditSaver, fileProcessors); err != nil {
 			el.Add(fmt.Errorf("processDir %s: %v", where, err))
 		}
 	}
@@ -98,7 +99,7 @@ func ProcessFiles(dl *downloadedFiles, auditSaver *AuditSaver, fileProcessors Pr
 	return el
 }
 
-func processDir(dir string, auditSaver *AuditSaver, fileProcessors Processors) error {
+func processDir(dir string, alerters alerting.Alerters, auditSaver *AuditSaver, fileProcessors Processors) error {
 	infos, err := os.ReadDir(dir)
 	if err != nil {
 		return fmt.Errorf("reading %s: %v", dir, err)
@@ -108,7 +109,7 @@ func processDir(dir string, auditSaver *AuditSaver, fileProcessors Processors) e
 	for _, info := range infos {
 		where := filepath.Join(dir, info.Name())
 
-		if err := processFile(where, auditSaver, fileProcessors); err != nil {
+		if err := processFile(where, alerters, auditSaver, fileProcessors); err != nil {
 			el.Add(err)
 		}
 	}
@@ -119,7 +120,7 @@ func processDir(dir string, auditSaver *AuditSaver, fileProcessors Processors) e
 	return el
 }
 
-func processFile(path string, auditSaver *AuditSaver, fileProcessors Processors) error {
+func processFile(path string, alerters alerting.Alerters, auditSaver *AuditSaver, fileProcessors Processors) error {
 	bs, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("problem opening %s: %v", path, err)
@@ -162,6 +163,10 @@ func processFile(path string, auditSaver *AuditSaver, fileProcessors Processors)
 		ACHFile:  &file,
 	})
 	if err != nil {
+		alertErr := alerters.AlertError(err)
+		if err != nil {
+			return fmt.Errorf("problem alerting on error: %w", alertErr)
+		}
 		return fmt.Errorf("processing %s error: %v", path, err)
 	}
 

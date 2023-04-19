@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/moov-io/ach"
+	"github.com/moov-io/achgateway/internal/alerting"
 	"github.com/moov-io/achgateway/internal/audittrail"
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/service"
@@ -45,11 +46,12 @@ func TestProcessor(t *testing.T) {
 		storage:  &audittrail.MockStorage{},
 		hostname: "ftp.foo.com",
 	}
+	alerters, _ := alerting.NewAlerters(service.ErrorAlerting{})
 
 	// By reading a file without ACH FileHeaders we still want to try and process
 	// Batches inside of it if any are found, so reading this kind of file shouldn't
 	// return an error from reading the file.
-	err = processDir(dir, auditSaver, processors)
+	err = processDir(dir, alerters, auditSaver, processors)
 	require.NoError(t, err)
 
 	require.NotNil(t, proc.HandledFile)
@@ -58,7 +60,7 @@ func TestProcessor(t *testing.T) {
 
 	// Real world file
 	path := filepath.Join("..", "..", "..", "testdata", "HMBRAD_ACHEXPORT_1001_08_19_2022_09_10")
-	err = processFile(path, auditSaver, processors)
+	err = processFile(path, alerters, auditSaver, processors)
 	if err != nil {
 		require.ErrorContains(t, err, "record:FileHeader *ach.FieldError FileCreationDate  is a mandatory field")
 	}

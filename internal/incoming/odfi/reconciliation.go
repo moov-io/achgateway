@@ -19,6 +19,7 @@ package odfi
 
 import (
 	"errors"
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -29,6 +30,7 @@ import (
 
 	"github.com/go-kit/kit/metrics/prometheus"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -110,20 +112,25 @@ func (pc *creditReconciliation) Handle(file File) error {
 		}
 	}
 	if len(recons) > 0 {
-		pc.sendEvent(models.ReconciliationFile{
-			Filename:        filepath.Base(file.Filepath),
-			File:            file.ACHFile,
-			Reconciliations: recons,
+		g := new(errgroup.Group)
+		g.Go(func() error {
+			return pc.sendEvent(models.ReconciliationFile{
+				Filename:        filepath.Base(file.Filepath),
+				File:            file.ACHFile,
+				Reconciliations: recons,
+			})
 		})
+		return g.Wait()
 	}
 	return nil
 }
 
-func (pc *creditReconciliation) sendEvent(event interface{}) {
+func (pc *creditReconciliation) sendEvent(event interface{}) error {
 	if pc.svc != nil {
 		err := pc.svc.Send(models.Event{Event: event})
 		if err != nil {
-			pc.logger.Logf("error sending reconciliations event: %v", err)
+			return fmt.Errorf("sending reconciliations event: %w", err)
 		}
 	}
+	return nil
 }
