@@ -26,6 +26,7 @@ import (
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/incoming"
+	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/compliance"
 	"github.com/moov-io/achgateway/pkg/models"
@@ -35,7 +36,7 @@ import (
 	"gocloud.dev/pubsub"
 )
 
-func NewFilesController(logger log.Logger, cfg service.HTTPConfig, pub *pubsub.Topic) *FilesController {
+func NewFilesController(logger log.Logger, cfg service.HTTPConfig, pub stream.Publisher) *FilesController {
 	return &FilesController{
 		logger:    logger,
 		cfg:       cfg,
@@ -46,7 +47,7 @@ func NewFilesController(logger log.Logger, cfg service.HTTPConfig, pub *pubsub.T
 type FilesController struct {
 	logger    log.Logger
 	cfg       service.HTTPConfig
-	publisher *pubsub.Topic
+	publisher stream.Publisher
 }
 
 func (c *FilesController) AppendRoutes(router *mux.Router) *mux.Router {

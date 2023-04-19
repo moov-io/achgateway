@@ -19,7 +19,9 @@ package stream
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/Shopify/sarama"
 	"github.com/moov-io/achgateway/internal/kafka"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
@@ -47,7 +49,31 @@ func OpenSubscription(logger log.Logger, cfg *service.Config) (Subscription, err
 			return nil, err
 		}
 		logger.Info().Logf("setup %T kafka subscription", sub)
-		return sub, nil
+		return &kafkaSubscription{sub: sub}, nil
 	}
 	return nil, nil
+}
+
+type kafkaSubscription struct {
+	sub *pubsub.Subscription
+}
+
+func (ks *kafkaSubscription) Receive(ctx context.Context) (*pubsub.Message, error) {
+	msg, err := ks.sub.Receive(ctx)
+	if err != nil {
+		var consumerError sarama.ConsumerError
+		if ks.sub.ErrorAs(err, &consumerError) {
+			return msg, fmt.Errorf("consumer error receiving message: %w", consumerError)
+		}
+		var consumerErrors sarama.ConsumerErrors
+		if ks.sub.ErrorAs(err, &consumerErrors) {
+			return msg, fmt.Errorf("consumer errors receiving message: %w", consumerErrors)
+		}
+		return msg, fmt.Errorf("error receiving message: %w", err)
+	}
+	return msg, nil
+}
+
+func (ks *kafkaSubscription) Shutdown(ctx context.Context) error {
+	return ks.sub.Shutdown(ctx)
 }
