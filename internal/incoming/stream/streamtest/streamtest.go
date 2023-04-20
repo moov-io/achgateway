@@ -32,7 +32,7 @@ import (
 	"gocloud.dev/pubsub"
 )
 
-func InmemStream(t *testing.T) (*pubsub.Topic, stream.Subscription) {
+func InmemStream(t *testing.T) (stream.Publisher, stream.Subscription) {
 	t.Helper()
 
 	n, _ := rand.Int(rand.Reader, big.NewInt(10000))

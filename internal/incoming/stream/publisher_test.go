@@ -44,7 +44,7 @@ func TestStream(t *testing.T) {
 	}
 }
 
-func send(ctx context.Context, t *pubsub.Topic, body string) *pubsub.Message {
+func send(ctx context.Context, t Publisher, body string) *pubsub.Message {
 	msg := &pubsub.Message{
 		Body:     []byte(body),
 		Metadata: make(map[string]string),

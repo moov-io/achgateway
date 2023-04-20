@@ -33,7 +33,7 @@ import (
 
 type streamService struct {
 	transformConfig *models.TransformConfig
-	topic           *pubsub.Topic
+	topic           stream.Publisher
 }
 
 func newStreamService(logger log.Logger, transformConfig *models.TransformConfig, cfg *service.EventsStream) (*streamService, error) {
@@ -70,7 +70,7 @@ func (ss *streamService) Send(evt models.Event) error {
 		Body: bs,
 	})
 	if err != nil {
-		return fmt.Errorf("error emitting %s: %v", evt.Type, err)
+		return fmt.Errorf("error emitting %s: %w", evt.Type, err)
 	}
 	return nil
 }
