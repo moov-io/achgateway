@@ -5,8 +5,10 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/PagerDuty/go-pagerduty"
@@ -22,6 +24,9 @@ func NewPagerDutyAlerter(cfg *service.PagerDutyAlerting) (*PagerDuty, error) {
 	notifier := &PagerDuty{
 		client:     pagerduty.NewClient(cfg.ApiKey),
 		routingKey: cfg.RoutingKey,
+	}
+	if notifier.client != nil {
+		notifier.client.SetDebugFlag(pagerduty.DebugCaptureLastResponse)
 	}
 	if err := notifier.ping(); err != nil {
 		return nil, err
@@ -69,9 +74,20 @@ func (pd *PagerDuty) AlertError(e error) error {
 	}
 
 	ctx := context.Background()
-	_, err = pd.client.ManageEventWithContext(ctx, event)
+	v2EventResponse, err := pd.client.ManageEventWithContext(ctx, event)
 	if err != nil {
-		return fmt.Errorf("creating event in PagerDuty: %v", err)
+		var httpRespBody []byte
+		httpResp, _ := pd.client.LastAPIResponse()
+		if httpResp != nil && httpResp.Body != nil {
+			httpRespBody, _ = io.ReadAll(httpResp.Body)
+		}
+		var outErr error
+		if v2EventResponse != nil {
+			outErr = fmt.Errorf("%s problem creating PagerDuty event caused by %s: %s", v2EventResponse.Status, v2EventResponse.Message, strings.Join(v2EventResponse.Errors, ", "))
+		} else {
+			outErr = fmt.Errorf("unexpected response of %s from creating event in PagerDuty: %v", string(httpRespBody), err)
+		}
+		return outErr
 	}
 
 	return nil
