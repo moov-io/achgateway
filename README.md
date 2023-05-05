@@ -33,8 +33,7 @@ We publish a [public Docker image `moov/achgateway`](https://hub.docker.com/r/mo
 
 Start achgateway and an FTP server:
 ```
-$ cd ./examples/getting-started/
-
+# Inside of ./examples/getting-started/
 $ docker-compose up achgateway
 ...
 achgateway_1  | ts=2021-06-18T23:38:06Z msg="public listening on :8484" version=v0.4.1 level=info app=achgateway
@@ -59,7 +58,7 @@ achgateway_1  | ts=2021-06-18T23:38:16Z msg="finished handling ACHFile=f4" level
 
 Initiate cutoff time processing (aka upload to your ODFI):
 ```
-$ curl -XPUT "http://localhost:9494/trigger-cutoff" --data '{"shardNames":["foo"]}'
+$ curl -XPUT "http://localhost:9494/trigger-cutoff" --data '{"shardNames":["testing"]}'
 achgateway_1  | ts=2021-06-18T23:38:20Z msg="starting manual cutoff window processing" level=info app=achgateway version=v0.4.1
 achgateway_1  | ts=2021-06-18T23:38:20Z msg="processing mergable directory foo" level=info app=achgateway version=v0.4.1 shardKey=foo
 achgateway_1  | ts=2021-06-18T23:38:20Z msg="found *upload.FTPTransferAgent agent" version=v0.4.1 shardKey=foo level=info app=achgateway
@@ -67,7 +66,7 @@ achgateway_1  | ts=2021-06-18T23:38:20Z msg="found 1 matching ACH files: []strin
 achgateway_1  | ts=2021-06-18T23:38:20Z msg="merged 1 files into 1 files" level=info app=achgateway version=v0.4.1 tenantID=foo
 ```
 
-View the uploaded file:
+View the uploaded file with [`achcli` from moov-io/ach](https://github.com/moov-io/ach#command-line):
 ```
 $ achcli ./testdata/ftp-server/outbound/20210618-233820-231380104.ach
 Describing ACH file './testdata/ftp-server/outbound/20210618-233820-231380104.ach'

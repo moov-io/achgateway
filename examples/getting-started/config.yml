@@ -54,8 +54,7 @@ ACHGateway:
         output:
           format: "nacha"
     Mappings:
-      "foo":
-        shardKey: "testing"  # Could be random value (UUID, fixed string)
+      - shardKey: "foo"      # Could be random value (UUID, fixed string)
         shardName: "testing" # Maps to Sharding.Shards[_].name
     Default: "testing"
   Upload:
