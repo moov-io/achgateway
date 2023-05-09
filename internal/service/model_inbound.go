@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/pkg/models"
 )
 
@@ -137,6 +138,8 @@ type ODFIProcessors struct {
 	Reconciliation ODFIReconciliation
 	Prenotes       ODFIPrenotes
 	Returns        ODFIReturns
+
+	Validation ach.ValidateOpts
 }
 
 func (cfg ODFIProcessors) Validate() error {

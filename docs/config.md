@@ -141,6 +141,8 @@ ACHGateway:
           [ Enabled: <boolean> | default = false]
           # Partial filename to match on. Example: "RET_"
           [ PathMatcher: <string> | default = "" ]
+        Validation:
+          # See moov-io/ach's ValidateOpts for the full list of options
       Publishing:
         Kafka:
           Brokers:
