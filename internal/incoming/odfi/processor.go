@@ -83,12 +83,12 @@ func (pcs Processors) HandleAll(file File) error {
 	return el
 }
 
-func ProcessFiles(dl *downloadedFiles, alerters alerting.Alerters, auditSaver *AuditSaver, fileProcessors Processors, agent upload.Agent) error {
+func ProcessFiles(dl *downloadedFiles, alerters alerting.Alerters, auditSaver *AuditSaver, validation ach.ValidateOpts, fileProcessors Processors, agent upload.Agent) error {
 	var el base.ErrorList
 
 	for _, processingPath := range []string{agent.InboundPath(), agent.ReconciliationPath(), agent.ReturnPath()} {
 		where := filepath.Join(dl.dir, processingPath)
-		if err := processDir(where, alerters, auditSaver, fileProcessors); err != nil {
+		if err := processDir(where, alerters, auditSaver, validation, fileProcessors); err != nil {
 			el.Add(fmt.Errorf("processDir %s: %v", where, err))
 		}
 	}
@@ -99,7 +99,7 @@ func ProcessFiles(dl *downloadedFiles, alerters alerting.Alerters, auditSaver *A
 	return el
 }
 
-func processDir(dir string, alerters alerting.Alerters, auditSaver *AuditSaver, fileProcessors Processors) error {
+func processDir(dir string, alerters alerting.Alerters, auditSaver *AuditSaver, validation ach.ValidateOpts, fileProcessors Processors) error {
 	infos, err := os.ReadDir(dir)
 	if err != nil {
 		return fmt.Errorf("reading %s: %v", dir, err)
@@ -109,7 +109,7 @@ func processDir(dir string, alerters alerting.Alerters, auditSaver *AuditSaver, 
 	for _, info := range infos {
 		where := filepath.Join(dir, info.Name())
 
-		if err := processFile(where, alerters, auditSaver, fileProcessors); err != nil {
+		if err := processFile(where, alerters, auditSaver, validation, fileProcessors); err != nil {
 			el.Add(err)
 		}
 	}
@@ -120,7 +120,7 @@ func processDir(dir string, alerters alerting.Alerters, auditSaver *AuditSaver, 
 	return el
 }
 
-func processFile(path string, alerters alerting.Alerters, auditSaver *AuditSaver, fileProcessors Processors) error {
+func processFile(path string, alerters alerting.Alerters, auditSaver *AuditSaver, validation ach.ValidateOpts, fileProcessors Processors) error {
 	bs, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("problem opening %s: %v", path, err)
@@ -128,11 +128,11 @@ func processFile(path string, alerters alerting.Alerters, auditSaver *AuditSaver
 	bs = bytes.TrimSpace(bs)
 
 	reader := ach.NewReader(bytes.NewReader(bs))
-	reader.SetValidation(&ach.ValidateOpts{
-		AllowMissingFileControl:    true,
-		AllowMissingFileHeader:     true,
-		AllowUnorderedBatchNumbers: true,
-	})
+	// Enable some default ACH ValidateOpts
+	validation.AllowMissingFileControl = true
+	validation.AllowMissingFileHeader = true
+	validation.AllowUnorderedBatchNumbers = true
+	reader.SetValidation(&validation)
 
 	file, err := reader.Read()
 	if err != nil {
