@@ -1,3 +1,20 @@
+## v0.21.0 (Released 2023-05-11)
+
+ADDITIONS
+
+- incoming/odfi: allow configuration of ValidateOpts
+
+IMPROVEMENTS
+
+- fix: pass event emitter errors to alerters
+- stream: try to extract consumer and producer errors from sarama
+- alerting: extract more information from PagerDuty error responses
+- docs: fixup getting started example
+
+BUILD
+
+- chore: update github.com/moov-io/ach to v1.31.2
+
 ## v0.20.0 (Released 2023-04-18)
 
 IMPROVEMENTS
