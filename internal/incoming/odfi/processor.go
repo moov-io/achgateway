@@ -164,7 +164,7 @@ func processFile(path string, alerters alerting.Alerters, auditSaver *AuditSaver
 	})
 	if err != nil {
 		alertErr := alerters.AlertError(err)
-		if err != nil {
+		if alertErr != nil {
 			return fmt.Errorf("problem alerting on error: %w", alertErr)
 		}
 		return fmt.Errorf("processing %s error: %v", path, err)
