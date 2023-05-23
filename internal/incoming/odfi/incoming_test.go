@@ -18,8 +18,15 @@
 package odfi
 
 import (
+	"bytes"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
@@ -34,13 +41,56 @@ func TestIncoming(t *testing.T) {
 	recon := service.ODFIReconciliation{
 		Enabled: true,
 	}
-	eventsService, err := events.NewEmitter(log.NewNopLogger(), &service.EventsConfig{
+
+	var output bytes.Buffer
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		output.Reset()
+		defer r.Body.Close()
+
+		bs, err := io.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		output.Write(bs)
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	logger := log.NewTestLogger()
+	eventsService, err := events.NewEmitter(logger, &service.EventsConfig{
 		Webhook: &service.WebhookConfig{
-			Endpoint: "https://cb.moov.io/incoming",
+			Endpoint: server.URL + "/incoming",
 		},
 	})
 	require.NoError(t, err)
 
-	emitter := IncomingEmitter(log.NewNopLogger(), cfg, recon, eventsService)
+	emitter := IncomingEmitter(logger, cfg, recon, eventsService)
 	require.NotNil(t, emitter)
+
+	t.Run("no ACH file", func(t *testing.T) {
+		err := emitter.Handle(File{})
+		require.NoError(t, err)
+		require.Equal(t, "", output.String())
+	})
+
+	t.Run("no batch controls, missing creation date/time", func(t *testing.T) {
+		bs, err := os.ReadFile(filepath.Join("testdata", "return-no-batch-controls.ach"))
+		require.NoError(t, err)
+
+		r := ach.NewReader(bytes.NewReader(bs))
+		r.SetValidation(&ach.ValidateOpts{SkipAll: true})
+		file, err := r.Read()
+		require.ErrorContains(t, err, ach.ErrFileHeader.Error())
+
+		// Clear out some FileHeader details
+		file.Header.FileCreationDate = ""
+		file.Header.FileCreationTime = ""
+
+		err = emitter.Handle(File{
+			ACHFile: &file,
+		})
+		require.NoError(t, err)
+
+		require.Contains(t, output.String(), `"individualName":"Best Co. #23          "`)
+	})
 }
