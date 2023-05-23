@@ -267,7 +267,7 @@ func (xfagg *aggregator) uploadFile(index int, agent upload.Agent, res *transfor
 	}
 
 	// Record the file in our audit trail
-	path := fmt.Sprintf("outbound/%s/%s/%s", agent.Hostname(), time.Now().Format("2006-01-02"), filename)
+	path := fmt.Sprintf("%s/%s/%s", agent.Hostname(), time.Now().Format("2006-01-02"), filename)
 	if err := xfagg.auditStorage.SaveFile(path, buf.Bytes()); err != nil {
 		recordFileUploadError(xfagg.shard.Name)
 		return fmt.Errorf("problem saving file in audit record: %v", err)

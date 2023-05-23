@@ -29,6 +29,7 @@ import (
 type AuditTrail struct {
 	ID        string
 	BucketURI string
+	BasePath  string // e.g. 'incoming' or 'outgoing'
 	GPG       *GPG
 }
 

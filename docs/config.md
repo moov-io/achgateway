@@ -110,6 +110,7 @@ ACHGateway:
         # See https://gocloud.dev/howto/blob/ for more information on configuring each cloud provide.r.
         # Example: s3://my-bucket?region=us-west-1 OR gcs://my-bucket/
         BucketURI: <string>
+        BasePath: <string> # Example: "incoming"
         GPG: # Optional, but recommended
           KeyFile: <string>
           Signer:
@@ -207,6 +208,7 @@ ACHGateway:
           # See https://gocloud.dev/howto/blob/ for more information on configuring each cloud provide.r.
           # Example: s3://my-bucket?region=us-west-1 OR gcs://my-bucket/
           BucketURI: <string>
+          BasePath: <string> # Example: "outgoing"
           GPG:
             KeyFile: <string>
             Signer:

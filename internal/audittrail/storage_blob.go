@@ -8,8 +8,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path/filepath"
 
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/base/strx"
 	"github.com/moov-io/cryptfs"
 
 	"gocloud.dev/blob"
@@ -23,13 +25,17 @@ import (
 // blobStorage implements Storage with gocloud.dev/blob which allows
 // clients to use AWS S3, GCP Storage, and Azure Storage.
 type blobStorage struct {
-	id      string
-	bucket  *blob.Bucket
-	cryptor *cryptfs.FS
+	id       string
+	bucket   *blob.Bucket
+	basePath string
+	cryptor  *cryptfs.FS
 }
 
 func newBlobStorage(cfg *service.AuditTrail) (*blobStorage, error) {
-	storage := &blobStorage{id: cfg.ID}
+	storage := &blobStorage{
+		id:       cfg.ID,
+		basePath: strx.Or(cfg.BasePath, "outbound"),
+	}
 
 	bucket, err := blob.OpenBucket(context.Background(), cfg.BucketURI)
 	if err != nil {
@@ -58,7 +64,7 @@ func (bs *blobStorage) Close() error {
 	return bs.bucket.Close()
 }
 
-func (bs *blobStorage) SaveFile(filepath string, data []byte) error {
+func (bs *blobStorage) SaveFile(path string, data []byte) error {
 	var encrypted []byte
 	var err error
 	if bs.cryptor != nil {
@@ -71,7 +77,10 @@ func (bs *blobStorage) SaveFile(filepath string, data []byte) error {
 		return err
 	}
 
-	exists, err := bs.bucket.Exists(context.Background(), filepath)
+	// Add the bucket's base path before out file
+	path = filepath.Join(bs.basePath, path)
+
+	exists, err := bs.bucket.Exists(context.Background(), path)
 	if exists {
 		return nil
 	}
@@ -80,7 +89,7 @@ func (bs *blobStorage) SaveFile(filepath string, data []byte) error {
 		return err
 	}
 
-	w, err := bs.bucket.NewWriter(context.Background(), filepath, nil)
+	w, err := bs.bucket.NewWriter(context.Background(), path, nil)
 	if err != nil {
 		uploadFilesErrors.With("type", "blob", "id", bs.id).Add(1)
 		return err
@@ -100,8 +109,8 @@ func (bs *blobStorage) SaveFile(filepath string, data []byte) error {
 	return nil
 }
 
-func (bs *blobStorage) GetFile(filepath string) (io.ReadCloser, error) {
-	r, err := bs.bucket.NewReader(context.Background(), filepath, nil)
+func (bs *blobStorage) GetFile(path string) (io.ReadCloser, error) {
+	r, err := bs.bucket.NewReader(context.Background(), filepath.Join(bs.basePath, path), nil)
 	if err != nil {
 		return nil, fmt.Errorf("get file: %v", err)
 	}
