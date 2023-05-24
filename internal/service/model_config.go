@@ -22,7 +22,6 @@ package service
 import (
 	"fmt"
 
-	"github.com/moov-io/achgateway/internal/consul"
 	"github.com/moov-io/base/database"
 	"github.com/moov-io/base/log"
 )
@@ -35,7 +34,6 @@ type Config struct {
 	Logger   log.Logger `json:"-"`
 	Clients  *ClientConfig
 	Database database.DatabaseConfig
-	Consul   *consul.Config
 	Admin    Admin
 	Inbound  Inbound
 	Events   *EventsConfig

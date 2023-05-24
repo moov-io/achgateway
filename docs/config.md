@@ -49,27 +49,6 @@ ACHGateway:
     DatabaseName: <string>
 ```
 
-### Consul
-
-```yaml
-  Consul: # Optional Object
-    Address: <string> # Example http://127.0.0.1:8500
-    [ Scheme: <string> | default = "" ]
-    SessionPath: <string>
-    Tags: # Optional
-      - <string>
-    [ Token: <string> ]
-    [ TokenFile: <string> ]
-    [ Datacenter: <string> ]
-    [ Namespace: <string> ]
-    Session:
-       [ CheckInterval: <duration> | 10s ]
-    TLS:
-      [ CAFile: <string> ]
-      [ CertFile: <string> ]
-      [ KeyFile: <string> ]
-```
-
 ### Inbound
 ```yaml
   Inbound:

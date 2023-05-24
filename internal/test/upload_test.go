@@ -37,7 +37,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/moov-io/ach"
-	"github.com/moov-io/achgateway/internal/consul"
 	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
 	"github.com/moov-io/achgateway/internal/incoming/web"
@@ -64,10 +63,6 @@ var (
 				User:     "root",
 				Password: "root",
 			},
-		},
-		Consul: &consul.Config{
-			Address:     "http://127.0.0.1:8500",
-			SessionPath: "achgateway/upload-test/",
 		},
 		Inbound: service.Inbound{
 			InMem: &service.InMemory{
@@ -150,9 +145,6 @@ func TestUploads(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewDefaultLogger()
 
-	consulClient, err := consul.NewConsulClient(logger, cfg.Consul)
-	require.NoError(t, err)
-
 	shardRepo := shards.NewInMemoryRepository()
 	shardKeys := setupShards(t, shardRepo)
 
@@ -166,7 +158,7 @@ func TestUploads(t *testing.T) {
 	fileController.AppendRoutes(r)
 
 	outboundPath := setupTestDirectory(t, cfg)
-	fileReceiver, err := pipeline.Start(ctx, logger, cfg, consulClient, shardRepo, httpSub)
+	fileReceiver, err := pipeline.Start(ctx, logger, cfg, shardRepo, httpSub)
 	require.NoError(t, err)
 	t.Cleanup(func() { fileReceiver.Shutdown() })
 

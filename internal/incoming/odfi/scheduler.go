@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/moov-io/achgateway/internal/alerting"
-	"github.com/moov-io/achgateway/internal/consul"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/upload"
 	"github.com/moov-io/base/admin"
@@ -48,14 +47,13 @@ type PeriodicScheduler struct {
 	shutdown       context.Context
 	shutdownFunc   context.CancelFunc
 
-	consul     *consul.Client
 	downloader Downloader
 	processors Processors
 
 	alerters alerting.Alerters
 }
 
-func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, consul *consul.Client, processors Processors) (Scheduler, error) {
+func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, processors Processors) (Scheduler, error) {
 	if cfg.Inbound.ODFI == nil {
 		return nil, errors.New("missing Inbound ODFI config")
 	}
@@ -79,7 +77,6 @@ func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, consul *consul
 		uploadAgents:   cfg.Upload,
 		ticker:         time.NewTicker(cfg.Inbound.ODFI.Interval),
 		inboundTrigger: make(chan manuallyTriggeredInbound, 1),
-		consul:         consul,
 		downloader:     dl,
 		processors:     processors,
 		shutdown:       ctx,
@@ -126,24 +123,14 @@ func (s *PeriodicScheduler) tickAll() error {
 			continue
 		}
 
-		// Attempt to acquire leadership prior to processing
-		leaderKey := fmt.Sprintf("achgateway/odfi/%s", shardName)
-		logger.Logf("attempting to acquire ODFI leadership for %s", leaderKey)
-
-		// Acquire leadership for this shard
-		err := consul.AcquireLock(logger, s.consul, leaderKey)
+		logger.Info().Logf("starting odfi periodic processing for %s", shard.Name)
+		err := s.tick(shard)
 		if err != nil {
-			logger.Info().Logf("skipping ODFI processing: %v", err)
+			// Push this alert outside achgateway
+			s.alertOnError(fmt.Errorf("%s %v", shardName, err))
+			logger.Warn().Logf("error with odfi periodic processing: %v", err)
 		} else {
-			logger.Info().Logf("starting odfi periodic processing for %s", shard.Name)
-			err := s.tick(shard)
-			if err != nil {
-				// Push this alert outside achgateway
-				s.alertOnError(fmt.Errorf("%s %v", shardName, err))
-				logger.Warn().Logf("error with odfi periodic processing: %v", err)
-			} else {
-				logger.Info().Logf("finished odfi periodic processing for %s", shard.Name)
-			}
+			logger.Info().Logf("finished odfi periodic processing for %s", shard.Name)
 		}
 	}
 	return nil

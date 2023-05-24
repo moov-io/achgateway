@@ -18,22 +18,6 @@ services:
     tmpfs: # Run this mysql in memory as its used for testing
       - /var/lib/mysql
 
-  consul-server:
-    image: hashicorp/consul:1.10
-    container_name: consul-server
-    restart: always
-    volumes:
-      - ./dev/consul/server.json:/consul/config/server.json:ro
-      - ./dev/consul/certs/:/consul/config/certs/:ro
-    networks:
-      - consul
-    ports:
-      - "8500:8500"
-      - "8501:8501"
-      - "8600:8600/tcp"
-      - "8600:8600/udp"
-    command: "agent"
-
   ftp:
     image: moov/fsftp:v0.2.0
     ports:
@@ -71,5 +55,3 @@ services:
 
 networks:
   intranet: {}
-  consul:
-    driver: bridge

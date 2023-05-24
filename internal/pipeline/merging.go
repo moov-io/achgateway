@@ -28,7 +28,6 @@ import (
 	"time"
 
 	"github.com/moov-io/ach"
-	"github.com/moov-io/achgateway/internal/consul"
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/storage"
@@ -54,7 +53,7 @@ type XferMerging interface {
 	WithEachMerged(f func(int, upload.Agent, *ach.File) error) (*processedFiles, error)
 }
 
-func NewMerging(logger log.Logger, consul *consul.Client, shard service.Shard, cfg service.UploadAgents) (XferMerging, error) {
+func NewMerging(logger log.Logger, shard service.Shard, cfg service.UploadAgents) (XferMerging, error) {
 	dir := strx.Or(
 		cfg.Merging.Storage.Filesystem.Directory,
 		cfg.Merging.Directory,
@@ -72,7 +71,6 @@ func NewMerging(logger log.Logger, consul *consul.Client, shard service.Shard, c
 		cfg:     cfg,
 		storage: storage,
 		shard:   shard,
-		consul:  consul,
 	}, nil
 }
 
@@ -81,7 +79,6 @@ type filesystemMerging struct {
 	cfg     service.UploadAgents
 	storage storage.Chest
 	shard   service.Shard
-	consul  *consul.Client
 }
 
 func (m *filesystemMerging) HandleXfer(xfer incoming.ACHFile) error {
@@ -297,29 +294,11 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 			continue // skip upload if we can't cache what to upload
 		}
 
-		// Perform the file upload if we are the shard leader
-		leaderKey := fmt.Sprintf("achgateway/outbound/%s", m.shard.Name)
-		if m.consul != nil {
-			logger.Logf("attempting to acquire outbound leadership for %s", leaderKey)
-		}
-
-		// Acquire leadership for this shard
-		err := consul.AcquireLock(logger, m.consul, leaderKey)
-		if err != nil {
-			logger.Warn().Logf("skipping file upload: %v", err)
+		// Upload the file
+		if err := f(i, agent, files[i]); err != nil {
+			el.Add(fmt.Errorf("problem from callback: %v", err))
 		} else {
-			if m.consul != nil {
-				logger.Info().Log("we are the leader")
-			} else {
-				logger.Info().Log("running leaderless")
-			}
-
-			// Upload the file
-			if err := f(i, agent, files[i]); err != nil {
-				el.Add(fmt.Errorf("problem from callback: %v", err))
-			} else {
-				successfulRemoteWrites++
-			}
+			successfulRemoteWrites++
 		}
 	}
 

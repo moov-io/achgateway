@@ -12,7 +12,7 @@ ACHGateway is designed to accept ACH files to batch and merge for upload to a re
 
 By persisting files to disk ACHGateway is able to survive restarts without losing data or needing to reconsume events. This helps handle higher volumes of files and allows operators access into the pending data. Filenames can be arbitrary strings (e.g. UUID's) to help identify files or objects. Pending files can be marked as canceled. Merged files optimize network usage and billing costs from your ACH partner.
 
-ACHGateway aims to upload all possible files and accumulates errors for alerting later. If files cannot be merged they'll be uploaded individually and if a merged file cannot be flattened it'll be uploaded unflattened. However, if we are unable to cache a file in `uploaded/` it won't be uploaded. When `Consul` is enabled but a lock cannot be obtained no upload will occur for that shard.
+ACHGateway aims to upload all possible files and accumulates errors for alerting later. If files cannot be merged they'll be uploaded individually and if a merged file cannot be flattened it'll be uploaded unflattened. However, if we are unable to cache a file in `uploaded/` it won't be uploaded.
 
 ## Encryption
 
@@ -45,14 +45,4 @@ Refer to the [`Merging` section](../../config/#upload-agents) of the `Upload` co
 
 ### Persistence
 
-There are two methods for deploying ACHGateway with a persistent storage attached. Each instance of ACHGateway having a unique volume attached or the instances share one volume. Both methods have advantages and drawbacks.
-
-**Unique Volumes**
-
-When each instance of ACHGateway has a unique volume attached the fault tolerance of ACH operations can be higher when other instances pickup the slack. With this deployment operators will need to decide between having ACHGateway instances consume all submitted files or a subset. If multiple instances consume all submitted files then [leader election](../leadership/) is recommended in order to avoid duplicated uploads. If instances a subset of files (e.g. by specifying a Kafka consumer group) then leader election is not recommended as each instance needs to upload its share of pending files.
-
-**Shared Volume**
-
-A shared volume between multiple ACHGateway instances offers a benefit where you can have several consumers handling the submitted files and optional [leader election](../leadership/) during uploads. Operators should be aware of duplicate uploads when instances do not perform leader election but share the underlying volume. Shared volumes will need to handle the combined I/O operations of all instances. Not all cloud providers support this "many write, many read" deployment for volumes.
-
-> Note: Moov has not tested running ACHGateway with a shared volume.
+The recommended way to deploy ACHGateway is where each instance has a unique volume attached. When each instance of ACHGateway has a unique volume attached then ACH operations are shared across N instances and an individual instance would have 1/N'th of the traffic. This deployment model requires that instances consume unique ACH files (e.g. share a kafka consumer group).
