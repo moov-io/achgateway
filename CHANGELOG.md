@@ -1,3 +1,22 @@
+## v0.22.0 (Released 2023-05-24)
+
+IMPROVEMENTS
+
+- feat: allow audittrail base paths to be configurable
+- fix: Correcting Error Messaging on Publish
+- incoming/odfi: don't emit IncomingFile events for empty ACH files
+- pipeline: remove consul and leader election
+
+BUILD
+
+- chore: update github.com/cloudflare/circl to v1.3.3
+- chore: update github.com/jlaffaye/ftp to v0.2.0
+- chore: update github.com/moov-io/ach to v1.31.3
+- chore: update github.com/moov-io/base to v0.43.0
+- chore: update github.com/moov-io/cryptfs to v0.4.2
+- chore: update golang.org/x/crypto to v0.9.0
+- chore: update golang.org/x/sync to v0.2.0
+
 ## v0.21.0 (Released 2023-05-11)
 
 ADDITIONS
