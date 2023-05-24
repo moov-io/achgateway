@@ -22,10 +22,12 @@ import (
 
 	"github.com/moov-io/achgateway/internal/audittrail"
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/base/strx"
 )
 
 type AuditSaver struct {
 	storage  audittrail.Storage
+	basePath string
 	hostname string
 }
 
@@ -51,6 +53,7 @@ func newAuditSaver(hostname string, cfg *service.AuditTrail) (*AuditSaver, error
 
 	return &AuditSaver{
 		storage:  storage,
+		basePath: strx.Or(cfg.BasePath, "odfi"),
 		hostname: hostname,
 	}, nil
 }
