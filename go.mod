@@ -12,7 +12,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-retryablehttp v0.7.2
-	github.com/jlaffaye/ftp v0.1.0
+	github.com/jlaffaye/ftp v0.2.0
 	github.com/markbates/pkger v0.17.1
 	github.com/moov-io/ach v1.31.2
 	github.com/moov-io/base v0.42.0
@@ -27,7 +27,7 @@ require (
 	github.com/sethvargo/go-retry v0.2.4
 	github.com/slack-go/slack v0.12.1
 	github.com/spf13/viper v1.15.0
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 	gocloud.dev v0.26.0
 	gocloud.dev/pubsub/kafkapubsub v0.26.0
 	goftp.io/server v0.4.1
