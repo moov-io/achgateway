@@ -12,8 +12,3 @@ ACHGateway:
   #     Address: "tcp(localhost:3306)"
   #     User: "achgateway"
   #     Password: "achgateway"
-  # Consul:
-  #   Address: "http://127.0.0.1:8500"
-  #   Tags: []
-  #   SessionPath: "achgateway/shards/"
-  #   HealthCheckInterval: "10s"

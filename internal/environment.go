@@ -27,7 +27,6 @@ import (
 	"time"
 
 	_ "github.com/moov-io/achgateway"
-	"github.com/moov-io/achgateway/internal/consul"
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/incoming/odfi"
 	"github.com/moov-io/achgateway/internal/incoming/stream"
@@ -52,7 +51,6 @@ type Environment struct {
 	TimeService    stime.TimeService
 	DB             *sql.DB
 	InternalClient *http.Client
-	Consul         *consul.Client
 	Events         events.Emitter
 
 	PublicRouter *mux.Router
@@ -135,24 +133,6 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		return env, fmt.Errorf("unable to create http files: %v", err)
 	}
 
-	// Setup our Consul client (if configured)
-	if env.Consul == nil && env.Config.Consul != nil {
-		consulClient, err := consul.NewConsulClient(env.Logger, env.Config.Consul)
-		if err != nil {
-			return env, err
-		}
-		env.Consul = consulClient
-		env.Logger.Info().Logf("created consul client for %s", env.Config.Consul.Address)
-
-		prev := env.Shutdown
-		env.Shutdown = func() {
-			prev()
-			if env.Consul != nil {
-				env.Consul.Shutdown()
-			}
-		}
-	}
-
 	// Setup our Events emitter
 	if env.Events == nil && env.Config.Events != nil {
 		emitter, err := events.NewEmitter(env.Logger, env.Config.Events)
@@ -169,7 +149,7 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	}
 
 	shardRepository := shards.NewRepository(env.DB, env.Config.Sharding.Mappings)
-	fileReceiver, err := pipeline.Start(ctx, env.Logger, env.Config, env.Consul, shardRepository, httpSub)
+	fileReceiver, err := pipeline.Start(ctx, env.Logger, env.Config, shardRepository, httpSub)
 	if err != nil {
 		return env, fmt.Errorf("unable to create file pipeline: %v", err)
 	}
@@ -201,7 +181,7 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 			odfi.ReturnEmitter(env.Logger, cfg.Processors.Returns, env.Events),
 			odfi.IncomingEmitter(env.Logger, cfg.Processors.Incoming, cfg.Processors.Reconciliation, env.Events),
 		)
-		odfiFiles, err := odfi.NewPeriodicScheduler(env.Logger, env.Config, env.Consul, processors)
+		odfiFiles, err := odfi.NewPeriodicScheduler(env.Logger, env.Config, processors)
 		if err != nil {
 			return env, fmt.Errorf("problem creating odfi periodic scheduler: %v", err)
 		}

@@ -42,8 +42,6 @@
   items:
     - name: Cutoffs
       link: /ops/cutoffs/
-    - name: Leader Election
-      link: /ops/leadership/
     - name: Merging
       link: /ops/merging/
     - name: File Options

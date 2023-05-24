@@ -30,7 +30,6 @@ import (
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/alerting"
 	"github.com/moov-io/achgateway/internal/audittrail"
-	"github.com/moov-io/achgateway/internal/consul"
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/notify"
@@ -61,15 +60,8 @@ type aggregator struct {
 	alerters              alerting.Alerters
 }
 
-func newAggregator(
-	logger log.Logger,
-	consul *consul.Client,
-	eventEmitter events.Emitter,
-	shard service.Shard,
-	uploadAgents service.UploadAgents,
-	errorAlerting service.ErrorAlerting,
-) (*aggregator, error) {
-	merger, err := NewMerging(logger, consul, shard, uploadAgents)
+func newAggregator(logger log.Logger, eventEmitter events.Emitter, shard service.Shard, uploadAgents service.UploadAgents, errorAlerting service.ErrorAlerting) (*aggregator, error) {
+	merger, err := NewMerging(logger, shard, uploadAgents)
 	if err != nil {
 		return nil, fmt.Errorf("error creating xfer merger: %v", err)
 	}
