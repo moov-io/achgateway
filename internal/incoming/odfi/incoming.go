@@ -72,10 +72,17 @@ func (pc *incomingEmitter) Handle(file File) error {
 		return nil
 	}
 
-	pc.logger.With(log.Fields{
+	logger := pc.logger.With(log.Fields{
 		"filepath": log.String(file.Filepath),
-	}).Log("emitting IncomingFile event")
+	})
 
+	// Skip when no ACH file was parsed
+	if file.ACHFile == nil {
+		logger.Warn().Log("no ACH file parsed")
+		return nil
+	}
+
+	logger.Log("emitting IncomingFile event")
 	err := pc.sendEvent(models.IncomingFile{
 		Filename: filepath.Base(file.Filepath),
 		File:     file.ACHFile,
