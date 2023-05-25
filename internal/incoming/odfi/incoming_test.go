@@ -64,11 +64,11 @@ func TestIncoming(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	emitter := IncomingEmitter(logger, cfg, recon, eventsService)
+	emitter := IncomingEmitter(cfg, recon, eventsService)
 	require.NotNil(t, emitter)
 
 	t.Run("no ACH file", func(t *testing.T) {
-		err := emitter.Handle(File{})
+		err := emitter.Handle(logger, File{})
 		require.NoError(t, err)
 		require.Equal(t, "", output.String())
 	})
@@ -86,7 +86,7 @@ func TestIncoming(t *testing.T) {
 		file.Header.FileCreationDate = ""
 		file.Header.FileCreationTime = ""
 
-		err = emitter.Handle(File{
+		err = emitter.Handle(logger, File{
 			ACHFile: &file,
 		})
 		require.NoError(t, err)

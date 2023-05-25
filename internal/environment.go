@@ -175,11 +175,11 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	if env.ODFIFiles == nil && env.Config.Inbound.ODFI != nil {
 		cfg := env.Config.Inbound.ODFI
 		processors := odfi.SetupProcessors(
-			odfi.CorrectionEmitter(env.Logger, cfg.Processors.Corrections, env.Events),
-			odfi.PrenoteEmitter(env.Logger, cfg.Processors.Prenotes, env.Events),
-			odfi.CreditReconciliationEmitter(env.Logger, cfg.Processors.Reconciliation, env.Events),
-			odfi.ReturnEmitter(env.Logger, cfg.Processors.Returns, env.Events),
-			odfi.IncomingEmitter(env.Logger, cfg.Processors.Incoming, cfg.Processors.Reconciliation, env.Events),
+			odfi.CorrectionEmitter(cfg.Processors.Corrections, env.Events),
+			odfi.PrenoteEmitter(cfg.Processors.Prenotes, env.Events),
+			odfi.CreditReconciliationEmitter(cfg.Processors.Reconciliation, env.Events),
+			odfi.ReturnEmitter(cfg.Processors.Returns, env.Events),
+			odfi.IncomingEmitter(cfg.Processors.Incoming, cfg.Processors.Reconciliation, env.Events),
 		)
 		odfiFiles, err := odfi.NewPeriodicScheduler(env.Logger, env.Config, processors)
 		if err != nil {

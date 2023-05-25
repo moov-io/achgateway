@@ -31,13 +31,14 @@ func TestCorrections(t *testing.T) {
 	cfg := service.ODFICorrections{
 		Enabled: true,
 	}
-	eventsService, err := events.NewEmitter(log.NewNopLogger(), &service.EventsConfig{
+	logger := log.NewTestLogger()
+	eventsService, err := events.NewEmitter(logger, &service.EventsConfig{
 		Webhook: &service.WebhookConfig{
 			Endpoint: "https://cb.moov.io/incoming",
 		},
 	})
 	require.NoError(t, err)
 
-	emitter := CorrectionEmitter(log.NewNopLogger(), cfg, eventsService)
+	emitter := CorrectionEmitter(cfg, eventsService)
 	require.NotNil(t, emitter)
 }

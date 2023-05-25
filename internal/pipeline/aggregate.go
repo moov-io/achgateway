@@ -165,44 +165,47 @@ func (xfagg *aggregator) cancelFile(msg incoming.CancelACHFile) error {
 func (xfagg *aggregator) withEachFile(when time.Time) error {
 	window := when.Format("15:04")
 	tzname, _ := when.Zone()
-	xfagg.logger.Info().With(log.Fields{
-		"shard": log.String(xfagg.shard.Name),
-	}).Logf("starting %s %s cutoff window processing", window, tzname)
 
-	defer xfagg.logger.Info().With(log.Fields{
+	logger := xfagg.logger.With(log.Fields{
+		"shard": log.String(xfagg.shard.Name),
+	})
+	logger.Info().Logf("starting %s %s cutoff window processing", window, tzname)
+
+	defer logger.With(log.Fields{
 		"shard": log.String(xfagg.shard.Name),
 	}).Logf("ended %s %s cutoff window processing", window, tzname)
 
 	processed, err := xfagg.merger.WithEachMerged(xfagg.runTransformers)
 	if err != nil {
-		xfagg.logger.LogErrorf("ERROR inside WithEachMerged: %v", err)
+		logger.LogErrorf("ERROR inside WithEachMerged: %v", err)
 		return fmt.Errorf("merging ACH files: %v", err)
 	}
 
 	if err := xfagg.emitFilesUploaded(processed); err != nil {
-		xfagg.logger.LogErrorf("ERROR sending files uploaded event: %v", err)
+		logger.LogErrorf("ERROR sending files uploaded event: %v", err)
 	}
 
 	return nil
 }
 
 func (xfagg *aggregator) manualCutoff(waiter manuallyTriggeredCutoff) {
-	xfagg.logger.Info().With(log.Fields{
+	logger := xfagg.logger.With(log.Fields{
 		"shard": log.String(xfagg.shard.Name),
-	}).Log("starting manual cutoff window processing")
+	})
+	logger.Info().Log("starting manual cutoff window processing")
 
 	if processed, err := xfagg.merger.WithEachMerged(xfagg.runTransformers); err != nil {
-		xfagg.logger.LogErrorf("ERROR inside manual WithEachMerged: %v", err)
+		logger.LogErrorf("ERROR inside manual WithEachMerged: %v", err)
 		waiter.C <- err
 	} else {
 		// Publish event of File uploads
 		if err := xfagg.emitFilesUploaded(processed); err != nil {
-			xfagg.logger.LogErrorf("ERROR sending manual files uploaded event: %v", err)
+			logger.LogErrorf("ERROR sending manual files uploaded event: %v", err)
 		}
 		waiter.C <- err
 	}
 
-	xfagg.logger.Info().With(log.Fields{
+	logger.Info().With(log.Fields{
 		"shard": log.String(xfagg.shard.Name),
 	}).Log("ended manual cutoff window processing")
 }

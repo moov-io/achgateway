@@ -29,22 +29,19 @@ import (
 )
 
 type incomingEmitter struct {
-	logger log.Logger
-	svc    events.Emitter
-
+	svc   events.Emitter
 	cfg   service.ODFIIncoming
 	recon service.ODFIReconciliation
 }
 
-func IncomingEmitter(logger log.Logger, cfg service.ODFIIncoming, recon service.ODFIReconciliation, svc events.Emitter) *incomingEmitter {
+func IncomingEmitter(cfg service.ODFIIncoming, recon service.ODFIReconciliation, svc events.Emitter) *incomingEmitter {
 	if !cfg.Enabled {
 		return nil
 	}
 	return &incomingEmitter{
-		logger: logger,
-		svc:    svc,
-		cfg:    cfg,
-		recon:  recon,
+		svc:   svc,
+		cfg:   cfg,
+		recon: recon,
 	}
 }
 
@@ -52,7 +49,7 @@ func (pc *incomingEmitter) Type() string {
 	return "incoming"
 }
 
-func (pc *incomingEmitter) Handle(file File) error {
+func (pc *incomingEmitter) Handle(logger log.Logger, file File) error {
 	// Ignore files if they don't contain the PathMatcher value
 	if pc.cfg.PathMatcher != "" && !strings.Contains(strings.ToLower(file.Filepath), pc.cfg.PathMatcher) {
 		return nil // skip the file
@@ -72,7 +69,7 @@ func (pc *incomingEmitter) Handle(file File) error {
 		return nil
 	}
 
-	logger := pc.logger.With(log.Fields{
+	logger = logger.With(log.Fields{
 		"filepath": log.String(file.Filepath),
 	})
 

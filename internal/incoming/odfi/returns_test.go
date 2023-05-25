@@ -31,13 +31,13 @@ func TestReturns(t *testing.T) {
 	cfg := service.ODFIReturns{
 		Enabled: true,
 	}
-	eventsService, err := events.NewEmitter(log.NewNopLogger(), &service.EventsConfig{
+	eventsService, err := events.NewEmitter(log.NewTestLogger(), &service.EventsConfig{
 		Webhook: &service.WebhookConfig{
 			Endpoint: "https://cb.moov.io/incoming",
 		},
 	})
 	require.NoError(t, err)
 
-	emitter := ReturnEmitter(log.NewNopLogger(), cfg, eventsService)
+	emitter := ReturnEmitter(cfg, eventsService)
 	require.NotNil(t, emitter)
 }

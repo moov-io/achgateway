@@ -17,6 +17,10 @@
 
 package odfi
 
+import (
+	"github.com/moov-io/base/log"
+)
+
 type MockProcessor struct {
 	HandledFile *File
 	Err         error
@@ -26,7 +30,7 @@ func (pc *MockProcessor) Type() string {
 	return "mock"
 }
 
-func (pc *MockProcessor) Handle(file File) error {
+func (pc *MockProcessor) Handle(logger log.Logger, file File) error {
 	pc.HandledFile = &file
 	return pc.Err
 }

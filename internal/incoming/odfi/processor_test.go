@@ -46,13 +46,14 @@ func TestProcessor(t *testing.T) {
 		storage:  &audittrail.MockStorage{},
 		hostname: "ftp.foo.com",
 	}
+	logger := log.NewTestLogger()
 	var validation ach.ValidateOpts
 	alerters, _ := alerting.NewAlerters(service.ErrorAlerting{})
 
 	// By reading a file without ACH FileHeaders we still want to try and process
 	// Batches inside of it if any are found, so reading this kind of file shouldn't
 	// return an error from reading the file.
-	err = processDir(dir, alerters, auditSaver, validation, processors)
+	err = processDir(logger, dir, alerters, auditSaver, validation, processors)
 	require.NoError(t, err)
 
 	require.NotNil(t, proc.HandledFile)
@@ -61,7 +62,7 @@ func TestProcessor(t *testing.T) {
 
 	// Real world file
 	path := filepath.Join("..", "..", "..", "testdata", "HMBRAD_ACHEXPORT_1001_08_19_2022_09_10")
-	err = processFile(path, alerters, auditSaver, validation, processors)
+	err = processFile(logger, path, alerters, auditSaver, validation, processors)
 	if err != nil {
 		require.ErrorContains(t, err, "record:FileHeader *ach.FieldError FileCreationDate  is a mandatory field")
 	}
@@ -101,8 +102,8 @@ func TestProcessor_MultiReturnCorrection(t *testing.T) {
 	require.NoError(t, err)
 
 	processors := SetupProcessors(
-		ReturnEmitter(logger, cfg.Processors.Returns, emitter),
-		CorrectionEmitter(logger, cfg.Processors.Corrections, emitter),
+		ReturnEmitter(cfg.Processors.Returns, emitter),
+		CorrectionEmitter(cfg.Processors.Corrections, emitter),
 	)
 
 	file, err := ach.ReadFile(filepath.Join("testdata", "return-no-batch-controls.ach"))
@@ -115,7 +116,7 @@ func TestProcessor_MultiReturnCorrection(t *testing.T) {
 	require.NoError(t, err)
 
 	// Process ACH file
-	err = processors.HandleAll(File{
+	err = processors.HandleAll(logger, File{
 		ACHFile: file,
 	})
 	require.NoError(t, err)
