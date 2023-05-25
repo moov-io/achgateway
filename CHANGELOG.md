@@ -1,3 +1,15 @@
+## v0.22.1 (Released 2023-05-25)
+
+IMPROVEMENTS
+
+- fix: build paths correctly for audittrails
+- incoming/odfi: pass through logger to maintain contextual fields
+- pipeline: share logger across more calls
+
+BUILD
+
+- build: split docker image creation out from tests
+
 ## v0.22.0 (Released 2023-05-24)
 
 IMPROVEMENTS
