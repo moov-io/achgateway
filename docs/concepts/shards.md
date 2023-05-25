@@ -15,7 +15,7 @@ Shards are defined in ACHGateway as a logical grouping for ACH file delivery. Th
 - `ND-live-bank1`: A shard for uploading ACH files for the last Traditional ACH window.
 - `SD-live-bank2`: Another FI used as an ODFI.
 
-TODO(adam): Diagram
+![](../images/OSS_Docs_Shard_Mapping.png)
 
 A business might have several customers that map to each shard. For example every new signup might be mapped to the `testing` shard until they're verified and onboarded successfully. Premium customers might be assigned to the `SD-live-bank1` window and free users may be mapped to `ND-live-bank1`.
 
