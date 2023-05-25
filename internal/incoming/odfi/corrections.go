@@ -39,19 +39,17 @@ var (
 )
 
 type correctionProcessor struct {
-	logger log.Logger
-	svc    events.Emitter
-	cfg    service.ODFICorrections
+	svc events.Emitter
+	cfg service.ODFICorrections
 }
 
-func CorrectionEmitter(logger log.Logger, cfg service.ODFICorrections, svc events.Emitter) *correctionProcessor {
+func CorrectionEmitter(cfg service.ODFICorrections, svc events.Emitter) *correctionProcessor {
 	if !cfg.Enabled {
 		return nil
 	}
 	return &correctionProcessor{
-		logger: logger,
-		svc:    svc,
-		cfg:    cfg,
+		svc: svc,
+		cfg: cfg,
 	}
 }
 
@@ -63,7 +61,7 @@ func isCorrectionFile(file File) bool {
 	return len(file.ACHFile.NotificationOfChange) >= 0
 }
 
-func (pc *correctionProcessor) Handle(file File) error {
+func (pc *correctionProcessor) Handle(logger log.Logger, file File) error {
 	if !isCorrectionFile(file) {
 		return nil
 	}
@@ -78,10 +76,11 @@ func (pc *correctionProcessor) Handle(file File) error {
 		File:     file.ACHFile,
 	}
 
-	pc.logger.With(log.Fields{
+	logger = logger.With(log.Fields{
 		"origin":      log.String(file.ACHFile.Header.ImmediateOrigin),
 		"destination": log.String(file.ACHFile.Header.ImmediateDestination),
-	}).Log(fmt.Sprintf("inbound: correction for %d batches", len(file.ACHFile.NotificationOfChange)))
+	})
+	logger.Logf("inbound: correction for %d batches", len(file.ACHFile.NotificationOfChange))
 
 	for i := range file.ACHFile.NotificationOfChange {
 		entries := file.ACHFile.NotificationOfChange[i].GetEntries()
@@ -101,7 +100,7 @@ func (pc *correctionProcessor) Handle(file File) error {
 				"code", changeCode.Code,
 			).Add(1)
 
-			pc.logger.With(log.Fields{
+			logger.With(log.Fields{
 				"origin":      log.String(file.ACHFile.Header.ImmediateOrigin),
 				"destination": log.String(file.ACHFile.Header.ImmediateDestination),
 			}).Log(fmt.Sprintf("odfi: correction batch %d entry %d code %s", i, j, changeCode.Code))

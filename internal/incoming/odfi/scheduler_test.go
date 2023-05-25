@@ -29,7 +29,7 @@ import (
 
 func TestScheduler(t *testing.T) {
 	cfg := &service.Config{
-		Logger: log.NewNopLogger(),
+		Logger: log.NewTestLogger(),
 		Inbound: service.Inbound{
 			ODFI: &service.ODFIFiles{
 				Interval:   10 * time.Second,
@@ -51,9 +51,7 @@ func TestScheduler(t *testing.T) {
 			DefaultAgentID: "ftp-test",
 		},
 	}
-	if testing.Verbose() {
-		cfg.Logger = log.NewDefaultLogger()
-	}
+	cfg.Logger = log.NewTestLogger()
 
 	processors := SetupProcessors(&MockProcessor{})
 	schd, err := NewPeriodicScheduler(cfg.Logger, cfg, processors)
@@ -69,7 +67,7 @@ func TestScheduler(t *testing.T) {
 		Name:        "mock",
 		UploadAgent: "ftp-test",
 	}
-	if err := ss.tick(mock); err != nil {
+	if err := ss.tick(cfg.Logger, mock); err != nil {
 		t.Fatal(err)
 	}
 }

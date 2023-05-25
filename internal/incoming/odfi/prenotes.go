@@ -41,19 +41,17 @@ var (
 )
 
 type prenoteEmitter struct {
-	logger log.Logger
-	svc    events.Emitter
-	cfg    service.ODFIPrenotes
+	svc events.Emitter
+	cfg service.ODFIPrenotes
 }
 
-func PrenoteEmitter(logger log.Logger, cfg service.ODFIPrenotes, svc events.Emitter) *prenoteEmitter {
+func PrenoteEmitter(cfg service.ODFIPrenotes, svc events.Emitter) *prenoteEmitter {
 	if !cfg.Enabled {
 		return nil
 	}
 	return &prenoteEmitter{
-		logger: logger,
-		svc:    svc,
-		cfg:    cfg,
+		svc: svc,
+		cfg: cfg,
 	}
 }
 
@@ -61,7 +59,7 @@ func (pc *prenoteEmitter) Type() string {
 	return "prenote"
 }
 
-func (pc *prenoteEmitter) Handle(file File) error {
+func (pc *prenoteEmitter) Handle(logger log.Logger, file File) error {
 	// Ignore files if they don't contain the PathMatcher value
 	if pc.cfg.PathMatcher != "" && !strings.Contains(strings.ToLower(file.Filepath), pc.cfg.PathMatcher) {
 		return nil // skip the file
@@ -81,10 +79,11 @@ func (pc *prenoteEmitter) Handle(file File) error {
 				batch.Entries = append(batch.Entries, entries[j])
 			}
 
-			pc.logger.With(log.Fields{
+			logger = logger.With(log.Fields{
 				"origin":      log.String(file.ACHFile.Header.ImmediateOrigin),
 				"destination": log.String(file.ACHFile.Header.ImmediateDestination),
-			}).Log(fmt.Sprintf("odfi: pre-notification traceNumber=%s", entries[j].TraceNumber))
+			})
+			logger.Log(fmt.Sprintf("odfi: pre-notification traceNumber=%s", entries[j].TraceNumber))
 
 			prenoteEntriesProcessed.With(
 				"origin", file.ACHFile.Header.ImmediateOrigin,

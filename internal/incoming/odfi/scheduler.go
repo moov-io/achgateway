@@ -124,7 +124,7 @@ func (s *PeriodicScheduler) tickAll() error {
 		}
 
 		logger.Info().Logf("starting odfi periodic processing for %s", shard.Name)
-		err := s.tick(shard)
+		err := s.tick(logger, shard)
 		if err != nil {
 			// Push this alert outside achgateway
 			s.alertOnError(fmt.Errorf("%s %v", shardName, err))
@@ -136,11 +136,7 @@ func (s *PeriodicScheduler) tickAll() error {
 	return nil
 }
 
-func (s *PeriodicScheduler) tick(shard *service.Shard) error {
-	logger := s.logger.With(log.Fields{
-		"shard": log.String(shard.Name),
-	})
-
+func (s *PeriodicScheduler) tick(logger log.Logger, shard *service.Shard) error {
 	agent, err := upload.New(logger, s.uploadAgents, shard.UploadAgent)
 	if err != nil {
 		return fmt.Errorf("agent: %v", err)
@@ -161,7 +157,7 @@ func (s *PeriodicScheduler) tick(shard *service.Shard) error {
 	}
 
 	// Run each processor over the files
-	if err := ProcessFiles(dl, s.alerters, auditSaver, s.odfi.Processors.Validation, s.processors, agent); err != nil {
+	if err := ProcessFiles(logger, dl, s.alerters, auditSaver, s.odfi.Processors.Validation, s.processors, agent); err != nil {
 		return fmt.Errorf("ERROR: processing files: %v", err)
 	}
 

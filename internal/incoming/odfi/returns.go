@@ -39,19 +39,17 @@ var (
 )
 
 type returnEmitter struct {
-	logger log.Logger
-	svc    events.Emitter
-	cfg    service.ODFIReturns
+	svc events.Emitter
+	cfg service.ODFIReturns
 }
 
-func ReturnEmitter(logger log.Logger, cfg service.ODFIReturns, svc events.Emitter) *returnEmitter {
+func ReturnEmitter(cfg service.ODFIReturns, svc events.Emitter) *returnEmitter {
 	if !cfg.Enabled {
 		return nil
 	}
 	return &returnEmitter{
-		logger: logger,
-		svc:    svc,
-		cfg:    cfg,
+		svc: svc,
+		cfg: cfg,
 	}
 }
 
@@ -63,7 +61,7 @@ func isReturnFile(file File) bool {
 	return len(file.ACHFile.ReturnEntries) >= 0
 }
 
-func (pc *returnEmitter) Handle(file File) error {
+func (pc *returnEmitter) Handle(logger log.Logger, file File) error {
 	if !isReturnFile(file) {
 		return nil
 	}
@@ -78,10 +76,11 @@ func (pc *returnEmitter) Handle(file File) error {
 		File:     file.ACHFile,
 	}
 
-	pc.logger.With(log.Fields{
+	logger = logger.With(log.Fields{
 		"origin":      log.String(file.ACHFile.Header.ImmediateOrigin),
 		"destination": log.String(file.ACHFile.Header.ImmediateDestination),
-	}).Log("odfi: processing return file")
+	})
+	logger.Log("odfi: processing return file")
 
 	for i := range file.ACHFile.ReturnEntries {
 		entries := file.ACHFile.ReturnEntries[i].GetEntries()
@@ -101,7 +100,7 @@ func (pc *returnEmitter) Handle(file File) error {
 				"code", returnCode.Code,
 			).Add(1)
 
-			pc.logger.With(log.Fields{
+			logger.With(log.Fields{
 				"origin":      log.String(file.ACHFile.Header.ImmediateOrigin),
 				"destination": log.String(file.ACHFile.Header.ImmediateDestination),
 			}).Log(fmt.Sprintf("odfi: return batch %d entry %d code %s", i, j, returnCode.Code))

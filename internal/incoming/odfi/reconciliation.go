@@ -41,19 +41,17 @@ var (
 )
 
 type creditReconciliation struct {
-	logger log.Logger
-	svc    events.Emitter
-	cfg    service.ODFIReconciliation
+	svc events.Emitter
+	cfg service.ODFIReconciliation
 }
 
-func CreditReconciliationEmitter(logger log.Logger, cfg service.ODFIReconciliation, svc events.Emitter) *creditReconciliation {
+func CreditReconciliationEmitter(cfg service.ODFIReconciliation, svc events.Emitter) *creditReconciliation {
 	if !cfg.Enabled {
 		return nil
 	}
 	return &creditReconciliation{
-		logger: logger,
-		svc:    svc,
-		cfg:    cfg,
+		svc: svc,
+		cfg: cfg,
 	}
 }
 
@@ -68,7 +66,7 @@ func isReconciliationFile(cfg service.ODFIReconciliation, file File) bool {
 	return cfg.PathMatcher != "" && strings.Contains(strings.ToLower(file.Filepath), cfg.PathMatcher)
 }
 
-func (pc *creditReconciliation) Handle(file File) error {
+func (pc *creditReconciliation) Handle(logger log.Logger, file File) error {
 	if file.ACHFile == nil {
 		return errors.New("nil ach.File")
 	}
@@ -87,9 +85,10 @@ func (pc *creditReconciliation) Handle(file File) error {
 		"origin", file.ACHFile.Header.ImmediateOrigin,
 		"destination", file.ACHFile.Header.ImmediateDestination,
 	).Add(1)
-	pc.logger.With(log.Fields{
+	logger = logger.With(log.Fields{
 		"filepath": log.String(file.Filepath),
-	}).Log("odfi: processing reconciliation file")
+	})
+	logger.Log("odfi: processing reconciliation file")
 
 	var recons []models.Batch
 
@@ -100,7 +99,7 @@ func (pc *creditReconciliation) Handle(file File) error {
 		}
 		entries := file.ACHFile.Batches[i].GetEntries()
 		for j := range entries {
-			pc.logger.With(log.Fields{
+			logger.With(log.Fields{
 				"traceNumber": log.String(entries[j].TraceNumber),
 			}).Log("odfi: received reconciliation entry")
 
