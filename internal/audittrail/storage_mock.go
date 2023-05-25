@@ -5,13 +5,15 @@
 package audittrail
 
 import (
+	"bytes"
 	"io"
-	"strings"
 )
 
 type MockStorage struct {
-	Err          error
-	FileContents string
+	Err error
+
+	SavedFilepath string
+	SavedContents []byte
 }
 
 func newMockStorage() *MockStorage {
@@ -26,11 +28,14 @@ func (s *MockStorage) Close() error {
 	return s.Err
 }
 
-func (s *MockStorage) SaveFile(_ string, _ []byte) error {
+func (s *MockStorage) SaveFile(path string, data []byte) error {
 	if s.Err != nil {
 		uploadFilesErrors.With("type", "mock", "id", "mock").Add(1)
 	} else {
 		uploadedFilesCounter.With("type", "mock", "id", "mock").Add(1)
+
+		s.SavedFilepath = path
+		s.SavedContents = data
 	}
 	return s.Err
 }
@@ -39,5 +44,5 @@ func (s *MockStorage) GetFile(_ string) (io.ReadCloser, error) {
 	if s.Err != nil {
 		return nil, s.Err
 	}
-	return io.NopCloser(strings.NewReader(s.FileContents)), nil
+	return io.NopCloser(bytes.NewReader(s.SavedContents)), nil
 }
