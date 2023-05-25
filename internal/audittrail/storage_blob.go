@@ -8,10 +8,8 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"path/filepath"
 
 	"github.com/moov-io/achgateway/internal/service"
-	"github.com/moov-io/base/strx"
 	"github.com/moov-io/cryptfs"
 
 	"gocloud.dev/blob"
@@ -25,16 +23,14 @@ import (
 // blobStorage implements Storage with gocloud.dev/blob which allows
 // clients to use AWS S3, GCP Storage, and Azure Storage.
 type blobStorage struct {
-	id       string
-	bucket   *blob.Bucket
-	basePath string
-	cryptor  *cryptfs.FS
+	id      string
+	bucket  *blob.Bucket
+	cryptor *cryptfs.FS
 }
 
 func newBlobStorage(cfg *service.AuditTrail) (*blobStorage, error) {
 	storage := &blobStorage{
-		id:       cfg.ID,
-		basePath: strx.Or(cfg.BasePath, "outbound"),
+		id: cfg.ID,
 	}
 
 	bucket, err := blob.OpenBucket(context.Background(), cfg.BucketURI)
@@ -77,9 +73,6 @@ func (bs *blobStorage) SaveFile(path string, data []byte) error {
 		return err
 	}
 
-	// Add the bucket's base path before out file
-	path = filepath.Join(bs.basePath, path)
-
 	exists, err := bs.bucket.Exists(context.Background(), path)
 	if exists {
 		return nil
@@ -110,7 +103,7 @@ func (bs *blobStorage) SaveFile(path string, data []byte) error {
 }
 
 func (bs *blobStorage) GetFile(path string) (io.ReadCloser, error) {
-	r, err := bs.bucket.NewReader(context.Background(), filepath.Join(bs.basePath, path), nil)
+	r, err := bs.bucket.NewReader(context.Background(), path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("get file: %v", err)
 	}

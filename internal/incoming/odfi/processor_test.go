@@ -66,6 +66,11 @@ func TestProcessor(t *testing.T) {
 	if err != nil {
 		require.ErrorContains(t, err, "record:FileHeader *ach.FieldError FileCreationDate  is a mandatory field")
 	}
+
+	// Verify saved file path
+	ms, ok := auditSaver.storage.(*audittrail.MockStorage)
+	require.True(t, ok)
+	require.Equal(t, "odfi/ftp.foo.com/testdata/2023-05-25/HMBRAD_ACHEXPORT_1001_08_19_2022_09_10", ms.SavedFilepath)
 }
 
 func TestProcessor_populateHashes(t *testing.T) {
