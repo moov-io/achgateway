@@ -42,6 +42,7 @@ import (
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/stime"
+	"github.com/moov-io/base/strx"
 )
 
 type aggregator struct {
@@ -264,7 +265,7 @@ func (xfagg *aggregator) uploadFile(index int, agent upload.Agent, res *transfor
 	// Record the file in our audit trail
 	basePath := "outbound"
 	if xfagg.shard.Audit != nil {
-		basePath = xfagg.shard.Audit.BasePath
+		basePath = strx.Or(xfagg.shard.Audit.BasePath, basePath)
 	}
 	path := fmt.Sprintf("%s/%s/%s/%s", basePath, agent.Hostname(), time.Now().Format("2006-01-02"), filename)
 	if err := xfagg.auditStorage.SaveFile(path, buf.Bytes()); err != nil {
