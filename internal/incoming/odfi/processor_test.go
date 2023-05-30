@@ -19,9 +19,11 @@ package odfi
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/alerting"
@@ -70,7 +72,9 @@ func TestProcessor(t *testing.T) {
 	// Verify saved file path
 	ms, ok := auditSaver.storage.(*audittrail.MockStorage)
 	require.True(t, ok)
-	require.Equal(t, "odfi/ftp.foo.com/testdata/2023-05-25/HMBRAD_ACHEXPORT_1001_08_19_2022_09_10", ms.SavedFilepath)
+
+	yyyymmdd := time.Now().Format("2006-01-02")
+	require.Equal(t, fmt.Sprintf("odfi/ftp.foo.com/testdata/%s/HMBRAD_ACHEXPORT_1001_08_19_2022_09_10", yyyymmdd), ms.SavedFilepath)
 }
 
 func TestProcessor_populateHashes(t *testing.T) {
