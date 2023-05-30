@@ -1,4 +1,4 @@
-## v0.22.2 (Released 2023-05-30)
+## v0.22.3 (Released 2023-05-30)
 
 IMPROVEMENTS
 
