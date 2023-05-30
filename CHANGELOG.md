@@ -1,3 +1,10 @@
+## v0.22.2 (Released 2023-05-30)
+
+IMPROVEMENTS
+
+- docs: add shard mapping diagram
+- pipeline: fallback to default outbound path
+
 ## v0.22.1 (Released 2023-05-25)
 
 IMPROVEMENTS
