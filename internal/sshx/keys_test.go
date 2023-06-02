@@ -21,34 +21,6 @@ import (
 )
 
 func TestSSHX__read(t *testing.T) {
-	// TODO(adam): finish up with transform.GPGEncryption
-
-	// 	fd, err := os.Open(filepath.Join("testdata", "rsa-2048.pub"))
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
-	// 	t.Cleanup(func() { fd.Close() })
-
-	// 	block, err := armor.Decode(fd)
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
-	// 	if block.Type != openpgp.PublicKeyType {
-	// 		t.Fatal(err)
-	// 	}
-
-	// 	reader := packet.NewReader(block.Body)
-	// 	pkt, err := reader.Next()
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
-
-	// 	if key, ok := pkt.(*packet.PublicKey); !ok {
-	// 		t.Errorf("%T", pkt)
-	// 	} else {
-	// 		t.Logf("key=%#v", key)
-	// 	}
-
 	data, err := os.ReadFile(filepath.Join("testdata", "rsa-2048.pub"))
 	require.NoError(t, err)
 	key, err := ReadPubKey(data)
@@ -66,19 +38,9 @@ func TestSSHX__read(t *testing.T) {
 			}
 
 			pgpKey := packet.NewRSAPublicKey(time.Now(), pk)
-			t.Logf("pgpKey=%#v", pgpKey)
+			require.NotNil(t, pgpKey)
 
 			w.Close()
-
-			// to := createEntityFromKeys(pubKey, privKey)
-
-			// w, err := armor.Encode(os.Stdout, "Message", make(map[string]string))
-			// kingpin.FatalIfError(err, "Error creating OpenPGP Armor: %s", err)
-			// defer w.Close()
-
-			// plain, err := openpgp.Encrypt(w, []*openpgp.Entity{to}, nil, nil, nil)
-			// kingpin.FatalIfError(err, "Error creating entity for encryption")
-			// defer plain.Close()
 		}
 	}
 }
