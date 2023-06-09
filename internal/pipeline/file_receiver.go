@@ -180,6 +180,7 @@ func (fr *FileReceiver) RegisterAdminRoutes(r *admin.Server) {
 	sub := r.Subrouter("/shards/{shardName}")
 	sub.HandleFunc("/files", fr.listShardFiles())
 	sub.PathPrefix("/files/{filepath}").Handler(fr.getShardFile())
+	sub.HandleFunc("/pipeline/{isolatedDirectory}/file-uploaded", fr.manuallyProduceFileUploaded())
 }
 
 // handleMessage will listen for an incoming.ACHFile to pass off to an aggregator for the shard
