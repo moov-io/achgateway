@@ -37,16 +37,17 @@ import (
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/database"
 	"github.com/moov-io/base/log"
-	"gocloud.dev/pubsub"
 
 	"github.com/stretchr/testify/require"
+	"gocloud.dev/pubsub"
 )
 
 type TestFileReceiver struct {
 	*FileReceiver
 
-	Publisher stream.Publisher
-	Events    *events.MockEmitter
+	MergingDir string
+	Publisher  stream.Publisher
+	Events     *events.MockEmitter
 }
 
 func (fr *TestFileReceiver) TriggerCutoff(t *testing.T) {
@@ -72,6 +73,7 @@ func testFileReceiver(t *testing.T) *TestFileReceiver {
 	ctx := context.Background()
 	logger := log.NewTestLogger()
 
+	dir := t.TempDir()
 	conf := &service.Config{
 		Inbound: service.Inbound{
 			InMem: &service.InMemory{
@@ -102,7 +104,7 @@ func testFileReceiver(t *testing.T) *TestFileReceiver {
 			Merging: service.Merging{
 				Storage: storage.Config{
 					Filesystem: storage.FilesystemConfig{
-						Directory: t.TempDir(),
+						Directory: dir,
 					},
 				},
 			},
@@ -124,6 +126,7 @@ func testFileReceiver(t *testing.T) *TestFileReceiver {
 
 	return &TestFileReceiver{
 		FileReceiver: fileReceiver,
+		MergingDir:   dir,
 		Publisher:    filesTopic,
 		Events:       eventEmitter,
 	}
