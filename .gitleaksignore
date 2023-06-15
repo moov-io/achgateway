@@ -1,0 +1,4 @@
+docs/concepts/upload.md:private-key:40
+internal/gpgx/testdata/key.priv:private-key:1
+internal/transform/testdata/moov.key:private-key:1
+internal/upload/sftp_test.go:private-key:306
