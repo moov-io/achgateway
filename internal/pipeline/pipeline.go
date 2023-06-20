@@ -62,7 +62,7 @@ func Start(
 	if cfg.Inbound.Kafka != nil && cfg.Inbound.Kafka.Transform != nil {
 		transformConfig = cfg.Inbound.Kafka.Transform
 	}
-	receiver, err := newFileReceiver(logger, cfg, shardRepository, shardAggregators, httpFiles, transformConfig)
+	receiver, err := newFileReceiver(logger, cfg, eventEmitter, shardRepository, shardAggregators, httpFiles, transformConfig)
 	if err != nil {
 		return nil, err
 	}

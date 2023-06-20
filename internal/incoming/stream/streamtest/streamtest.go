@@ -43,10 +43,10 @@ func InmemStream(t *testing.T) (stream.Publisher, stream.Subscription) {
 			},
 		},
 	}
-	topic, err := stream.Topic(log.NewNopLogger(), conf)
+	topic, err := stream.Topic(log.NewTestLogger(), conf)
 	require.NoError(t, err)
 
-	sub, err := stream.OpenSubscription(log.NewNopLogger(), conf)
+	sub, err := stream.OpenSubscription(log.NewTestLogger(), conf)
 	require.NoError(t, err)
 	t.Cleanup(func() { sub.Shutdown(context.Background()) })
 

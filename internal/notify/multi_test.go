@@ -16,7 +16,7 @@ import (
 )
 
 func TestMultiSender(t *testing.T) {
-	logger := log.NewNopLogger()
+	logger := log.NewTestLogger()
 	cfg := &service.Notifications{}
 	notifiers := &service.UploadNotifiers{}
 
@@ -38,7 +38,7 @@ func TestMultiSenderErr(t *testing.T) {
 	sendErr := errors.New("bad error")
 
 	sender := &MultiSender{
-		logger: log.NewNopLogger(),
+		logger: log.NewTestLogger(),
 		senders: []Sender{
 			&MockSender{Err: sendErr},
 		},
@@ -57,7 +57,7 @@ func TestMulti__Retry(t *testing.T) {
 			MaxRetries: 3,
 		},
 	}
-	ms, err := NewMultiSender(log.NewNopLogger(), cfg, &service.UploadNotifiers{})
+	ms, err := NewMultiSender(log.NewTestLogger(), cfg, &service.UploadNotifiers{})
 	require.NoError(t, err)
 	require.NotNil(t, ms.retryConfig)
 }

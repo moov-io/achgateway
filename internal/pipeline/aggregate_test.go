@@ -61,7 +61,7 @@ func TestAggregateACHFile(t *testing.T) {
 	}
 	var errorAlerting service.ErrorAlerting
 
-	xfagg, err := newAggregator(log.NewNopLogger(), &events.MockEmitter{}, shard, uploadAgents, errorAlerting)
+	xfagg, err := newAggregator(log.NewTestLogger(), &events.MockEmitter{}, shard, uploadAgents, errorAlerting)
 	require.NoError(t, err)
 
 	merge := &MockXferMerging{}
@@ -109,7 +109,7 @@ func TestAggregate_notifyAfterUpload(t *testing.T) {
 	}
 	var errorAlerting service.ErrorAlerting
 
-	xfagg, err := newAggregator(log.NewNopLogger(), &events.MockEmitter{}, shard, uploadAgents, errorAlerting)
+	xfagg, err := newAggregator(log.NewTestLogger(), &events.MockEmitter{}, shard, uploadAgents, errorAlerting)
 	require.NoError(t, err)
 
 	require.NotPanics(t, func() {
@@ -143,7 +143,7 @@ func TestAggregate_notifyAfterUploadErr(t *testing.T) {
 	}
 	var errorAlerting service.ErrorAlerting
 
-	xfagg, err := newAggregator(log.NewNopLogger(), &events.MockEmitter{}, shard, uploadAgents, errorAlerting)
+	xfagg, err := newAggregator(log.NewTestLogger(), &events.MockEmitter{}, shard, uploadAgents, errorAlerting)
 	require.NoError(t, err)
 
 	require.NotPanics(t, func() {

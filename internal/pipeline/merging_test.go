@@ -79,7 +79,7 @@ func TestMerging__writeACHFile(t *testing.T) {
 	require.NoError(t, err)
 
 	m := &filesystemMerging{
-		logger: log.NewNopLogger(),
+		logger: log.NewTestLogger(),
 		shard: service.Shard{
 			Name: "testing",
 		},

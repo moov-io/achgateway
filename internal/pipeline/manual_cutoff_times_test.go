@@ -101,7 +101,7 @@ func setupFileReceiver(t *testing.T, waiterResponse error) (*FileReceiver, *sync
 	t.Helper()
 
 	fr := &FileReceiver{
-		logger:           log.NewNopLogger(),
+		logger:           log.NewTestLogger(),
 		defaultShardName: "testing",
 		shardAggregators: make(map[string]*aggregator),
 	}

@@ -30,7 +30,7 @@ import (
 
 func TestDownloader__deleteFiles(t *testing.T) {
 	factory := &downloaderImpl{
-		logger:  log.NewNopLogger(),
+		logger:  log.NewTestLogger(),
 		baseDir: t.TempDir(),
 	}
 
@@ -59,7 +59,7 @@ func TestDownloader__deleteFiles(t *testing.T) {
 
 func TestDownloader__deleteEmptyDirs(t *testing.T) {
 	factory := &downloaderImpl{
-		logger:  log.NewNopLogger(),
+		logger:  log.NewTestLogger(),
 		baseDir: t.TempDir(),
 	}
 

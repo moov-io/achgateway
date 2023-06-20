@@ -34,7 +34,7 @@ func TestTermination(t *testing.T) {
 	listener := service.NewTerminationListener()
 	err := make(chan error)
 	go func() {
-		err <- service.AwaitTermination(log.NewNopLogger(), listener)
+		err <- service.AwaitTermination(log.NewTestLogger(), listener)
 	}()
 	listener <- errors.New("foo")
 
