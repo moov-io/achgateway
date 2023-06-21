@@ -60,6 +60,13 @@ func TestEvent(t *testing.T) {
 		ShardKey:   base.ID(),
 		UploadedAt: time.Now(),
 	}, `"type":"FileUploaded"`)
+
+	check(t, InvalidQueueFile{
+		File: QueueACHFile{
+			File: ach.NewFile(),
+		},
+		Error: "missing abc123",
+	}, `"type":"InvalidQueueFile"`, `"error":"missing abc123"`)
 }
 
 func TestRead(t *testing.T) {
@@ -81,6 +88,31 @@ func TestRead(t *testing.T) {
 
 	require.Equal(t, orig.FileID, cancel.FileID)
 	require.Equal(t, orig.ShardKey, cancel.ShardKey)
+}
+
+func TestRead__InvalidQueueFile(t *testing.T) {
+	data := []byte(`{"event":{"file":{"id":"07e45f053b513d7ccc64cdd4c16da93fb3f57ea8","shardKey":"testing","file":{"id":"","fileHeader":{"id":"","immediateDestination":"","immediateOrigin":"","fileCreationDate":"","fileCreationTime":"","fileIDModifier":"A","immediateDestinationName":"","immediateOriginName":""},"batches":null,"IATBatches":null,"fileControl":{"id":"","batchCount":0,"blockCount":0,"entryAddendaCount":0,"entryHash":0,"totalDebit":0,"totalCredit":0},"fileADVControl":{"id":"","batchCount":0,"entryAddendaCount":0,"entryHash":0,"totalDebit":0,"totalCredit":0},"NotificationOfChange":null,"ReturnEntries":null,"validateOpts":{"skipAll":false,"requireABAOrigin":false,"bypassOriginValidation":false,"bypassDestinationValidation":false,"customTraceNumbers":false,"allowZeroBatches":false,"allowMissingFileHeader":false,"allowMissingFileControl":false,"bypassCompanyIdentificationMatch":false,"customReturnCodes":false,"unequalServiceClassCode":false,"allowUnorderedBatchNumbers":false,"allowInvalidCheckDigit":false,"unequalAddendaCounts":false,"preserveSpaces":false,"allowInvalidAmounts":false}}},"error":"reading QueueACHFile failed: ImmediateDestination            is a mandatory field and has a default value, did you use the constructor?"},"type":"InvalidQueueFile"}`)
+
+	t.Run("Read", func(t *testing.T) {
+		found, err := Read(data)
+		require.NoError(t, err)
+		require.NotNil(t, found)
+		require.Equal(t, "InvalidQueueFile", found.Type)
+
+		iqf, ok := found.Event.(*InvalidQueueFile)
+		require.True(t, ok)
+		require.Equal(t, "reading QueueACHFile failed: ImmediateDestination            is a mandatory field and has a default value, did you use the constructor?", iqf.Error)
+	})
+
+	t.Run("ReadEvent", func(t *testing.T) {
+		iqf := &InvalidQueueFile{}
+		iqf.SetValidation(&ach.ValidateOpts{
+			SkipAll: true,
+		})
+		err := ReadEvent(data, iqf)
+		require.NoError(t, err)
+		require.Equal(t, "reading QueueACHFile failed: ImmediateDestination            is a mandatory field and has a default value, did you use the constructor?", iqf.Error)
+	})
 }
 
 func TestPartialReconciliationFile(t *testing.T) {
