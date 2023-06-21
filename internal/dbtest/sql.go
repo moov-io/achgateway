@@ -82,7 +82,7 @@ func CreateTestDatabase(t *testing.T, config database.DatabaseConfig) database.D
 }
 
 func LoadDatabase(t *testing.T, config database.DatabaseConfig) *sql.DB {
-	l := log.NewNopLogger()
+	l := log.NewTestLogger()
 	db, err := database.New(context.Background(), l, config)
 	if err != nil {
 		panic(err)

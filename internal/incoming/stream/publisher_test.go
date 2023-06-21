@@ -25,11 +25,11 @@ func TestStream(t *testing.T) {
 		},
 	}
 
-	topic, err := Topic(log.NewNopLogger(), cfg)
+	topic, err := Topic(log.NewTestLogger(), cfg)
 	require.NoError(t, err)
 	defer topic.Shutdown(ctx)
 
-	sub, err := OpenSubscription(log.NewNopLogger(), cfg)
+	sub, err := OpenSubscription(log.NewTestLogger(), cfg)
 	require.NoError(t, err)
 	defer sub.Shutdown(ctx)
 

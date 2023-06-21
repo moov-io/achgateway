@@ -23,7 +23,7 @@ func TestAgent(t *testing.T) {
 			},
 		},
 	}
-	agent, err := New(log.NewNopLogger(), cfg, "mock")
+	agent, err := New(log.NewTestLogger(), cfg, "mock")
 	require.NoError(t, err)
 
 	if aa, ok := agent.(*MockAgent); !ok {
@@ -41,7 +41,7 @@ func TestAgent(t *testing.T) {
 		Interval:   1 * time.Second,
 		MaxRetries: 3,
 	}
-	agent, err = New(log.NewNopLogger(), cfg, "mock")
+	agent, err = New(log.NewTestLogger(), cfg, "mock")
 	require.NoError(t, err)
 
 	if aa, ok := agent.(*RetryAgent); !ok {

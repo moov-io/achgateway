@@ -40,7 +40,7 @@ import (
 func TestCreateFileHandler(t *testing.T) {
 	topic, sub := streamtest.InmemStream(t)
 
-	controller := NewFilesController(log.NewNopLogger(), service.HTTPConfig{}, topic)
+	controller := NewFilesController(log.NewTestLogger(), service.HTTPConfig{}, topic)
 	r := mux.NewRouter()
 	controller.AppendRoutes(r)
 
@@ -68,7 +68,7 @@ func TestCreateFileHandler(t *testing.T) {
 func TestCreateFileHandlerErr(t *testing.T) {
 	topic, _ := streamtest.InmemStream(t)
 
-	controller := NewFilesController(log.NewNopLogger(), service.HTTPConfig{}, topic)
+	controller := NewFilesController(log.NewTestLogger(), service.HTTPConfig{}, topic)
 	r := mux.NewRouter()
 	controller.AppendRoutes(r)
 
@@ -84,7 +84,7 @@ func TestCreateFileHandlerErr(t *testing.T) {
 func TestCancelFileHandler(t *testing.T) {
 	topic, sub := streamtest.InmemStream(t)
 
-	controller := NewFilesController(log.NewNopLogger(), service.HTTPConfig{}, topic)
+	controller := NewFilesController(log.NewTestLogger(), service.HTTPConfig{}, topic)
 	r := mux.NewRouter()
 	controller.AppendRoutes(r)
 

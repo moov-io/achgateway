@@ -30,7 +30,7 @@ import (
 )
 
 func Test_ConfigLoading(t *testing.T) {
-	logger := log.NewNopLogger()
+	logger := log.NewTestLogger()
 	ConfigService := config.NewService(logger)
 
 	gc := &service.GlobalConfig{}

@@ -143,7 +143,7 @@ func newAgent(host, user, pass, passFile string) (*SFTPTransferAgent, error) {
 	} else {
 		cfg.SFTP.ClientPrivateKey = passFile
 	}
-	return newSFTPTransferAgent(log.NewNopLogger(), cfg)
+	return newSFTPTransferAgent(log.NewTestLogger(), cfg)
 }
 
 func cp(from, to string) error {
@@ -333,7 +333,7 @@ wg/HcAJWY60xZTJDFN+Qfx8ZQvBEin6c2/h+zZi5IVY=
 }
 
 func TestSFTP__sftpConnect(t *testing.T) {
-	client, _, _, err := sftpConnect(log.NewNopLogger(), service.UploadAgent{
+	client, _, _, err := sftpConnect(log.NewTestLogger(), service.UploadAgent{
 		SFTP: &service.SFTP{
 			Username: "foo",
 		},
@@ -343,7 +343,7 @@ func TestSFTP__sftpConnect(t *testing.T) {
 	}
 
 	// bad host public key
-	_, _, _, err = sftpConnect(log.NewNopLogger(), service.UploadAgent{
+	_, _, _, err = sftpConnect(log.NewTestLogger(), service.UploadAgent{
 		SFTP: &service.SFTP{
 			HostPublicKey: "bad key material",
 		},

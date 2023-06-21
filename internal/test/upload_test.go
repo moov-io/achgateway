@@ -143,7 +143,7 @@ func TestUploads(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	logger := log.NewDefaultLogger()
+	logger := log.NewTestLogger()
 
 	shardRepo := shards.NewInMemoryRepository()
 	shardKeys := setupShards(t, shardRepo)

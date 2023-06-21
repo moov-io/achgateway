@@ -24,6 +24,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/service"
@@ -46,6 +47,8 @@ type FileReceiver struct {
 
 	defaultShardName string
 
+	eventEmitter events.Emitter
+
 	shardRepository  shards.Repository
 	shardAggregators map[string]*aggregator
 
@@ -58,6 +61,7 @@ type FileReceiver struct {
 func newFileReceiver(
 	logger log.Logger,
 	cfg *service.Config,
+	eventEmitter events.Emitter,
 	shardRepository shards.Repository,
 	shardAggregators map[string]*aggregator,
 	httpFiles stream.Subscription,
@@ -67,6 +71,7 @@ func newFileReceiver(
 	fr := &FileReceiver{
 		logger:           logger,
 		cfg:              cfg,
+		eventEmitter:     eventEmitter,
 		defaultShardName: cfg.Sharding.Default,
 		shardRepository:  shardRepository,
 		shardAggregators: shardAggregators,
@@ -257,48 +262,32 @@ func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 
 	data := msg.Body
 	var err error
+	logger := fr.msgWrappedLogger(msg)
 
 	// Optionally decode and decrypt message
 	data, err = compliance.Reveal(fr.transformConfig, data)
 	if err != nil {
-		return fr.wrappedErrorLogger(msg).LogErrorf("unable to reveal event: %v", err).Err()
+		return logger.LogErrorf("unable to reveal event: %v", err).Err()
 	}
 
-	event, err := models.Read(data)
-	if err != nil {
-		return fr.wrappedErrorLogger(msg).LogErrorf("unable to read event: %v", err).Err()
+	event, readErr := models.Read(data)
+	if readErr != nil {
+		logger.LogErrorf("unable to read %s event: %v", event.Type, readErr)
 	}
 
+	var file *incoming.ACHFile
 	switch evt := event.Event.(type) {
-	case incoming.ACHFile:
-		err = fr.processACHFile(evt)
-		if err != nil {
-			return fr.wrappedErrorLogger(msg).With(log.Fields{
-				"type": log.String(fmt.Sprintf("%T", evt)),
-			}).LogError(err).Err()
-		}
-		if !committed {
-			msg.Ack()
-		}
-		return nil
-
 	case *models.QueueACHFile:
-		file := incoming.ACHFile(*evt)
-		err = fr.processACHFile(file)
-		if err != nil {
-			return fr.wrappedErrorLogger(msg).With(log.Fields{
-				"type": log.String(fmt.Sprintf("%T", evt)),
-			}).LogError(err).Err()
-		}
-		if !committed {
-			msg.Ack()
-		}
-		return nil
+		f := incoming.ACHFile(*evt)
+		file = &f
+
+	case incoming.ACHFile:
+		file = &evt
 
 	case *models.CancelACHFile:
 		err = fr.cancelACHFile(evt)
 		if err != nil {
-			return fr.wrappedErrorLogger(msg).With(log.Fields{
+			return logger.With(log.Fields{
 				"type": log.String(fmt.Sprintf("%T", evt)),
 			}).LogError(err).Err()
 		}
@@ -308,8 +297,37 @@ func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 		return nil
 	}
 
+	logger = logger.With(log.Fields{
+		"type": log.String(fmt.Sprintf("%T", file)),
+	})
+
+	if file != nil {
+		// Quit after we failed to read the event's file
+		if readErr != nil {
+			producerErr := fr.produceInvalidQueueFile(logger, *file, readErr)
+			if err != nil {
+				return logger.LogErrorf("problem producing InvalidQueueFile: %w", producerErr).Err()
+			}
+			return readErr
+		} else {
+			// Process the event like normal
+			err = fr.processACHFile(*file)
+			if err != nil {
+				producerErr := fr.produceInvalidQueueFile(logger, *file, err)
+				if err != nil {
+					return logger.LogErrorf("problem producing InvalidQueueFile after processing file: %w", producerErr).Err()
+				}
+				return err
+			}
+			if !committed {
+				msg.Ack()
+			}
+			return nil
+		}
+	}
+
 	// Unhandled Message
-	return fr.wrappedErrorLogger(msg).LogError(errors.New("unhandled message")).Err()
+	return logger.LogError(errors.New("unhandled message")).Err()
 }
 
 func (fr *FileReceiver) shouldAutocommit() bool {
@@ -320,7 +338,7 @@ func (fr *FileReceiver) shouldAutocommit() bool {
 	return kafkaConfig.AutoCommit
 }
 
-func (fr *FileReceiver) wrappedErrorLogger(msg *pubsub.Message) log.Logger {
+func (fr *FileReceiver) msgWrappedLogger(msg *pubsub.Message) log.Logger {
 	logger := fr.logger.With(log.Fields{
 		"loggableID": log.String(msg.LoggableID),
 		"length":     log.Int(len(msg.Body)),
@@ -337,7 +355,18 @@ func (fr *FileReceiver) wrappedErrorLogger(msg *pubsub.Message) log.Logger {
 		})
 	}
 
-	return logger.Error()
+	return logger
+}
+
+func (fr *FileReceiver) produceInvalidQueueFile(logger log.Logger, file incoming.ACHFile, err error) error {
+	logger.Info().Log("producing InvalidQueueFile")
+
+	return fr.eventEmitter.Send(models.Event{
+		Event: models.InvalidQueueFile{
+			File:  models.QueueACHFile(file),
+			Error: err.Error(),
+		},
+	})
 }
 
 func (fr *FileReceiver) getAggregator(shardKey string) *aggregator {
@@ -381,7 +410,7 @@ func (fr *FileReceiver) processACHFile(file incoming.ACHFile) error {
 
 	agg := fr.getAggregator(file.ShardKey)
 	if agg == nil {
-		return nil
+		return fmt.Errorf("no aggregator for shard key %s found", file.ShardKey)
 	}
 
 	logger := fr.logger.With(log.Fields{

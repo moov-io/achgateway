@@ -19,8 +19,11 @@ package events
 
 import (
 	"errors"
+	"fmt"
+	"sync"
 
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/pkg/compliance"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
 )
@@ -42,8 +45,42 @@ func NewEmitter(logger log.Logger, cfg *service.EventsConfig) (Emitter, error) {
 	return nil, errors.New("unknown events config")
 }
 
-type MockEmitter struct{}
+type MockEmitter struct {
+	mu   sync.Mutex
+	sent []models.Event
+}
 
-func (*MockEmitter) Send(evt models.Event) error {
+func (e *MockEmitter) Send(evt models.Event) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	// Compute the full cycle of events like real implementations do
+	bs, err := compliance.Protect(nil, evt)
+	if err != nil {
+		return fmt.Errorf("mock emitter - protect: %w", err)
+	}
+	bs, err = compliance.Reveal(nil, bs)
+	if err != nil {
+		return fmt.Errorf("mock emitter - reveal: %w", err)
+	}
+
+	found, _ := models.Read(bs)
+	if err != nil {
+		return fmt.Errorf("mock emitter - read: %w", err)
+	}
+
+	if found != nil {
+		e.sent = append(e.sent, *found)
+	}
+
 	return nil
+}
+
+func (e *MockEmitter) Sent() []models.Event {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	out := make([]models.Event, len(e.sent))
+	copy(out, e.sent)
+	return out
 }

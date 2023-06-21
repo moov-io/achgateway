@@ -102,6 +102,11 @@ func ReadWithOpts(data []byte, opts *ach.ValidateOpts) (*Event, error) {
 		file.SetValidation(opts)
 		event.Event = &file
 
+	case "InvalidQueueFile":
+		var file InvalidQueueFile
+		file.SetValidation(opts)
+		event.Event = &file
+
 	case "CancelACHFile":
 		var file CancelACHFile
 		event.Event = &file
@@ -229,6 +234,21 @@ func (evt *QueueACHFile) SetValidation(opts *ach.ValidateOpts) {
 	if evt.File == nil {
 		evt.File = ach.NewFile()
 	}
+	evt.File.SetValidation(opts)
+}
+
+// InvalidQueueFile is an event that achgateway produces when a QueueACHFile could not be processed.
+// This event is typically produced when the ACH file is invalid.
+type InvalidQueueFile struct {
+	File  QueueACHFile `json:"file"`
+	Error string       `json:"error"`
+}
+
+func (evt *InvalidQueueFile) SetValidation(opts *ach.ValidateOpts) {
+	if opts == nil {
+		opts = &ach.ValidateOpts{}
+	}
+	opts.SkipAll = true
 	evt.File.SetValidation(opts)
 }
 
