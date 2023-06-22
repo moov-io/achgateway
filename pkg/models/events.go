@@ -110,6 +110,10 @@ func ReadWithOpts(data []byte, opts *ach.ValidateOpts) (*Event, error) {
 	case "CancelACHFile":
 		var file CancelACHFile
 		event.Event = &file
+
+	case "FileUploaded":
+		var file FileUploaded
+		event.Event = &file
 	}
 
 	err = json.Unmarshal(eventType.Event, event.Event)
