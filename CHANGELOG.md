@@ -1,3 +1,22 @@
+## v0.23.0 (Released 2023-06-22)
+
+ADDITIONS
+
+- docs: add FileUploaded event to api specification
+- feat: add API for publishing FileUploaded on isolated directories
+- pipeline: produce InvalidQueueFile when reading or processing QueueACHFile fails
+
+IMPROVEMENTS
+
+- build: upgrade and tidy golang.org deps
+- test: use log.NewTestLogger
+- test: verify FileUploaded is sent from events api
+- test: verify events API handles invalid conditions
+
+BUILD
+
+- build: enable gitleaks again, remove outdated IGNORED_CVES option
+
 ## v0.22.3 (Released 2023-05-30)
 
 IMPROVEMENTS
