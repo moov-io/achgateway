@@ -45,6 +45,11 @@ func (fr *FileReceiver) manuallyProduceFileUploaded() http.HandlerFunc {
 		}
 
 		dir := mux.Vars(r)["isolatedDirectory"]
+		if dir == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
 		matches, err := m.getNonCanceledMatches(dir)
 		if err != nil {
 			logger.LogErrorf("problem listing matches: %v", err)
@@ -53,6 +58,12 @@ func (fr *FileReceiver) manuallyProduceFileUploaded() http.HandlerFunc {
 		}
 
 		processed := newProcessedFiles(agg.shard.Name, matches)
+		if len(matches) == 0 || len(processed.fileIDs) == 0 {
+			logger.Logf("%s not found", dir)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
 		err = agg.emitFilesUploaded(processed)
 		if err != nil {
 			logger.LogErrorf("problem emitting FileUploaded: %v", err)

@@ -124,3 +124,33 @@ func TestEventsAPI_FileUploaded(t *testing.T) {
 		}
 	}
 }
+
+func TestEventsAPI_FileUploadedErrors(t *testing.T) {
+	adminServer := admin.NewServer(":0")
+	require.NotNil(t, adminServer)
+	go adminServer.Listen()
+	defer adminServer.Shutdown()
+
+	fr := testFileReceiver(t)
+	fr.RegisterAdminRoutes(adminServer)
+
+	t.Run("Call /file-uploaded on a shard that doesn't exist", func(t *testing.T) {
+		address := fmt.Sprintf("http://%s/shards/missing/pipeline/missing-12345/file-uploaded", adminServer.BindAddr())
+		req, err := http.NewRequest("PUT", address, nil)
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
+
+	t.Run("Call /file-uploaded on a directory that doesn't exist", func(t *testing.T) {
+		address := fmt.Sprintf("http://%s/shards/testing/pipeline/missing/file-uploaded", adminServer.BindAddr())
+		req, err := http.NewRequest("PUT", address, nil)
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+}
