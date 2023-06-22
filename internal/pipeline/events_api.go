@@ -60,7 +60,7 @@ func (fr *FileReceiver) manuallyProduceFileUploaded() http.HandlerFunc {
 		processed := newProcessedFiles(agg.shard.Name, matches)
 		if len(matches) == 0 || len(processed.fileIDs) == 0 {
 			logger.Logf("%s not found", dir)
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 

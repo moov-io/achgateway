@@ -340,6 +340,39 @@ paths:
               schema:
                 $ref: '#/components/schemas/TriggerResponse'
 
+  /shards/{shardName}/pipeline/{isolatedDirectory}/file-uploaded:
+    put:
+      description: |
+        Produce FileUploaded events from an isolatedDirectory.
+      tags: [ "Operations" ]
+      operationId: produceFileUploaded
+      summary: Produce FileUploaded event
+      servers:
+        - url: http://localhost:9494
+          description: Admin Endpoints
+      parameters:
+        - name: shardName
+          in: path
+          required: true
+          description: Name of shard from configuration file
+          schema:
+            type: string
+            example: SD-live
+        - name: isolatedDirectory
+          in: path
+          required: true
+          description: Directory name that was previously isolated/uploaded
+          schema:
+            type: string
+            example: SD-live-1234567890
+      responses:
+        '200':
+          description: List of pending files in the shard.
+        '400':
+          description: An internal error occurred.
+        '404':
+          description: The shard or directory was not found.
+
 components:
   schemas:
     Config:
