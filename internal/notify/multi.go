@@ -27,7 +27,6 @@ type MultiSender struct {
 func NewMultiSender(logger log.Logger, cfg *service.Notifications, notifiers *service.UploadNotifiers) (*MultiSender, error) {
 	ms := &MultiSender{logger: logger}
 	if cfg == nil || notifiers == nil {
-		ms.logger.Log("multi-sender: created empty sender")
 		return ms, nil
 	}
 	if cfg.Retry != nil {
@@ -61,7 +60,6 @@ func NewMultiSender(logger log.Logger, cfg *service.Notifications, notifiers *se
 		ms.senders = append(ms.senders, sender)
 	}
 
-	ms.logger.Logf("multi-sender: created senders for %v", strings.Join(ms.senderTypes(), ", "))
 	return ms, nil
 }
 
@@ -74,12 +72,12 @@ func setupBackoff(cfg *service.NotificationRetries) (retry.Backoff, error) {
 	return fib, nil
 }
 
-func (ms *MultiSender) senderTypes() []string {
+func (ms *MultiSender) senderTypes() string {
 	var out []string
 	for i := range ms.senders {
 		out = append(out, fmt.Sprintf("%T", ms.senders[i]))
 	}
-	return out
+	return strings.Join(out, ", ")
 }
 
 func (ms *MultiSender) Info(msg *Message) error {
@@ -94,6 +92,9 @@ func (ms *MultiSender) Info(msg *Message) error {
 				firstError = err
 			}
 		}
+	}
+	if firstError == nil && len(ms.senders) > 0 {
+		ms.logger.Logf("multi-sender: sent %d info notifications to %v", len(ms.senders), ms.senderTypes())
 	}
 	return firstError
 }
@@ -110,6 +111,9 @@ func (ms *MultiSender) Critical(msg *Message) error {
 				firstError = err
 			}
 		}
+	}
+	if firstError == nil && len(ms.senders) > 0 {
+		ms.logger.Logf("multi-sender: sent %d critical notifications to %v", len(ms.senders), ms.senderTypes())
 	}
 	return firstError
 }
