@@ -299,6 +299,10 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 			el.Add(fmt.Errorf("problem from callback: %v", err))
 		} else {
 			successfulRemoteWrites++
+
+			if i > 1 && i%10 == 0 {
+				logger.Logf("written (%d/%d) files to remote agent", successfulRemoteWrites, len(files))
+			}
 		}
 	}
 
