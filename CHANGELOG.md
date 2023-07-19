@@ -1,3 +1,18 @@
+## v0.23.1 (Released 2023-07-19)
+
+IMPROVEMENTS
+
+- notify: remove spammy multi-sender logs
+- pipeline: log file upload progress in chunks of 10
+
+BUILD
+
+- chore: update github.com/moov-io/ach to v1.32.0
+- chore: update github.com/moov-io/cryptfs to v0.7.0
+- chore: update github.com/slack-go/slack to v0.12.2
+- chore: update gocloud.dev to v0.30.0
+- chore: update golang.org/x/crypto to v0.11.0
+
 ## v0.23.0 (Released 2023-06-22)
 
 ADDITIONS
