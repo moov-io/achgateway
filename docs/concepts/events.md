@@ -18,7 +18,7 @@ Events may be delivered over a HTTP webhook or supported Stream provider (e.g. K
 
 [`FileUploaded`](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/models#FileUploaded):
 
-```json
+```
 {
   "fileID": "2d05191f-381b-4e93-b8b4-b999f892a95a",
   "shardKey": "SD-bank1-live",
@@ -28,7 +28,7 @@ Events may be delivered over a HTTP webhook or supported Stream provider (e.g. K
 
 [`InvalidQueueFile`](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/models#InvalidQueueFile):
 
-```json
+```
 {
     "file": {
         "id": "01d5af6b-0f77-4976-b681-69947ccc9ea1",
