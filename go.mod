@@ -17,6 +17,7 @@ require (
 	github.com/moov-io/ach v1.32.0
 	github.com/moov-io/base v0.45.0
 	github.com/moov-io/cryptfs v0.7.0
+	github.com/moov-io/go-ftp v0.1.0
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/ory/mail/v3 v3.0.0
 	github.com/pkg/errors v0.9.1

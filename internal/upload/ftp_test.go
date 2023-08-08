@@ -16,7 +16,6 @@ import (
 	"testing"
 	"time"
 
-	mhttptest "github.com/moov-io/achgateway/internal/httptest"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/util"
 	"github.com/moov-io/base"
@@ -205,22 +204,6 @@ func TestFTPAgent_Hostname(t *testing.T) {
 	}
 }
 
-func TestFTP__tlsDialOption(t *testing.T) {
-	if testing.Short() {
-		return // skip network calls
-	}
-
-	cafile, err := mhttptest.GrabConnectionCertificates(t, "google.com:443")
-	require.NoError(t, err)
-	defer os.Remove(cafile)
-
-	opt, err := tlsDialOption(cafile)
-	require.NoError(t, err)
-	if opt == nil {
-		t.Fatal("nil tls DialOption")
-	}
-}
-
 func TestFTP__getInboundFiles(t *testing.T) {
 	svc, agent := createTestFTPAgent(t)
 	defer agent.Close()
@@ -268,9 +251,8 @@ func TestFTP__getReconciliationFiles(t *testing.T) {
 
 	files, err := agent.GetReconciliationFiles()
 	require.NoError(t, err)
-	if len(files) != 1 {
-		t.Errorf("got %d files", len(files))
-	}
+	require.Len(t, files, 1)
+
 	for i := range files {
 		if files[i].Filename == "ppd-debit.ach" {
 			bs, _ := io.ReadAll(files[i].Contents)
@@ -284,9 +266,8 @@ func TestFTP__getReconciliationFiles(t *testing.T) {
 	// make sure we perform the same call and get the same result
 	files, err = agent.GetReconciliationFiles()
 	require.NoError(t, err)
-	if len(files) != 1 {
-		t.Errorf("got %d files", len(files))
-	}
+	require.Len(t, files, 1)
+
 	for i := range files {
 		if files[0].Filename == "ppd-debit.ach" {
 			continue
@@ -347,19 +328,12 @@ func TestFTP__uploadFile(t *testing.T) {
 	}
 
 	// manually read file contents
-	agent.conn.ChangeDir(agent.OutboundPath())
-	resp, _ := agent.conn.Retr(f.Filename)
-	if resp == nil {
-		t.Fatal("nil File response")
-	}
-	r, _ := agent.readResponse(resp)
-	if r == nil {
-		t.Fatal("failed to read file")
-	}
-	bs, _ := io.ReadAll(r)
-	if !bytes.Equal(bs, []byte(content)) {
-		t.Errorf("got %q", string(bs))
-	}
+	fd, err := agent.client.Reader(f.Filename)
+	require.NoError(t, err)
+
+	bs, err := io.ReadAll(fd)
+	require.NoError(t, err)
+	require.Equal(t, content, string(bs))
 
 	// delete the file
 	if err := agent.Delete(f.Filename); err != nil {
