@@ -327,8 +327,10 @@ func TestFTP__uploadFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	path := filepath.Join(agent.OutboundPath(), f.Filename)
+
 	// manually read file contents
-	fd, err := agent.client.Reader(f.Filename)
+	fd, err := agent.client.Reader(path)
 	require.NoError(t, err)
 
 	bs, err := io.ReadAll(fd)
@@ -336,7 +338,7 @@ func TestFTP__uploadFile(t *testing.T) {
 	require.Equal(t, content, string(bs))
 
 	// delete the file
-	if err := agent.Delete(f.Filename); err != nil {
+	if err := agent.Delete(path); err != nil {
 		t.Fatal(err)
 	}
 
