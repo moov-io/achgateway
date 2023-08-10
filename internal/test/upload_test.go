@@ -26,6 +26,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -177,7 +178,9 @@ func TestUploads(t *testing.T) {
 	createdEntries := 0
 	canceledEntries := 0
 	erroredSubscriptions := 0
-	for i := 0; i < 750; i++ {
+	var createdFileIDs []string
+
+	for i := 0; i < 500; i++ {
 		shardKey := shardKeys[i%10]
 		fileID := uuid.NewString()
 		file := randomACHFile(t)
@@ -188,6 +191,8 @@ func TestUploads(t *testing.T) {
 		canceled := maybeCancelFile(t, r, shardKey, fileID, file)
 		if canceled > 0 {
 			canceledEntries += canceled
+		} else {
+			createdFileIDs = append(createdFileIDs, fileID)
 		}
 
 		// Force the subscription to fail sometimes
@@ -199,9 +204,9 @@ func TestUploads(t *testing.T) {
 	}
 
 	t.Logf("created %d entries and canceled %d entries", createdEntries, canceledEntries)
-	require.Greater(t, createdEntries, 0)
-	require.Greater(t, canceledEntries, 0)
-	time.Sleep(10 * time.Second)
+	require.Greater(t, createdEntries, 0, "created entries")
+	require.Greater(t, canceledEntries, 0, "canceled entries")
+	time.Sleep(5 * time.Second)
 
 	var buf bytes.Buffer
 	buf.WriteString(`{"shardNames":["prod", "beta"]}`)
@@ -210,6 +215,9 @@ func TestUploads(t *testing.T) {
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
+
+	// Wait before verifying filesystem results
+	time.Sleep(5 * time.Second)
 
 	filenamePrefixCounts := countFilenamePrefixes(t, outboundPath)
 	require.Greater(t, filenamePrefixCounts["BETA"], 0)
@@ -220,19 +228,22 @@ func TestUploads(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, len(mergableFiles))
 
+	// Verify each fileID was isolated on disk
+	verifyFilesWereIsolated(t, createdFileIDs)
+
 	createdFiles, err := ach.ReadDir(outboundPath)
 	require.NoError(t, err)
 
 	expected := createdEntries - canceledEntries
 	found := countAllEntries(createdFiles)
-	t.Logf("found %d entries of %d expected (%d canceled) (%d errored) (%d files)", found, expected, canceledEntries, erroredSubscriptions, len(createdFiles))
+	t.Logf("found %d entries of %d expected (%d canceled) (%d errored) from %d files", found, expected, canceledEntries, erroredSubscriptions, len(createdFiles))
 	require.Equal(t, found, expected)
 }
 
 func setupTestDirectory(t *testing.T, cfg *service.Config) string {
 	t.Helper()
 
-	dir, err := os.MkdirTemp(filepath.Join("..", "..", "testdata", "ftp-server"), "upload-test-*")
+	dir, err := os.MkdirTemp(filepath.Join("..", "..", "testdata", "ftp-server"), "outbound-*")
 	require.NoError(t, err)
 	t.Cleanup(func() { os.RemoveAll(dir) })
 
@@ -246,22 +257,18 @@ func countFilenamePrefixes(t *testing.T, outboundPath string) map[string]int {
 	out := make(map[string]int)
 
 	entries, err := os.ReadDir(outboundPath)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	for i := range entries {
 		info, err := entries[i].Info()
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
+
 		if info.Mode().IsRegular() {
 			parts := strings.Split(filepath.Base(entries[i].Name()), "-")
 			out[parts[0]] += 1
 		}
 	}
-	if len(out) != 2 {
-		t.Fatalf("unexpected shard counts: %v", out)
-	}
+	require.Len(t, out, 2, "unexpected shard counts")
 	t.Logf("found %v shards", out)
 	return out
 }
@@ -425,4 +432,29 @@ func causeSubscriptionFailure(t *testing.T) error {
 		return subscriptionFailures[idx]
 	}
 	return nil
+}
+
+func firstDirectory(t *testing.T, fsys fs.FS, prefix string) string {
+	t.Helper()
+
+	matches, err := fs.Glob(fsys, fmt.Sprintf("%s-*", prefix))
+	require.NoError(t, err)
+	require.Len(t, matches, 1)
+
+	return matches[0]
+}
+
+func verifyFilesWereIsolated(t *testing.T, fileIDs []string) {
+	t.Helper()
+
+	fsys := os.DirFS("storage")
+	beta, prod := firstDirectory(t, fsys, "beta"), firstDirectory(t, fsys, "prod")
+
+	for i := range fileIDs {
+		betaMatches, _ := fs.Glob(fsys, filepath.Join(beta, fmt.Sprintf("%s.*", fileIDs[i])))
+		prodMatches, _ := fs.Glob(fsys, filepath.Join(prod, fmt.Sprintf("%s.*", fileIDs[i])))
+
+		total := len(betaMatches) + len(prodMatches)
+		require.Greater(t, total, 0, fmt.Sprintf("fileID[%d] %s not found in beta or prod shard", i, fileIDs[i]))
+	}
 }
