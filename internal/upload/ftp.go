@@ -5,22 +5,16 @@
 package upload
 
 import (
-	"bytes"
-	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
+	go_ftp "github.com/moov-io/go-ftp"
 
 	"github.com/go-kit/kit/metrics/prometheus"
-	"github.com/jlaffaye/ftp"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 )
 
@@ -33,122 +27,45 @@ var (
 
 // FTPTransferAgent is an FTP implementation of a Agent
 type FTPTransferAgent struct {
-	conn   *ftp.ServerConn
+	client go_ftp.Client
 	cfg    service.UploadAgent
 	logger log.Logger
-	mu     sync.Mutex // protects all read/write methods
 }
 
 func newFTPTransferAgent(logger log.Logger, cfg *service.UploadAgent) (*FTPTransferAgent, error) {
 	if cfg == nil || cfg.FTP == nil {
 		return nil, errors.New("nil FTP config")
 	}
-	agent := &FTPTransferAgent{
-		cfg:    *cfg,
-		logger: logger,
-	}
 
 	if err := rejectOutboundIPRange(cfg.SplitAllowedIPs(), cfg.FTP.Hostname); err != nil {
 		return nil, fmt.Errorf("ftp: %s is not whitelisted: %v", cfg.FTP.Hostname, err)
 	}
 
-	_, err := agent.connection() // initial connection
-	agent.record(err)
+	client, err := go_ftp.NewClient(go_ftp.ClientConfig{
+		Hostname: cfg.FTP.Hostname,
+		Username: cfg.FTP.Username,
+		Password: cfg.FTP.Password,
+
+		Timeout:     cfg.FTP.Timeout(),
+		DisableEPSV: cfg.FTP.DisableEPSV(),
+		CAFile:      cfg.FTP.CAFile(),
+	})
 	if err != nil {
-		return agent, fmt.Errorf("ftp connect: %v", err)
+		return nil, err
 	}
-	return agent, nil
+	return &FTPTransferAgent{
+		client: client,
+		cfg:    *cfg,
+		logger: logger,
+	}, nil
 }
 
 func (agent *FTPTransferAgent) ID() string {
 	return agent.cfg.ID
 }
 
-// connection returns an ftp.ServerConn which is connected to the remote server.
-// This function will attempt to establish a new connection if none exists already.
-//
-// connection must be called within a mutex lock as the underlying FTP client is not
-// goroutine-safe.
-func (agent *FTPTransferAgent) connection() (*ftp.ServerConn, error) {
-	if agent == nil {
-		return nil, errors.New("nil agent / config")
-	}
-
-	if agent.conn != nil {
-		// Verify the connection works and f not drop through and reconnect
-		if err := agent.conn.NoOp(); err == nil {
-			return agent.conn, nil
-		} else {
-			// Our connection is having issues, so retry connecting
-			agent.conn.Quit()
-		}
-	}
-
-	// Setup our FTP connection
-	opts := []ftp.DialOption{
-		ftp.DialWithTimeout(agent.cfg.FTP.Timeout()),
-		ftp.DialWithDisabledEPSV(agent.cfg.FTP.DisableEPSV()),
-	}
-	tlsOpt, err := tlsDialOption(agent.cfg.FTP.CAFile())
-	if err != nil {
-		return nil, err
-	}
-	if tlsOpt != nil {
-		opts = append(opts, *tlsOpt)
-	}
-
-	// Make the first connection
-	conn, err := ftp.Dial(agent.cfg.FTP.Hostname, opts...)
-	if err != nil {
-		return nil, err
-	}
-	if err := conn.Login(agent.cfg.FTP.Username, agent.cfg.FTP.Password); err != nil {
-		return nil, err
-	}
-	agent.conn = conn
-
-	return agent.conn, nil
-}
-
-func tlsDialOption(caFilePath string) (*ftp.DialOption, error) {
-	if caFilePath == "" {
-		return nil, nil
-	}
-	bs, err := os.ReadFile(caFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("tlsDialOption: failed to read %s: %v", caFilePath, err)
-	}
-	pool, err := x509.SystemCertPool()
-	if pool == nil || err != nil {
-		pool = x509.NewCertPool()
-	}
-	ok := pool.AppendCertsFromPEM(bs)
-	if !ok {
-		return nil, fmt.Errorf("tlsDialOption: problem with AppendCertsFromPEM from %s", caFilePath)
-	}
-	cfg := &tls.Config{
-		RootCAs:    pool,
-		MinVersion: tls.VersionTLS12,
-	}
-	opt := ftp.DialWithTLS(cfg)
-	return &opt, nil
-}
-
 func (agent *FTPTransferAgent) Ping() error {
-	if agent == nil {
-		return errors.New("nil FTPTransferAgent")
-	}
-
-	agent.mu.Lock()
-	defer agent.mu.Unlock()
-
-	conn, err := agent.connection()
-	agent.record(err)
-	if err != nil {
-		return err
-	}
-
-	err = conn.NoOp()
+	err := agent.client.Ping()
 	agent.record(err)
 	return err
 }
@@ -165,18 +82,10 @@ func (agent *FTPTransferAgent) record(err error) {
 }
 
 func (agent *FTPTransferAgent) Close() error {
-	if agent == nil || agent.conn == nil {
+	if agent == nil || agent.client == nil {
 		return nil
 	}
-
-	agent.mu.Lock()
-	defer agent.mu.Unlock()
-
-	conn, err := agent.connection()
-	if err != nil {
-		return err
-	}
-	return conn.Quit()
+	return agent.client.Close()
 }
 
 func (agent *FTPTransferAgent) InboundPath() string {
@@ -203,57 +112,19 @@ func (agent *FTPTransferAgent) Hostname() string {
 }
 
 func (agent *FTPTransferAgent) Delete(path string) error {
-	agent.mu.Lock()
-	defer agent.mu.Unlock()
-
-	if path == "" || strings.HasSuffix(path, "/") {
-		return fmt.Errorf("FTPTransferAgent: invalid path %v", path)
-	}
-
-	conn, err := agent.connection()
-	if err != nil {
-		return err
-	}
-
-	err = conn.Delete(path)
-	if err != nil && !strings.Contains(err.Error(), "no such file or directory") {
-		return err
-	}
-	return nil
+	return agent.client.Delete(path)
 }
 
 // uploadFile saves the content of File at the given filename in the OutboundPath directory
 //
 // The File's contents will always be closed
 func (agent *FTPTransferAgent) UploadFile(f File) error {
-	defer f.Close()
-
-	agent.mu.Lock()
-	defer agent.mu.Unlock()
-
-	conn, err := agent.connection()
-	if err != nil {
-		return err
+	if agent == nil || agent.cfg.FTP == nil {
+		return errors.New("missing FTP client or config")
 	}
 
-	// move into inbound directory and set a trigger to undo and set a defer to move back
-	wd, err := conn.CurrentDir()
-	if err != nil {
-		return err
-	}
-	if err := conn.ChangeDir(agent.cfg.Paths.Outbound); err != nil {
-		return err
-	}
-	defer func(path string) {
-		// Return to our previous directory when initially called
-		if err := conn.ChangeDir(path); err != nil {
-			agent.logger.LogErrorf("FTP: problem uploading file: %v", err)
-		}
-	}(wd)
-
-	// Write file contents into path
-	// Take the base of f.Filename and our (out of band) OutboundPath to avoid accepting a write like '../../../../etc/passwd'.
-	return conn.Stor(filepath.Base(f.Filename), f.Contents)
+	pathToWrite := filepath.Join(agent.OutboundPath(), f.Filename)
+	return agent.client.UploadFile(pathToWrite, f.Contents)
 }
 
 func (agent *FTPTransferAgent) GetInboundFiles() ([]File, error) {
@@ -268,71 +139,29 @@ func (agent *FTPTransferAgent) GetReturnFiles() ([]File, error) {
 	return agent.readFiles(agent.cfg.Paths.Return)
 }
 
-func (agent *FTPTransferAgent) readFiles(path string) ([]File, error) {
-	agent.mu.Lock()
-	defer agent.mu.Unlock()
-
-	conn, err := agent.connection()
-	if err != nil {
-		return nil, err
-	}
-
-	// move into inbound directory and set a trigger to undo
-	wd, err := conn.CurrentDir()
-	if err != nil {
-		return nil, err
-	}
-	defer func(path string) {
-		// Return to our previous directory when initially called
-		if err := conn.ChangeDir(wd); err != nil {
-			agent.logger.LogErrorf("FTP: problem with readFiles: %v", err)
-		}
-	}(wd)
-	if err := conn.ChangeDir(path); err != nil {
-		return nil, err
-	}
-
-	items, err := conn.NameList("")
-	if err != nil {
-		return nil, err
-	}
+func (agent *FTPTransferAgent) readFiles(dir string) ([]File, error) {
 	var files []File
-	for i := range items {
-		resp, err := conn.Retr(items[i])
-		if err != nil {
-			return nil, fmt.Errorf("problem retrieving %s: %v", items[i], err)
-		}
 
-		r, err := agent.readResponse(resp)
-		if err != nil {
-			return nil, fmt.Errorf("problem reading %s: %v", items[i], err)
-		}
-		if r != nil {
-			files = append(files, File{
-				Filename: items[i],
-				Contents: r,
-			})
-		}
-	}
-	return files, nil
-}
-
-func (*FTPTransferAgent) readResponse(resp *ftp.Response) (io.ReadCloser, error) {
-	defer resp.Close()
-
-	var buf bytes.Buffer
-	n, err := io.Copy(&buf, resp)
-	// If there was nothing downloaded and no error then assume it's a directory.
-	//
-	// The FTP client doesn't have a STAT command, so we can't quite ensure this
-	// was a directory.
-	//
-	// See https://github.com/moovfinancial/paygate/issues/494
-	if n == 0 && err == nil {
-		return nil, nil
-	}
+	filenames, err := agent.client.ListFiles(dir)
 	if err != nil {
-		return nil, fmt.Errorf("n=%d error=%v", n, err)
+		return nil, err
 	}
-	return io.NopCloser(&buf), nil
+
+	for i := range filenames {
+		// Ignore hidden files
+		if strings.HasPrefix(filenames[i], ".") {
+			continue
+		}
+
+		reader, err := agent.client.Reader(filepath.Join(dir, filenames[i]))
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, File{
+			Filename: filepath.Base(filenames[i]),
+			Contents: reader,
+		})
+	}
+
+	return files, nil
 }

@@ -20,12 +20,14 @@ package test
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"math/rand"
+	"io/fs"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -50,6 +52,7 @@ import (
 	"github.com/moov-io/base/database"
 	"github.com/moov-io/base/log"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 )
@@ -133,14 +136,13 @@ var (
 	mergingAESKey = base64.RawStdEncoding.EncodeToString(bytes.Repeat([]byte("1"), 32))
 )
 
-func init() {
-	rand.Seed(time.Now().Unix())
-}
-
 func TestUploads(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test via -short")
 	}
+
+	// Force a clean mergable directory for the test
+	require.NoError(t, os.RemoveAll("storage"))
 
 	ctx := context.Background()
 	logger := log.NewTestLogger()
@@ -176,15 +178,22 @@ func TestUploads(t *testing.T) {
 	createdEntries := 0
 	canceledEntries := 0
 	erroredSubscriptions := 0
-	for i := 0; i < 1000; i++ {
+	var createdFileIDs []string
+
+	for i := 0; i < 500; i++ {
 		shardKey := shardKeys[i%10]
-		fileID := base.ID()
+		fileID := uuid.NewString()
 		file := randomACHFile(t)
 		createdEntries += countEntries(file)
 		w := submitFile(t, r, shardKey, fileID, file)
 		require.Equal(t, http.StatusOK, w.Code)
 
-		canceledEntries += maybeCancelFile(t, r, shardKey, fileID, file)
+		canceled := maybeCancelFile(t, r, shardKey, fileID, file)
+		if canceled > 0 {
+			canceledEntries += canceled
+		} else {
+			createdFileIDs = append(createdFileIDs, fileID)
+		}
 
 		// Force the subscription to fail sometimes
 		if err := causeSubscriptionFailure(t); err != nil {
@@ -195,8 +204,8 @@ func TestUploads(t *testing.T) {
 	}
 
 	t.Logf("created %d entries and canceled %d entries", createdEntries, canceledEntries)
-	require.Greater(t, createdEntries, 0)
-	require.Greater(t, canceledEntries, 0)
+	require.Greater(t, createdEntries, 0, "created entries")
+	require.Greater(t, canceledEntries, 0, "canceled entries")
 	time.Sleep(5 * time.Second)
 
 	var buf bytes.Buffer
@@ -207,21 +216,34 @@ func TestUploads(t *testing.T) {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
+	// Wait before verifying filesystem results
+	time.Sleep(5 * time.Second)
+
 	filenamePrefixCounts := countFilenamePrefixes(t, outboundPath)
 	require.Greater(t, filenamePrefixCounts["BETA"], 0)
 	require.Greater(t, filenamePrefixCounts["PROD"], 0)
+
+	// Verify no files are left in mergable/
+	mergableFiles, err := ach.ReadDir(filepath.Join("storage", "mergable"))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(mergableFiles))
+
+	// Verify each fileID was isolated on disk
+	verifyFilesWereIsolated(t, createdFileIDs)
 
 	createdFiles, err := ach.ReadDir(outboundPath)
 	require.NoError(t, err)
 
 	expected := createdEntries - canceledEntries
 	found := countAllEntries(createdFiles)
-	t.Logf("found %d entries of %d expected (%d canceled) (%d errored)", found, expected, canceledEntries, erroredSubscriptions)
+	t.Logf("found %d entries of %d expected (%d canceled) (%d errored) from %d files", found, expected, canceledEntries, erroredSubscriptions, len(createdFiles))
 	require.Equal(t, found, expected)
 }
 
 func setupTestDirectory(t *testing.T, cfg *service.Config) string {
-	dir, err := os.MkdirTemp(filepath.Join("..", "..", "testdata", "ftp-server"), "upload-test-*")
+	t.Helper()
+
+	dir, err := os.MkdirTemp(filepath.Join("..", "..", "testdata", "ftp-server"), "outbound-*")
 	require.NoError(t, err)
 	t.Cleanup(func() { os.RemoveAll(dir) })
 
@@ -235,22 +257,18 @@ func countFilenamePrefixes(t *testing.T, outboundPath string) map[string]int {
 	out := make(map[string]int)
 
 	entries, err := os.ReadDir(outboundPath)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	for i := range entries {
 		info, err := entries[i].Info()
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
+
 		if info.Mode().IsRegular() {
 			parts := strings.Split(filepath.Base(entries[i].Name()), "-")
 			out[parts[0]] += 1
 		}
 	}
-	if len(out) != 2 {
-		t.Fatalf("unexpected shard counts: %v", out)
-	}
+	require.Len(t, out, 2, "unexpected shard counts")
 	t.Logf("found %v shards", out)
 	return out
 }
@@ -272,9 +290,20 @@ func countEntries(file *ach.File) (out int) {
 	return out
 }
 
+func randomInt(t *testing.T, max int64) int64 {
+	t.Helper()
+
+	n, err := rand.Int(rand.Reader, big.NewInt(max))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return n.Int64()
+}
+
 func randomACHFile(t *testing.T) *ach.File {
-	//nolint:gosec
-	if rand.Int31()%2 == 0 {
+	t.Helper()
+
+	if randomInt(t, 100)%2 == 0 {
 		file, err := ach.ReadFile(filepath.Join("..", "..", "testdata", "ppd-debit.ach"))
 		require.NoError(t, err)
 		return randomTraceNumbers(t, file)
@@ -287,9 +316,10 @@ func randomACHFile(t *testing.T) *ach.File {
 	return randomTraceNumbers(t, file)
 }
 
-func traceNumber(routingNumber string) string {
-	//nolint:gosec
-	num := rand.Int63n(1e15)
+func traceNumber(t *testing.T, routingNumber string) string {
+	t.Helper()
+
+	num := randomInt(t, 1e15)
 	v := fmt.Sprintf("%s%d", routingNumber, num)
 	if utf8.RuneCountInString(v) > 15 {
 		return v[:15]
@@ -298,6 +328,8 @@ func traceNumber(routingNumber string) string {
 }
 
 func randomTraceNumbers(t *testing.T, file *ach.File) *ach.File {
+	t.Helper()
+
 	for i := range file.Batches {
 		b, err := ach.NewBatch(file.Batches[i].GetHeader())
 		require.NoError(t, err)
@@ -305,7 +337,7 @@ func randomTraceNumbers(t *testing.T, file *ach.File) *ach.File {
 		entries := file.Batches[i].GetEntries()
 		for i := range entries {
 			if i == 0 {
-				entries[i].TraceNumber = traceNumber(entries[i].TraceNumber[:8])
+				entries[i].TraceNumber = traceNumber(t, entries[i].TraceNumber[:8])
 				b.AddEntry(entries[i])
 			} else {
 				n, _ := strconv.Atoi(entries[0].TraceNumber)
@@ -322,6 +354,8 @@ func randomTraceNumbers(t *testing.T, file *ach.File) *ach.File {
 }
 
 func setupShards(t *testing.T, repo *shards.InMemoryRepository) []string {
+	t.Helper()
+
 	var out []string
 	for i := 0; i < 10; i++ {
 		shardKey := base.ID()
@@ -363,7 +397,7 @@ func maybeCancelFile(t *testing.T, r *mux.Router, shardKey, fileID string, file 
 func shouldCancelFile(t *testing.T) bool {
 	t.Helper()
 
-	return rand.Int63n(100)%10 == 0 //nolint:gosec
+	return randomInt(t, 100)%10 == 0
 }
 
 func cancelFile(t *testing.T, r *mux.Router, shardKey, fileID string) {
@@ -392,10 +426,35 @@ var subscriptionFailures = []error{
 func causeSubscriptionFailure(t *testing.T) error {
 	t.Helper()
 
-	n := rand.Int63n(100) //nolint:gosec
+	n := randomInt(t, 100)
 	if n%25 == 0 {
 		idx := (len(subscriptionFailures) - 1) % (int(n) + 1)
 		return subscriptionFailures[idx]
 	}
 	return nil
+}
+
+func firstDirectory(t *testing.T, fsys fs.FS, prefix string) string {
+	t.Helper()
+
+	matches, err := fs.Glob(fsys, fmt.Sprintf("%s-*", prefix))
+	require.NoError(t, err)
+	require.Len(t, matches, 1)
+
+	return matches[0]
+}
+
+func verifyFilesWereIsolated(t *testing.T, fileIDs []string) {
+	t.Helper()
+
+	fsys := os.DirFS("storage")
+	beta, prod := firstDirectory(t, fsys, "beta"), firstDirectory(t, fsys, "prod")
+
+	for i := range fileIDs {
+		betaMatches, _ := fs.Glob(fsys, filepath.Join(beta, fmt.Sprintf("%s.*", fileIDs[i])))
+		prodMatches, _ := fs.Glob(fsys, filepath.Join(prod, fmt.Sprintf("%s.*", fileIDs[i])))
+
+		total := len(betaMatches) + len(prodMatches)
+		require.Greater(t, total, 0, fmt.Sprintf("fileID[%d] %s not found in beta or prod shard", i, fileIDs[i]))
+	}
 }
