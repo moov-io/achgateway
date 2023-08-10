@@ -103,7 +103,7 @@ func (agent *SFTPTransferAgent) Delete(path string) error {
 // The File's contents will always be closed
 func (agent *SFTPTransferAgent) UploadFile(f File) error {
 	// Take the base of f.Filename and our (out of band) OutboundPath to avoid accepting a write like '../../../../etc/passwd'.
-	pathToWrite := filepath.Join(agent.cfg.Paths.Outbound, filepath.Base(f.Filename))
+	pathToWrite := filepath.Join(agent.OutboundPath(), filepath.Base(f.Filename))
 
 	return agent.client.UploadFile(pathToWrite, f.Contents)
 }

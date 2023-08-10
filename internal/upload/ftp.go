@@ -122,7 +122,9 @@ func (agent *FTPTransferAgent) UploadFile(f File) error {
 	if agent == nil || agent.cfg.FTP == nil {
 		return errors.New("missing FTP client or config")
 	}
-	return agent.client.UploadFile(f.Filename, f.Contents)
+
+	pathToWrite := filepath.Join(agent.OutboundPath(), f.Filename)
+	return agent.client.UploadFile(pathToWrite, f.Contents)
 }
 
 func (agent *FTPTransferAgent) GetInboundFiles() ([]File, error) {
