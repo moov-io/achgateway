@@ -1,3 +1,12 @@
+## v0.23.2 (Released 2023-08-11)
+
+IMPROVEMENTS
+
+- test/upload: use UUID's for fileIDs, use crypto/rand, verify more details
+- test/upload: verify every fileID was written to disk
+- upload: replace SFTP code with moov-io/go-sftp
+- upload: replace FTP agent code with moov-io/go-ftp
+
 ## v0.23.1 (Released 2023-07-19)
 
 IMPROVEMENTS
