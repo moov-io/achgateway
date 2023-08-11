@@ -30,12 +30,6 @@ func TestAgent(t *testing.T) {
 		t.Errorf("unexpected agent: %#v", aa)
 	}
 
-	// check Agent was registered
-	require.Len(t, createdAgents.agents, 1)
-
-	_, ok := createdAgents.agents[0].(*MockAgent)
-	require.True(t, ok)
-
 	// setup a second (retrying) agent
 	cfg.Retry = &service.UploadRetry{
 		Interval:   1 * time.Second,
@@ -51,13 +45,4 @@ func TestAgent(t *testing.T) {
 			t.Errorf("unexpected agent: %#v", aa)
 		}
 	}
-
-	// check Agent was registered
-	require.Len(t, createdAgents.agents, 2)
-
-	retr, ok := createdAgents.agents[1].(*RetryAgent)
-	require.True(t, ok)
-
-	_, ok = retr.underlying.(*MockAgent)
-	require.True(t, ok)
 }

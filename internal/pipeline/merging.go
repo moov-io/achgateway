@@ -273,6 +273,8 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 	if err != nil {
 		return processed, fmt.Errorf("%s merging agent: %v", m.shard.Name, err)
 	}
+	defer agent.Close()
+
 	logger.Logf("found %T agent", agent)
 
 	// Write each file to our remote agent
