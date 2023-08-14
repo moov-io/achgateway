@@ -141,7 +141,6 @@ func (s *PeriodicScheduler) tick(logger log.Logger, shard *service.Shard) error 
 	if err != nil {
 		return fmt.Errorf("agent: %v", err)
 	}
-	defer agent.Close()
 
 	logger.Logf("start retrieving and processing of inbound files in %s", agent.Hostname())
 

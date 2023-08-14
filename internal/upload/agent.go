@@ -6,9 +6,11 @@ package upload
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/moov-io/achgateway/internal/service"
 
+	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/log"
 )
 
@@ -32,7 +34,21 @@ type Agent interface {
 	Close() error
 }
 
+var (
+	createdAgents = &CreatedAgents{}
+)
+
 func New(logger log.Logger, cfg service.UploadAgents, id string) (Agent, error) {
+	createdAgents.mu.Lock()
+	defer createdAgents.mu.Unlock()
+
+	// lookup cached
+	for i := range createdAgents.agents {
+		if createdAgents.agents[i].ID() == id {
+			return createdAgents.agents[i], nil
+		}
+	}
+
 	// Create the new agent
 	var agent Agent
 	if conf := cfg.Find(id); conf != nil {
@@ -64,5 +80,32 @@ func New(logger log.Logger, cfg service.UploadAgents, id string) (Agent, error) 
 		}
 		agent = retr
 	}
+	createdAgents.register(agent)
 	return agent, nil
+}
+
+type CreatedAgents struct {
+	mu          sync.Mutex
+	agents      []Agent
+	adminServer *admin.Server
+}
+
+func RegisterAdminServer(svc *admin.Server) {
+	createdAgents.mu.Lock()
+	defer createdAgents.mu.Unlock()
+
+	if createdAgents.adminServer == nil && svc != nil {
+		createdAgents.adminServer = svc
+	}
+}
+
+func (as *CreatedAgents) register(agent Agent) {
+	// track agent
+	as.agents = append(as.agents, agent)
+
+	// register liveness probe
+	if as.adminServer != nil {
+		kind := fmt.Sprintf("%T", agent)
+		as.adminServer.AddLivenessCheck(kind, agent.Ping)
+	}
 }
