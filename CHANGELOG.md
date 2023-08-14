@@ -1,3 +1,10 @@
+## v0.23.3 (Released 2023-08-14)
+
+BUILD
+
+- chore: update github.com/moov-io/go-ftp to v0.1.1
+- chore: update github.com/moov-io/go-sftp to v0.10.2
+
 ## v0.23.2 (Released 2023-08-11)
 
 IMPROVEMENTS
