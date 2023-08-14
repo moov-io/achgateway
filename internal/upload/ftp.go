@@ -153,13 +153,14 @@ func (agent *FTPTransferAgent) readFiles(dir string) ([]File, error) {
 			continue
 		}
 
-		reader, err := agent.client.Reader(filepath.Join(dir, filenames[i]))
+		// Consume entire file into memory
+		data, err := agent.client.Open(filepath.Join(dir, filenames[i]))
 		if err != nil {
 			return nil, err
 		}
 		files = append(files, File{
 			Filename: filepath.Base(filenames[i]),
-			Contents: reader,
+			Contents: data,
 		})
 	}
 
