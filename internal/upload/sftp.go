@@ -102,47 +102,45 @@ func (agent *SFTPTransferAgent) Delete(path string) error {
 //
 // The File's contents will always be closed
 func (agent *SFTPTransferAgent) UploadFile(f File) error {
-	// Take the base of f.Filename and our (out of band) OutboundPath to avoid accepting a write like '../../../../etc/passwd'.
-	pathToWrite := filepath.Join(agent.OutboundPath(), filepath.Base(f.Filename))
+	// Take the base of f.Filepath and our (out of band) OutboundPath to avoid accepting a write like '../../../../etc/passwd'.
+	pathToWrite := filepath.Join(agent.OutboundPath(), filepath.Base(f.Filepath))
 
 	return agent.client.UploadFile(pathToWrite, f.Contents)
 }
 
-func (agent *SFTPTransferAgent) GetInboundFiles() ([]File, error) {
-	return agent.readFiles(agent.cfg.Paths.Inbound)
+func (agent *SFTPTransferAgent) ReadFile(path string) (*File, error) {
+	file, err := agent.client.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("sftp open %s failed: %w", path, err)
+	}
+	return &File{
+		Filepath: filepath.Base(file.Filename),
+		Contents: file.Contents,
+	}, nil
 }
 
-func (agent *SFTPTransferAgent) GetReconciliationFiles() ([]File, error) {
-	return agent.readFiles(agent.cfg.Paths.Reconciliation)
+func (agent *SFTPTransferAgent) GetInboundFiles() ([]string, error) {
+	return agent.readFilepaths(agent.cfg.Paths.Inbound)
 }
 
-func (agent *SFTPTransferAgent) GetReturnFiles() ([]File, error) {
-	return agent.readFiles(agent.cfg.Paths.Return)
+func (agent *SFTPTransferAgent) GetReconciliationFiles() ([]string, error) {
+	return agent.readFilepaths(agent.cfg.Paths.Reconciliation)
 }
 
-func (agent *SFTPTransferAgent) readFiles(dir string) ([]File, error) {
-	var files []File
+func (agent *SFTPTransferAgent) GetReturnFiles() ([]string, error) {
+	return agent.readFilepaths(agent.cfg.Paths.Return)
+}
 
-	filenames, err := agent.client.ListFiles(dir)
+func (agent *SFTPTransferAgent) readFilepaths(dir string) ([]string, error) {
+	filepaths, err := agent.client.ListFiles(dir)
 	if err != nil {
 		return nil, err
 	}
-
-	for i := range filenames {
-		// Ignore hidden files
-		if strings.HasPrefix(filenames[i], ".") {
-			continue
+	// Ignore hidden files
+	for i := range filepaths {
+		if strings.HasPrefix(filepath.Base(filepaths[i]), ".") {
+			filepaths = append(filepaths[:i], filepaths[i+1:]...)
 		}
-
-		reader, err := agent.client.Reader(filenames[i])
-		if err != nil {
-			return nil, err
-		}
-		files = append(files, File{
-			Filename: filepath.Base(filenames[i]),
-			Contents: reader,
-		})
 	}
-
-	return files, nil
+	return filepaths, nil
 }

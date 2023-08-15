@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/moov-io/achgateway/internal/service"
-
 	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/log"
 )
@@ -18,11 +17,12 @@ import (
 type Agent interface {
 	ID() string
 
-	GetInboundFiles() ([]File, error)
-	GetReconciliationFiles() ([]File, error)
-	GetReturnFiles() ([]File, error)
+	GetInboundFiles() ([]string, error)
+	GetReconciliationFiles() ([]string, error)
+	GetReturnFiles() ([]string, error)
 	UploadFile(f File) error
 	Delete(path string) error
+	ReadFile(path string) (*File, error)
 
 	InboundPath() string
 	OutboundPath() string

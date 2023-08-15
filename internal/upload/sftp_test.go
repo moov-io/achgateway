@@ -165,7 +165,7 @@ func TestSFTP__password(t *testing.T) {
 	require.NoError(t, err)
 
 	err = deployment.agent.UploadFile(File{
-		Filename: "upload.ach",
+		Filepath: "upload.ach",
 		Contents: io.NopCloser(strings.NewReader("test data")),
 	})
 	require.NoError(t, err)
@@ -181,10 +181,10 @@ func TestSFTP__password(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	files, err := deployment.agent.GetInboundFiles()
+	filepaths, err := deployment.agent.GetInboundFiles()
 	require.NoError(t, err)
-	require.Len(t, files, 1)
-	require.Equal(t, "iat-credit.ach", files[0].Filename)
+	require.Len(t, filepaths, 1)
+	require.Equal(t, "/upload/inbound/iat-credit.ach", filepaths[0])
 
 	// Return files (WEB in our testdata/sftp-server/)
 	os.MkdirAll(filepath.Join(deployment.dir, "returned"), 0777)
@@ -196,10 +196,10 @@ func TestSFTP__password(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	files, err = deployment.agent.GetReturnFiles()
+	filepaths, err = deployment.agent.GetReturnFiles()
 	require.NoError(t, err)
-	require.Len(t, files, 1)
-	require.Equal(t, "return-WEB.ach", files[0].Filename)
+	require.Len(t, filepaths, 1)
+	require.Equal(t, "/upload/returned/return-WEB.ach", filepaths[0])
 }
 
 func TestSFTP__readFilesEmpty(t *testing.T) {
@@ -211,25 +211,30 @@ func TestSFTP__readFilesEmpty(t *testing.T) {
 	// Upload an empty file
 	filename := fmt.Sprintf("%s.ach", base.ID())
 	err = deployment.agent.UploadFile(File{
-		Filename: filename,
+		Filepath: filename,
 		Contents: io.NopCloser(strings.NewReader("")),
 	})
 	require.NoError(t, err)
 
 	// Read the empty file
-	files, err := deployment.agent.readFiles(deployment.agent.OutboundPath())
+	filepaths, err := deployment.agent.readFilepaths(deployment.agent.OutboundPath())
 	require.NoError(t, err)
-	require.Len(t, files, 1)
+	require.Len(t, filepaths, 1)
+	require.ElementsMatch(t, filepaths, []string{
+		filepath.Join(deployment.agent.OutboundPath(), filename),
+	})
 
-	bs, err := io.ReadAll(files[0].Contents)
+	file, err := deployment.agent.ReadFile(filepaths[0])
+	require.NoError(t, err)
+
+	bs, err := io.ReadAll(file.Contents)
 	require.NoError(t, err)
 	require.Equal(t, "", string(bs))
 
 	// read a non-existent directory
-	files, err = deployment.agent.readFiles("/dev/null")
-	if err == nil {
-		t.Errorf("expected error -- files: %#v", files)
-	}
+	filepaths, err = deployment.agent.readFilepaths("/dev/null")
+	require.Error(t, err)
+	require.Len(t, filepaths, 0)
 }
 
 func TestSFTP__uploadFile(t *testing.T) {
@@ -241,7 +246,7 @@ func TestSFTP__uploadFile(t *testing.T) {
 	// force out OutboundPath to create more directories
 	deployment.agent.cfg.Paths.Outbound = filepath.Join("upload", "foo")
 	err = deployment.agent.UploadFile(File{
-		Filename: "upload.ach",
+		Filepath: "upload.ach",
 		Contents: io.NopCloser(strings.NewReader("test data")),
 	})
 	require.NoError(t, err)
@@ -249,7 +254,7 @@ func TestSFTP__uploadFile(t *testing.T) {
 	// fail to create the OutboundPath
 	deployment.agent.cfg.Paths.Outbound = string(os.PathSeparator) + filepath.Join("home", "bad-path")
 	err = deployment.agent.UploadFile(File{
-		Filename: "upload.ach",
+		Filepath: "upload.ach",
 		Contents: io.NopCloser(strings.NewReader("test data")),
 	})
 	require.Error(t, err)

@@ -11,12 +11,15 @@ import (
 )
 
 type MockAgent struct {
-	InboundFiles        []File
-	ReconciliationFiles []File
-	ReturnFiles         []File
-	UploadedFile        *File        // non-nil on file upload
-	DeletedFile         string       // filepath of last deleted file
-	mu                  sync.RWMutex // protects all fields
+	InboundFilepaths        []string
+	ReconciliationFilepaths []string
+	ReturnFilepaths         []string
+
+	UploadedFile *File  // non-nil on file upload
+	DeletedFile  string // filepath of last deleted file
+	ReadableFile *File
+
+	mu sync.RWMutex // protects all fields
 
 	Err error
 }
@@ -25,25 +28,25 @@ func (a *MockAgent) ID() string {
 	return "mock-agent"
 }
 
-func (a *MockAgent) GetInboundFiles() ([]File, error) {
+func (a *MockAgent) GetInboundFiles() ([]string, error) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	return a.InboundFiles, nil
+	return a.InboundFilepaths, nil
 }
 
-func (a *MockAgent) GetReconciliationFiles() ([]File, error) {
+func (a *MockAgent) GetReconciliationFiles() ([]string, error) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	return a.ReconciliationFiles, nil
+	return a.ReconciliationFilepaths, nil
 }
 
-func (a *MockAgent) GetReturnFiles() ([]File, error) {
+func (a *MockAgent) GetReturnFiles() ([]string, error) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	return a.ReturnFiles, nil
+	return a.ReturnFilepaths, nil
 }
 
 func (a *MockAgent) UploadFile(f File) error {
@@ -63,6 +66,13 @@ func (a *MockAgent) Delete(path string) error {
 
 	a.DeletedFile = path
 	return nil
+}
+
+func (a *MockAgent) ReadFile(path string) (*File, error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	return a.ReadableFile, nil
 }
 
 func (a *MockAgent) InboundPath() string {

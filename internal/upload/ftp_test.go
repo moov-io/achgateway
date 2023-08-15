@@ -209,14 +209,16 @@ func TestFTP__getInboundFiles(t *testing.T) {
 	defer agent.Close()
 	defer svc.Shutdown()
 
-	files, err := agent.GetInboundFiles()
+	filenames, err := agent.GetInboundFiles()
 	require.NoError(t, err)
-	if len(files) != 3 {
-		t.Errorf("got %d files", len(files))
-	}
-	for i := range files {
-		if files[i].Filename == "iat-credit.ach" {
-			bs, _ := io.ReadAll(files[i].Contents)
+	require.Len(t, filenames, 3)
+
+	for i := range filenames {
+		if filenames[i] == "inbound/iat-credit.ach" {
+			file, err := agent.ReadFile(filenames[i])
+			require.NoError(t, err)
+
+			bs, _ := io.ReadAll(file.Contents)
 			bs = bytes.TrimSpace(bs)
 			if !strings.HasPrefix(string(bs), "101 121042882 2313801041812180000A094101Bank                   My Bank Name                   ") {
 				t.Errorf("got %v", string(bs))
@@ -225,23 +227,10 @@ func TestFTP__getInboundFiles(t *testing.T) {
 	}
 
 	// make sure we perform the same call and get the same result
-	files, err = agent.GetInboundFiles()
+	filenames, err = agent.GetInboundFiles()
 	require.NoError(t, err)
-	if len(files) != 3 {
-		t.Errorf("got %d files", len(files))
-	}
-	for i := range files {
-		if files[0].Filename == "iat-credit.ach" {
-			continue
-		}
-		if files[0].Filename == "cor-c01.ach" {
-			continue
-		}
-		if files[0].Filename == "prenote-ppd-debit.ach" {
-			continue
-		}
-		t.Errorf("files[%d]=%s", i, files[i])
-	}
+	require.Len(t, filenames, 3)
+	require.ElementsMatch(t, filenames, []string{"inbound/iat-credit.ach", "inbound/cor-c01.ach", "inbound/prenote-ppd-debit.ach"})
 }
 
 func TestFTP__getReconciliationFiles(t *testing.T) {
@@ -249,13 +238,17 @@ func TestFTP__getReconciliationFiles(t *testing.T) {
 	defer agent.Close()
 	defer svc.Shutdown()
 
-	files, err := agent.GetReconciliationFiles()
+	filenames, err := agent.GetReconciliationFiles()
 	require.NoError(t, err)
-	require.Len(t, files, 1)
+	require.Len(t, filenames, 1)
+	require.ElementsMatch(t, filenames, []string{"reconciliation/ppd-debit.ach"})
 
-	for i := range files {
-		if files[i].Filename == "ppd-debit.ach" {
-			bs, _ := io.ReadAll(files[i].Contents)
+	for i := range filenames {
+		if filenames[i] == "reconciliation/ppd-debit.ach" {
+			file, err := agent.ReadFile(filenames[i])
+			require.NoError(t, err)
+
+			bs, _ := io.ReadAll(file.Contents)
 			bs = bytes.TrimSpace(bs)
 			if !strings.HasPrefix(string(bs), "5225companyname                         origid    PPDCHECKPAYMT000002080730   1076401250000001") {
 				t.Errorf("got %v", string(bs))
@@ -264,16 +257,9 @@ func TestFTP__getReconciliationFiles(t *testing.T) {
 	}
 
 	// make sure we perform the same call and get the same result
-	files, err = agent.GetReconciliationFiles()
+	filenames, err = agent.GetReconciliationFiles()
 	require.NoError(t, err)
-	require.Len(t, files, 1)
-
-	for i := range files {
-		if files[0].Filename == "ppd-debit.ach" {
-			continue
-		}
-		t.Errorf("files[%d]=%s", i, files[i])
-	}
+	require.ElementsMatch(t, filenames, []string{"reconciliation/ppd-debit.ach"})
 }
 
 func TestFTP__getReturnFiles(t *testing.T) {
@@ -281,29 +267,26 @@ func TestFTP__getReturnFiles(t *testing.T) {
 	defer agent.Close()
 	defer svc.Shutdown()
 
-	files, err := agent.GetReturnFiles()
+	filenames, err := agent.GetReturnFiles()
 	require.NoError(t, err)
-	if len(files) != 1 {
-		t.Errorf("got %d files", len(files))
-	}
-	if files[0].Filename != "return-WEB.ach" {
-		t.Errorf("files[0]=%s", files[0])
-	}
-	bs, _ := io.ReadAll(files[0].Contents)
+	require.Len(t, filenames, 1)
+	require.Equal(t, "returned/return-WEB.ach", filenames[0])
+
+	// read the returned file and verify its contents
+	file, err := agent.ReadFile(filenames[0])
+	require.NoError(t, err)
+
+	bs, _ := io.ReadAll(file.Contents)
 	bs = bytes.TrimSpace(bs)
 	if !strings.HasPrefix(string(bs), "101 091400606 6910001341810170306A094101FIRST BANK & TRUST     ASF APPLICATION SUPERVI        ") {
 		t.Errorf("got %v", string(bs))
 	}
 
 	// make sure we perform the same call and get the same result
-	files, err = agent.GetReturnFiles()
+	filenames, err = agent.GetReturnFiles()
 	require.NoError(t, err)
-	if len(files) != 1 {
-		t.Errorf("got %d files", len(files))
-	}
-	if files[0].Filename != "return-WEB.ach" {
-		t.Errorf("files[0]=%s", files[0])
-	}
+	require.Len(t, filenames, 1)
+	require.Equal(t, "returned/return-WEB.ach", filenames[0])
 }
 
 func TestFTP__uploadFile(t *testing.T) {
@@ -313,7 +296,7 @@ func TestFTP__uploadFile(t *testing.T) {
 
 	content := base.ID()
 	f := File{
-		Filename: base.ID(),
+		Filepath: base.ID(),
 		Contents: io.NopCloser(strings.NewReader(content)), // random file contents
 	}
 
@@ -327,7 +310,7 @@ func TestFTP__uploadFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	path := filepath.Join(agent.OutboundPath(), f.Filename)
+	path := filepath.Join(agent.OutboundPath(), f.Filepath)
 
 	// manually read file contents
 	fd, err := agent.client.Reader(path)

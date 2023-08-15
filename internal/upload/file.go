@@ -9,7 +9,7 @@ import (
 )
 
 type File struct {
-	Filename string
+	Filepath string
 	Contents io.ReadCloser
 }
 

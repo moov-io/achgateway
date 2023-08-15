@@ -123,46 +123,43 @@ func (agent *FTPTransferAgent) UploadFile(f File) error {
 		return errors.New("missing FTP client or config")
 	}
 
-	pathToWrite := filepath.Join(agent.OutboundPath(), f.Filename)
+	pathToWrite := filepath.Join(agent.OutboundPath(), f.Filepath)
 	return agent.client.UploadFile(pathToWrite, f.Contents)
 }
 
-func (agent *FTPTransferAgent) GetInboundFiles() ([]File, error) {
-	return agent.readFiles(agent.cfg.Paths.Inbound)
+func (agent *FTPTransferAgent) ReadFile(path string) (*File, error) {
+	file, err := agent.client.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("ftp open %s failed: %w", path, err)
+	}
+	return &File{
+		Filepath: filepath.Base(file.Filename),
+		Contents: file.Contents,
+	}, nil
 }
 
-func (agent *FTPTransferAgent) GetReconciliationFiles() ([]File, error) {
-	return agent.readFiles(agent.cfg.Paths.Reconciliation)
+func (agent *FTPTransferAgent) GetInboundFiles() ([]string, error) {
+	return agent.readFilepaths(agent.cfg.Paths.Inbound)
 }
 
-func (agent *FTPTransferAgent) GetReturnFiles() ([]File, error) {
-	return agent.readFiles(agent.cfg.Paths.Return)
+func (agent *FTPTransferAgent) GetReconciliationFiles() ([]string, error) {
+	return agent.readFilepaths(agent.cfg.Paths.Reconciliation)
 }
 
-func (agent *FTPTransferAgent) readFiles(dir string) ([]File, error) {
-	var files []File
+func (agent *FTPTransferAgent) GetReturnFiles() ([]string, error) {
+	return agent.readFilepaths(agent.cfg.Paths.Return)
+}
 
-	filenames, err := agent.client.ListFiles(dir)
+func (agent *FTPTransferAgent) readFilepaths(dir string) ([]string, error) {
+	filepaths, err := agent.client.ListFiles(dir)
 	if err != nil {
 		return nil, err
 	}
-
-	for i := range filenames {
-		// Ignore hidden files
-		if strings.HasPrefix(filenames[i], ".") {
-			continue
+	// Ignore hidden files
+	for i := range filepaths {
+		if strings.HasPrefix(filepath.Base(filepaths[i]), ".") {
+			filepaths = append(filepaths[:i], filepaths[i+1:]...)
 		}
-
-		// Consume entire file into memory
-		data, err := agent.client.Open(filepath.Join(dir, filenames[i]))
-		if err != nil {
-			return nil, err
-		}
-		files = append(files, File{
-			Filename: filepath.Base(filenames[i]),
-			Contents: data,
-		})
 	}
-
-	return files, nil
+	return filepaths, nil
 }
