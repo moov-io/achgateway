@@ -130,62 +130,72 @@ func (dl *downloaderImpl) CopyFilesFromRemote(agent upload.Agent) (*downloadedFi
 	}
 
 	// copy down files from our "inbound" directory
-	files, err := agent.GetInboundFiles()
-	dl.logger.Logf("%T found %d inbound files in %s", agent, len(files), agent.InboundPath())
+	filepaths, err := agent.GetInboundFiles()
+	dl.logger.Logf("%T found %d inbound files in %s", agent, len(filepaths), agent.InboundPath())
 	if err != nil {
 		return out, fmt.Errorf("problem downloading inbound files: %v", err)
 	}
-	filesDownloaded.With("kind", "inbound").Add(float64(len(files)))
-	if err := dl.writeFiles(filepath.Join(out.dir, agent.InboundPath()), files); err != nil {
+	filesDownloaded.With("kind", "inbound").Add(float64(len(filepaths)))
+	if err := dl.saveFilepaths(agent, filepaths, filepath.Join(out.dir, agent.InboundPath())); err != nil {
 		return out, fmt.Errorf("problem saving inbound files: %v", err)
 	}
 
 	// copy down files from out "reconciliation" directory
-	files, err = agent.GetReconciliationFiles()
-	dl.logger.Logf("%T found %d reconciliation files in %s", agent, len(files), agent.ReconciliationPath())
+	filepaths, err = agent.GetReconciliationFiles()
+	dl.logger.Logf("%T found %d reconciliation files in %s", agent, len(filepaths), agent.ReconciliationPath())
 	if err != nil {
 		return out, fmt.Errorf("problem downloading reconciliation files: %v", err)
 	}
-	filesDownloaded.With("kind", "reconciliation").Add(float64(len(files)))
-	if err := dl.writeFiles(filepath.Join(out.dir, agent.ReconciliationPath()), files); err != nil {
+	filesDownloaded.With("kind", "reconciliation").Add(float64(len(filepaths)))
+	if err := dl.saveFilepaths(agent, filepaths, filepath.Join(out.dir, agent.ReconciliationPath())); err != nil {
 		return out, fmt.Errorf("problem saving reconciliation files: %v", err)
 	}
 
 	// copy down files from out "return" directory
-	files, err = agent.GetReturnFiles()
-	dl.logger.Logf("%T found %d return files in %s", agent, len(files), agent.ReturnPath())
+	filepaths, err = agent.GetReturnFiles()
+	dl.logger.Logf("%T found %d return files in %s", agent, len(filepaths), agent.ReturnPath())
 	if err != nil {
 		return out, fmt.Errorf("problem downloading return files: %v", err)
 	}
-	filesDownloaded.With("kind", "return").Add(float64(len(files)))
-	if err := dl.writeFiles(filepath.Join(out.dir, agent.ReturnPath()), files); err != nil {
+	filesDownloaded.With("kind", "return").Add(float64(len(filepaths)))
+	if err := dl.saveFilepaths(agent, filepaths, filepath.Join(out.dir, agent.ReturnPath())); err != nil {
 		return out, fmt.Errorf("problem saving return files: %v", err)
 	}
 
 	return out, nil
 }
 
-// writeFiles will create files in dir for each file object provided
+// saveFilepaths will create files in dir for each file object provided
 // The contents of each file struct will always be closed.
-func (dl *downloaderImpl) writeFiles(dir string, files []upload.File) error {
+func (dl *downloaderImpl) saveFilepaths(agent upload.Agent, filepaths []string, dir string) error {
 	var firstErr error
 	var errordFilenames []string
 
 	os.MkdirAll(dir, 0777) // ignore errors
-	for i := range files {
-		f, err := os.Create(filepath.Join(dir, files[i].Filename))
+	for i := range filepaths {
+		outPath := filepath.Join(dir, filepath.Base(filepaths[i]))
+		f, err := os.Create(outPath)
 		if err != nil {
 			if firstErr == nil {
 				firstErr = err
 			}
-			errordFilenames = append(errordFilenames, files[i].Filename)
+			errordFilenames = append(errordFilenames, filepaths[i])
 			continue
 		}
-		if _, err = io.Copy(f, files[i].Contents); err != nil {
+
+		file, err := agent.ReadFile(filepaths[i])
+		if err != nil {
 			if firstErr == nil {
 				firstErr = err
 			}
-			errordFilenames = append(errordFilenames, files[i].Filename)
+			errordFilenames = append(errordFilenames, filepaths[i])
+			continue
+		}
+		if _, err = io.Copy(f, file.Contents); err != nil {
+			if firstErr == nil {
+				firstErr = err
+			}
+			errordFilenames = append(errordFilenames, filepaths[i])
 			continue
 		}
 		if err := f.Sync(); err != nil {
@@ -194,13 +204,13 @@ func (dl *downloaderImpl) writeFiles(dir string, files []upload.File) error {
 		if err := f.Close(); err != nil {
 			return err
 		}
-		if err := files[i].Contents.Close(); err != nil {
+		if err := file.Close(); err != nil {
 			return err
 		}
-		dl.logger.Logf("saved %s at %s", files[i].Filename, filepath.Join(dir, files[i].Filename))
+		dl.logger.Logf("saved %s at %s", filepaths[i], outPath)
 	}
 	if len(errordFilenames) != 0 {
-		return fmt.Errorf("writeFiles problem on: %s: %v", strings.Join(errordFilenames, ", "), firstErr)
+		return fmt.Errorf("saveFilepaths problem on: %s: %v", strings.Join(errordFilenames, ", "), firstErr)
 	}
 	return nil
 }

@@ -296,7 +296,7 @@ func TestFTP__uploadFile(t *testing.T) {
 
 	content := base.ID()
 	f := File{
-		Filename: base.ID(),
+		Filepath: base.ID(),
 		Contents: io.NopCloser(strings.NewReader(content)), // random file contents
 	}
 
@@ -310,7 +310,7 @@ func TestFTP__uploadFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	path := filepath.Join(agent.OutboundPath(), f.Filename)
+	path := filepath.Join(agent.OutboundPath(), f.Filepath)
 
 	// manually read file contents
 	fd, err := agent.client.Reader(path)

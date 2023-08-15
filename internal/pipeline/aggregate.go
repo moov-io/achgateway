@@ -275,7 +275,7 @@ func (xfagg *aggregator) uploadFile(index int, agent upload.Agent, res *transfor
 
 	// Upload our file
 	err = agent.UploadFile(upload.File{
-		Filename: filename,
+		Filepath: filename,
 		Contents: io.NopCloser(&buf),
 	})
 

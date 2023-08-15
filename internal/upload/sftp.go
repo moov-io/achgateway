@@ -102,8 +102,8 @@ func (agent *SFTPTransferAgent) Delete(path string) error {
 //
 // The File's contents will always be closed
 func (agent *SFTPTransferAgent) UploadFile(f File) error {
-	// Take the base of f.Filename and our (out of band) OutboundPath to avoid accepting a write like '../../../../etc/passwd'.
-	pathToWrite := filepath.Join(agent.OutboundPath(), filepath.Base(f.Filename))
+	// Take the base of f.Filepath and our (out of band) OutboundPath to avoid accepting a write like '../../../../etc/passwd'.
+	pathToWrite := filepath.Join(agent.OutboundPath(), filepath.Base(f.Filepath))
 
 	return agent.client.UploadFile(pathToWrite, f.Contents)
 }
@@ -114,33 +114,33 @@ func (agent *SFTPTransferAgent) ReadFile(path string) (*File, error) {
 		return nil, fmt.Errorf("sftp open %s failed: %w", path, err)
 	}
 	return &File{
-		Filename: filepath.Base(file.Filename),
+		Filepath: filepath.Base(file.Filename),
 		Contents: file.Contents,
 	}, nil
 }
 
 func (agent *SFTPTransferAgent) GetInboundFiles() ([]string, error) {
-	return agent.readFilenames(agent.cfg.Paths.Inbound)
+	return agent.readFilepaths(agent.cfg.Paths.Inbound)
 }
 
 func (agent *SFTPTransferAgent) GetReconciliationFiles() ([]string, error) {
-	return agent.readFilenames(agent.cfg.Paths.Reconciliation)
+	return agent.readFilepaths(agent.cfg.Paths.Reconciliation)
 }
 
 func (agent *SFTPTransferAgent) GetReturnFiles() ([]string, error) {
-	return agent.readFilenames(agent.cfg.Paths.Return)
+	return agent.readFilepaths(agent.cfg.Paths.Return)
 }
 
-func (agent *SFTPTransferAgent) readFilenames(dir string) ([]string, error) {
-	filenames, err := agent.client.ListFiles(dir)
+func (agent *SFTPTransferAgent) readFilepaths(dir string) ([]string, error) {
+	filepaths, err := agent.client.ListFiles(dir)
 	if err != nil {
 		return nil, err
 	}
 	// Ignore hidden files
-	for i := range filenames {
-		if strings.HasPrefix(filepath.Base(filenames[i]), ".") {
-			filenames = append(filenames[:i], filenames[i+1:]...)
+	for i := range filepaths {
+		if strings.HasPrefix(filepath.Base(filepaths[i]), ".") {
+			filepaths = append(filepaths[:i], filepaths[i+1:]...)
 		}
 	}
-	return filenames, nil
+	return filepaths, nil
 }

@@ -123,7 +123,7 @@ func (agent *FTPTransferAgent) UploadFile(f File) error {
 		return errors.New("missing FTP client or config")
 	}
 
-	pathToWrite := filepath.Join(agent.OutboundPath(), f.Filename)
+	pathToWrite := filepath.Join(agent.OutboundPath(), f.Filepath)
 	return agent.client.UploadFile(pathToWrite, f.Contents)
 }
 
@@ -133,33 +133,33 @@ func (agent *FTPTransferAgent) ReadFile(path string) (*File, error) {
 		return nil, fmt.Errorf("ftp open %s failed: %w", path, err)
 	}
 	return &File{
-		Filename: filepath.Base(file.Filename),
+		Filepath: filepath.Base(file.Filename),
 		Contents: file.Contents,
 	}, nil
 }
 
 func (agent *FTPTransferAgent) GetInboundFiles() ([]string, error) {
-	return agent.readFilenames(agent.cfg.Paths.Inbound)
+	return agent.readFilepaths(agent.cfg.Paths.Inbound)
 }
 
 func (agent *FTPTransferAgent) GetReconciliationFiles() ([]string, error) {
-	return agent.readFilenames(agent.cfg.Paths.Reconciliation)
+	return agent.readFilepaths(agent.cfg.Paths.Reconciliation)
 }
 
 func (agent *FTPTransferAgent) GetReturnFiles() ([]string, error) {
-	return agent.readFilenames(agent.cfg.Paths.Return)
+	return agent.readFilepaths(agent.cfg.Paths.Return)
 }
 
-func (agent *FTPTransferAgent) readFilenames(dir string) ([]string, error) {
-	filenames, err := agent.client.ListFiles(dir)
+func (agent *FTPTransferAgent) readFilepaths(dir string) ([]string, error) {
+	filepaths, err := agent.client.ListFiles(dir)
 	if err != nil {
 		return nil, err
 	}
 	// Ignore hidden files
-	for i := range filenames {
-		if strings.HasPrefix(filepath.Base(filenames[i]), ".") {
-			filenames = append(filenames[:i], filenames[i+1:]...)
+	for i := range filepaths {
+		if strings.HasPrefix(filepath.Base(filepaths[i]), ".") {
+			filepaths = append(filepaths[:i], filepaths[i+1:]...)
 		}
 	}
-	return filenames, nil
+	return filepaths, nil
 }

@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/moov-io/achgateway/internal/service"
-
 	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/log"
 )

@@ -11,9 +11,9 @@ import (
 )
 
 type MockAgent struct {
-	InboundFilenames        []string
-	ReconciliationFilenames []string
-	ReturnFilenames         []string
+	InboundFilepaths        []string
+	ReconciliationFilepaths []string
+	ReturnFilepaths         []string
 
 	UploadedFile *File  // non-nil on file upload
 	DeletedFile  string // filepath of last deleted file
@@ -32,21 +32,21 @@ func (a *MockAgent) GetInboundFiles() ([]string, error) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	return a.InboundFilenames, nil
+	return a.InboundFilepaths, nil
 }
 
 func (a *MockAgent) GetReconciliationFiles() ([]string, error) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	return a.ReconciliationFilenames, nil
+	return a.ReconciliationFilepaths, nil
 }
 
 func (a *MockAgent) GetReturnFiles() ([]string, error) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	return a.ReturnFilenames, nil
+	return a.ReturnFilepaths, nil
 }
 
 func (a *MockAgent) UploadFile(f File) error {
