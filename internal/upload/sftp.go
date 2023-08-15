@@ -108,41 +108,39 @@ func (agent *SFTPTransferAgent) UploadFile(f File) error {
 	return agent.client.UploadFile(pathToWrite, f.Contents)
 }
 
-func (agent *SFTPTransferAgent) GetInboundFiles() ([]File, error) {
-	return agent.readFiles(agent.cfg.Paths.Inbound)
+func (agent *SFTPTransferAgent) ReadFile(path string) (*File, error) {
+	file, err := agent.client.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("sftp open %s failed: %w", path, err)
+	}
+	return &File{
+		Filename: filepath.Base(file.Filename),
+		Contents: file.Contents,
+	}, nil
 }
 
-func (agent *SFTPTransferAgent) GetReconciliationFiles() ([]File, error) {
-	return agent.readFiles(agent.cfg.Paths.Reconciliation)
+func (agent *SFTPTransferAgent) GetInboundFiles() ([]string, error) {
+	return agent.readFilenames(agent.cfg.Paths.Inbound)
 }
 
-func (agent *SFTPTransferAgent) GetReturnFiles() ([]File, error) {
-	return agent.readFiles(agent.cfg.Paths.Return)
+func (agent *SFTPTransferAgent) GetReconciliationFiles() ([]string, error) {
+	return agent.readFilenames(agent.cfg.Paths.Reconciliation)
 }
 
-func (agent *SFTPTransferAgent) readFiles(dir string) ([]File, error) {
-	var files []File
+func (agent *SFTPTransferAgent) GetReturnFiles() ([]string, error) {
+	return agent.readFilenames(agent.cfg.Paths.Return)
+}
 
+func (agent *SFTPTransferAgent) readFilenames(dir string) ([]string, error) {
 	filenames, err := agent.client.ListFiles(dir)
 	if err != nil {
 		return nil, err
 	}
-
+	// Ignore hidden files
 	for i := range filenames {
-		// Ignore hidden files
-		if strings.HasPrefix(filenames[i], ".") {
-			continue
+		if strings.HasPrefix(filepath.Base(filenames[i]), ".") {
+			filenames = append(filenames[:i], filenames[i+1:]...)
 		}
-
-		reader, err := agent.client.Reader(filenames[i])
-		if err != nil {
-			return nil, err
-		}
-		files = append(files, File{
-			Filename: filepath.Base(filenames[i]),
-			Contents: reader,
-		})
 	}
-
-	return files, nil
+	return filenames, nil
 }

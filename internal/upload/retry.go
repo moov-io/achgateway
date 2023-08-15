@@ -59,12 +59,12 @@ func (rt *RetryAgent) newBackoff() (retry.Backoff, error) {
 	return fib, nil
 }
 
-func (rt *RetryAgent) retryFiles(f func() ([]File, error)) ([]File, error) {
+func (rt *RetryAgent) retryFiles(f func() ([]string, error)) ([]string, error) {
 	backoff, err := rt.newBackoff()
 	if err != nil {
 		return nil, err
 	}
-	var files []File
+	var files []string
 	ctx := context.Background()
 	err = retry.Do(ctx, backoff, func(ctx context.Context) error {
 		fs, err := f()
@@ -78,15 +78,15 @@ func (rt *RetryAgent) retryFiles(f func() ([]File, error)) ([]File, error) {
 }
 
 // Network'd calls
-func (rt *RetryAgent) GetInboundFiles() ([]File, error) {
+func (rt *RetryAgent) GetInboundFiles() ([]string, error) {
 	return rt.retryFiles(rt.underlying.GetInboundFiles)
 }
 
-func (rt *RetryAgent) GetReconciliationFiles() ([]File, error) {
+func (rt *RetryAgent) GetReconciliationFiles() ([]string, error) {
 	return rt.retryFiles(rt.underlying.GetReconciliationFiles)
 }
 
-func (rt *RetryAgent) GetReturnFiles() ([]File, error) {
+func (rt *RetryAgent) GetReturnFiles() ([]string, error) {
 	return rt.retryFiles(rt.underlying.GetReturnFiles)
 }
 
@@ -110,6 +110,23 @@ func (rt *RetryAgent) Delete(path string) error {
 	return retry.Do(ctx, backoff, func(ctx context.Context) error {
 		return isRetryableError(rt.underlying.Delete(path))
 	})
+}
+
+func (rt *RetryAgent) ReadFile(path string) (*File, error) {
+	backoff, err := rt.newBackoff()
+	if err != nil {
+		return nil, err
+	}
+	var file *File
+	ctx := context.Background()
+	err = retry.Do(ctx, backoff, func(ctx context.Context) error {
+		file, err = rt.underlying.ReadFile(path)
+		if err := isRetryableError(err); err != nil {
+			return err
+		}
+		return nil
+	})
+	return file, err
 }
 
 // Non-Network calls, so pass-through

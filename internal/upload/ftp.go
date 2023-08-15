@@ -127,42 +127,39 @@ func (agent *FTPTransferAgent) UploadFile(f File) error {
 	return agent.client.UploadFile(pathToWrite, f.Contents)
 }
 
-func (agent *FTPTransferAgent) GetInboundFiles() ([]File, error) {
-	return agent.readFiles(agent.cfg.Paths.Inbound)
+func (agent *FTPTransferAgent) ReadFile(path string) (*File, error) {
+	file, err := agent.client.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("ftp open %s failed: %w", path, err)
+	}
+	return &File{
+		Filename: filepath.Base(file.Filename),
+		Contents: file.Contents,
+	}, nil
 }
 
-func (agent *FTPTransferAgent) GetReconciliationFiles() ([]File, error) {
-	return agent.readFiles(agent.cfg.Paths.Reconciliation)
+func (agent *FTPTransferAgent) GetInboundFiles() ([]string, error) {
+	return agent.readFilenames(agent.cfg.Paths.Inbound)
 }
 
-func (agent *FTPTransferAgent) GetReturnFiles() ([]File, error) {
-	return agent.readFiles(agent.cfg.Paths.Return)
+func (agent *FTPTransferAgent) GetReconciliationFiles() ([]string, error) {
+	return agent.readFilenames(agent.cfg.Paths.Reconciliation)
 }
 
-func (agent *FTPTransferAgent) readFiles(dir string) ([]File, error) {
-	var files []File
+func (agent *FTPTransferAgent) GetReturnFiles() ([]string, error) {
+	return agent.readFilenames(agent.cfg.Paths.Return)
+}
 
+func (agent *FTPTransferAgent) readFilenames(dir string) ([]string, error) {
 	filenames, err := agent.client.ListFiles(dir)
 	if err != nil {
 		return nil, err
 	}
-
+	// Ignore hidden files
 	for i := range filenames {
-		// Ignore hidden files
-		if strings.HasPrefix(filenames[i], ".") {
-			continue
+		if strings.HasPrefix(filepath.Base(filenames[i]), ".") {
+			filenames = append(filenames[:i], filenames[i+1:]...)
 		}
-
-		// Consume entire file into memory
-		data, err := agent.client.Open(filepath.Join(dir, filenames[i]))
-		if err != nil {
-			return nil, err
-		}
-		files = append(files, File{
-			Filename: filepath.Base(filenames[i]),
-			Contents: data,
-		})
 	}
-
-	return files, nil
+	return filenames, nil
 }
