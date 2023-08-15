@@ -1,3 +1,10 @@
+## v0.23.4 (Released 2023-08-15)
+
+IMPROVEMENTS
+
+- odfi: read files in sequence to download
+- upload: return filepaths to be downloaded, rather than full file contents
+
 ## v0.23.3 (Released 2023-08-14)
 
 BUILD
