@@ -6,7 +6,7 @@ go 1.20
 
 require (
 	github.com/PagerDuty/go-pagerduty v1.7.0
-	github.com/ProtonMail/go-crypto v0.0.0-20220407094043-a94812496cf5
+	github.com/ProtonMail/go-crypto v0.0.0-20230717121422-5aa5874ade95
 	github.com/Shopify/sarama v1.38.1
 	github.com/go-kit/kit v0.12.0
 	github.com/google/uuid v1.3.0
@@ -18,7 +18,7 @@ require (
 	github.com/moov-io/base v0.45.1
 	github.com/moov-io/cryptfs v0.5.0
 	github.com/moov-io/go-ftp v0.2.0
-	github.com/moov-io/go-sftp v0.10.0
+	github.com/moov-io/go-sftp v0.11.0
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/ory/mail/v3 v3.0.0
 	github.com/pkg/errors v0.9.1
@@ -80,6 +80,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
+	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/cncf/udpa/go v0.0.0-20220112060539-c52dc94e7fbe // indirect
 	github.com/cncf/xds/go v0.0.0-20230607035331-e9ce68804cb4 // indirect
 	github.com/containerd/continuity v0.3.0 // indirect

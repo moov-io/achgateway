@@ -41,9 +41,11 @@ func newSFTPTransferAgent(logger log.Logger, cfg *service.UploadAgent) (*SFTPTra
 		Timeout:        cfg.SFTP.DialTimeout,
 		MaxConnections: cfg.SFTP.MaxConnections(),
 		PacketSize:     cfg.SFTP.MaxPacketSize,
+
+		SkipDirectoryCreation: cfg.SFTP.SkipDirectoryCreation,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("AA: %w", err)
+		return nil, err
 	}
 	return &SFTPTransferAgent{
 		client: client,

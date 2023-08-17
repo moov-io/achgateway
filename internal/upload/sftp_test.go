@@ -233,7 +233,7 @@ func TestSFTP__readFilesEmpty(t *testing.T) {
 
 	// read a non-existent directory
 	filepaths, err = deployment.agent.readFilepaths("/dev/null")
-	require.Error(t, err)
+	require.NoError(t, err)
 	require.Len(t, filepaths, 0)
 }
 
