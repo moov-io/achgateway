@@ -1,3 +1,9 @@
+## v0.23.5 (Released 2023-08-18)
+
+BUILD
+
+- chore: upgrade moov-io/go-sftp to v0.11.0
+
 ## v0.23.4 (Released 2023-08-15)
 
 IMPROVEMENTS
