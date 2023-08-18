@@ -1,3 +1,10 @@
+## v0.23.6 (Released 2023-08-18)
+
+BUILD
+
+- chore: update github.com/moov-io/go-sftp to v0.11.1
+- meta: replace panics with better alternatives
+
 ## v0.23.5 (Released 2023-08-18)
 
 BUILD
