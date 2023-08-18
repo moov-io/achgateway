@@ -72,18 +72,18 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 
 	env.Shutdown = func() {}
 
+	if env.Logger == nil {
+		env.Logger = log.NewDefaultLogger()
+	}
+
 	var err error
 	ctx, cancelFunc := context.WithCancel(context.Background()) //nolint:lostcancel
 	defer func() {
 		if err := recover(); err != nil {
 			cancelFunc()
-			panic(err)
+			env.Logger.Fatal().LogErrorf("shutting down from unrecoverable error: %v", err)
 		}
 	}()
-
-	if env.Logger == nil {
-		env.Logger = log.NewDefaultLogger()
-	}
 
 	if env.Config == nil {
 		cfg, err := LoadConfig(env.Logger)
