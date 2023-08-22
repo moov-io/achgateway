@@ -41,7 +41,7 @@ var (
 )
 
 type Downloader interface {
-	CopyFilesFromRemote(agent upload.Agent) (*downloadedFiles, error)
+	CopyFilesFromRemote(agent upload.Agent, shard *service.Shard) (*downloadedFiles, error)
 }
 
 func NewDownloader(logger log.Logger, cfg service.ODFIStorage) (Downloader, error) {
@@ -123,15 +123,19 @@ func (dl *downloaderImpl) setup(agent upload.Agent) (*downloadedFiles, error) {
 	}, nil
 }
 
-func (dl *downloaderImpl) CopyFilesFromRemote(agent upload.Agent) (*downloadedFiles, error) {
+func (dl *downloaderImpl) CopyFilesFromRemote(agent upload.Agent, shard *service.Shard) (*downloadedFiles, error) {
 	out, err := dl.setup(agent)
 	if err != nil {
 		return nil, err
 	}
 
+	logger := dl.logger.With(log.Fields{
+		"shard": log.String(shard.Name),
+	})
+
 	// copy down files from our "inbound" directory
 	filepaths, err := agent.GetInboundFiles()
-	dl.logger.Logf("%T found %d inbound files in %s", agent, len(filepaths), agent.InboundPath())
+	logger.Logf("%T found %d inbound files in %s", agent, len(filepaths), agent.InboundPath())
 	if err != nil {
 		return out, fmt.Errorf("problem downloading inbound files: %v", err)
 	}
@@ -142,7 +146,7 @@ func (dl *downloaderImpl) CopyFilesFromRemote(agent upload.Agent) (*downloadedFi
 
 	// copy down files from out "reconciliation" directory
 	filepaths, err = agent.GetReconciliationFiles()
-	dl.logger.Logf("%T found %d reconciliation files in %s", agent, len(filepaths), agent.ReconciliationPath())
+	logger.Logf("%T found %d reconciliation files in %s", agent, len(filepaths), agent.ReconciliationPath())
 	if err != nil {
 		return out, fmt.Errorf("problem downloading reconciliation files: %v", err)
 	}
@@ -153,7 +157,7 @@ func (dl *downloaderImpl) CopyFilesFromRemote(agent upload.Agent) (*downloadedFi
 
 	// copy down files from out "return" directory
 	filepaths, err = agent.GetReturnFiles()
-	dl.logger.Logf("%T found %d return files in %s", agent, len(filepaths), agent.ReturnPath())
+	logger.Logf("%T found %d return files in %s", agent, len(filepaths), agent.ReturnPath())
 	if err != nil {
 		return out, fmt.Errorf("problem downloading return files: %v", err)
 	}

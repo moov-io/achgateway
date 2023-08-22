@@ -145,7 +145,7 @@ func (s *PeriodicScheduler) tick(logger log.Logger, shard *service.Shard) error 
 	logger.Logf("start retrieving and processing of inbound files in %s", agent.Hostname())
 
 	// Download and process files
-	dl, err := s.downloader.CopyFilesFromRemote(agent)
+	dl, err := s.downloader.CopyFilesFromRemote(agent, shard)
 	if err != nil {
 		return fmt.Errorf("ERROR: problem copying files: %v", err)
 	}
