@@ -355,3 +355,23 @@ func TestSFTP__DeleteMissing(t *testing.T) {
 	err := deploy.agent.Delete("/missing.txt")
 	require.NoError(t, err)
 }
+
+func TestSFTP_GetReconciliationFiles(t *testing.T) {
+	conf := &service.UploadAgent{
+		SFTP: &service.SFTP{
+			Hostname: "localhost:2222",
+			Username: "demo",
+			Password: "password",
+		},
+		Paths: service.UploadPaths{
+			Reconciliation: "reconciliation",
+		},
+	}
+	logger := log.NewTestLogger()
+	agent, err := newSFTPTransferAgent(logger, conf)
+	require.NoError(t, err)
+
+	filepaths, err := agent.GetReconciliationFiles()
+	require.NoError(t, err)
+	require.ElementsMatch(t, filepaths, []string{"reconciliation/ppd-debit.ach"})
+}

@@ -365,3 +365,23 @@ func TestFTP__DeleteMissing(t *testing.T) {
 	err := agent.Delete("/missing.txt")
 	require.NoError(t, err)
 }
+
+func TestFTP_GetReconciliationFiles(t *testing.T) {
+	conf := &service.UploadAgent{
+		FTP: &service.FTP{
+			Hostname: "localhost:2121",
+			Username: "admin",
+			Password: "123456",
+		},
+		Paths: service.UploadPaths{
+			Reconciliation: "reconciliation",
+		},
+	}
+	logger := log.NewTestLogger()
+	agent, err := newFTPTransferAgent(logger, conf)
+	require.NoError(t, err)
+
+	filepaths, err := agent.GetReconciliationFiles()
+	require.NoError(t, err)
+	require.ElementsMatch(t, filepaths, []string{"reconciliation/ppd-debit.ach"})
+}
