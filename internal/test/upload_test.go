@@ -58,7 +58,7 @@ import (
 )
 
 var (
-	cfg = &service.Config{
+	uploadConf = &service.Config{
 		Database: database.DatabaseConfig{
 			DatabaseName: "achgateway",
 			MySQL: &database.MySQLConfig{
@@ -151,7 +151,7 @@ func TestUploads(t *testing.T) {
 	shardKeys := setupShards(t, shardRepo)
 
 	httpPub, httpSub := streamtest.InmemStream(t)
-	streamTopic, err := stream.Topic(logger, cfg)
+	streamTopic, err := stream.Topic(logger, uploadConf)
 	require.NoError(t, err)
 	defer streamTopic.Shutdown(context.Background())
 
@@ -159,8 +159,8 @@ func TestUploads(t *testing.T) {
 	r := mux.NewRouter()
 	fileController.AppendRoutes(r)
 
-	outboundPath := setupTestDirectory(t, cfg)
-	fileReceiver, err := pipeline.Start(ctx, logger, cfg, shardRepo, httpSub)
+	outboundPath := setupTestDirectory(t, uploadConf)
+	fileReceiver, err := pipeline.Start(ctx, logger, uploadConf, shardRepo, httpSub)
 	require.NoError(t, err)
 	t.Cleanup(func() { fileReceiver.Shutdown() })
 
@@ -209,11 +209,12 @@ func TestUploads(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	var buf bytes.Buffer
-	buf.WriteString(`{"shardNames":["prod", "beta"]}`)
+	buf.WriteString(`{"shardNames":["prod", "beta", "testing"]}`)
 
 	req, _ := http.NewRequest("PUT", "http://"+adminServer.BindAddr()+"/trigger-cutoff", &buf)
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 
 	// Wait before verifying filesystem results
