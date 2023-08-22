@@ -138,8 +138,9 @@ func (agent *SFTPTransferAgent) readFilepaths(dir string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Ignore hidden files
-	for i := range filepaths {
+
+	// remove hidden files from resulting filepaths
+	for i := len(filepaths) - 1; i >= 0; i-- {
 		if strings.HasPrefix(filepath.Base(filepaths[i]), ".") {
 			filepaths = append(filepaths[:i], filepaths[i+1:]...)
 		}
