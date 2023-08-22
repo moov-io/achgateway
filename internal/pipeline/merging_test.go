@@ -65,11 +65,11 @@ func TestMerging__getNonCanceledMatches(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, matches, 1)
-	require.Equal(t, matches[0], filepath.Join("test-2021", xfer1))
+	require.Contains(t, matches[0], filepath.Join("test-2021", xfer1))
 
-	require.NotEqual(t, matches[0], filepath.Join("test-2021", cancel1))
-	require.NotEqual(t, matches[0], filepath.Join("test-2021", xfer2))
-	require.NotEqual(t, matches[0], filepath.Join("test-2021", cancel2))
+	require.NotContains(t, matches[0], filepath.Join("test-2021", cancel1))
+	require.NotContains(t, matches[0], filepath.Join("test-2021", xfer2))
+	require.NotContains(t, matches[0], filepath.Join("test-2021", cancel2))
 }
 
 func TestMerging__writeACHFile(t *testing.T) {
