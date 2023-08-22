@@ -32,6 +32,15 @@ services:
       - "-pass=123456"
       - "-passive-ports=30000-30009"
 
+  sftp:
+    image: atmoz/sftp:latest
+    ports:
+      - "2222:22"
+    volumes:
+      - "./testdata/download-test:/home/demo"
+    command:
+      - "demo:password:::inbound,outbound,reconciliation,returned"
+
   zookeeper:
     image: wurstmeister/zookeeper
     ports:
