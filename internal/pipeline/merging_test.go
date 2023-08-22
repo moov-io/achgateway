@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/moov-io/ach"
@@ -48,9 +47,12 @@ func TestMerging__getNonCanceledMatches(t *testing.T) {
 		return filename
 	}
 
-	transfer := write(fmt.Sprintf("%s.ach", base.ID()))
-	canceled := write(fmt.Sprintf("%s.ach", base.ID()))
-	canceled = write(fmt.Sprintf("%s.canceled", canceled))
+	xfer1 := write(fmt.Sprintf("%s.ach", base.ID()))
+
+	cancel1 := write(fmt.Sprintf("%s.ach.canceled", base.ID()))
+
+	xfer2 := write(fmt.Sprintf("%s.ach", base.ID()))
+	cancel2 := write(fmt.Sprintf("%s.canceled", xfer2))
 
 	fs, err := storage.NewFilesystem(dir)
 	require.NoError(t, err)
@@ -62,15 +64,12 @@ func TestMerging__getNonCanceledMatches(t *testing.T) {
 	matches, err := m.getNonCanceledMatches("test-2021")
 	require.NoError(t, err)
 
-	if len(matches) != 1 {
-		t.Fatalf("got %d matches: %v", len(matches), matches)
-	}
-	if !strings.HasSuffix(matches[0], transfer) {
-		t.Errorf("unexpected match: %v", matches[0])
-	}
-	if strings.Contains(matches[0], canceled) {
-		t.Errorf("unexpected match: %v", matches[0])
-	}
+	require.Len(t, matches, 1)
+	require.Equal(t, matches[0], filepath.Join("test-2021", xfer1))
+
+	require.NotEqual(t, matches[0], filepath.Join("test-2021", cancel1))
+	require.NotEqual(t, matches[0], filepath.Join("test-2021", xfer2))
+	require.NotEqual(t, matches[0], filepath.Join("test-2021", cancel2))
 }
 
 func TestMerging__writeACHFile(t *testing.T) {
