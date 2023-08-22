@@ -357,6 +357,10 @@ func TestSFTP__DeleteMissing(t *testing.T) {
 }
 
 func TestSFTP_GetReconciliationFiles(t *testing.T) {
+	if !docker.Enabled() {
+		t.Skip("Docker not enabled")
+	}
+
 	conf := &service.UploadAgent{
 		SFTP: &service.SFTP{
 			Hostname: "localhost:2222",

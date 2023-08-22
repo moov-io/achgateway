@@ -19,6 +19,7 @@ import (
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/util"
 	"github.com/moov-io/base"
+	"github.com/moov-io/base/docker"
 	"github.com/moov-io/base/log"
 
 	"github.com/jlaffaye/ftp"
@@ -367,6 +368,10 @@ func TestFTP__DeleteMissing(t *testing.T) {
 }
 
 func TestFTP_GetReconciliationFiles(t *testing.T) {
+	if !docker.Enabled() {
+		t.Skip("Docker not enabled")
+	}
+
 	conf := &service.UploadAgent{
 		FTP: &service.FTP{
 			Hostname: "localhost:2121",
