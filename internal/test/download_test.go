@@ -110,6 +110,10 @@ var (
 )
 
 func TestODFIDownload(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test via -short")
+	}
+
 	logger := log.NewTestLogger()
 
 	// Setup our config with test specific values
