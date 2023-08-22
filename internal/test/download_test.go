@@ -205,6 +205,7 @@ func TestODFIDownload(t *testing.T) {
 		}
 		if err != nil {
 			if err == context.DeadlineExceeded {
+				cleanupFunc()
 				break
 			}
 			cleanupFunc()

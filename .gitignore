@@ -28,5 +28,6 @@ pkged.go
 /storage-*/
 /testdata/ftp-server/outbound/*.ach
 /internal/test/storage/
+/testdata/download-test/reconciliation/empty.txt
 
 .idea/
