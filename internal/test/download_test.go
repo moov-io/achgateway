@@ -161,7 +161,9 @@ func TestODFIDownload(t *testing.T) {
 	// Write empty files to reconciliation folder
 	var buf bytes.Buffer
 	emptyFilepath := filepath.Join("..", "..", "testdata", "download-test", "reconciliation", "empty.txt")
-	err = os.WriteFile(emptyFilepath, buf.Bytes(), 0666) //nolint:gosec
+	info, err := os.Stat(filepath.Join(filepath.Dir(emptyFilepath), "ppd-debit.ach"))
+	require.NoError(t, err)
+	err = os.WriteFile(emptyFilepath, buf.Bytes(), info.Mode())
 	require.NoError(t, err)
 
 	// Trigger inbound processing
