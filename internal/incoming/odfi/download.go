@@ -140,7 +140,7 @@ func (dl *downloaderImpl) CopyFilesFromRemote(agent upload.Agent, shard *service
 		return out, fmt.Errorf("problem downloading inbound files: %v", err)
 	}
 	filesDownloaded.With("kind", "inbound").Add(float64(len(filepaths)))
-	if err := dl.saveFilepaths(agent, filepaths, filepath.Join(out.dir, agent.InboundPath())); err != nil {
+	if err := saveFilepaths(logger, agent, filepaths, filepath.Join(out.dir, agent.InboundPath())); err != nil {
 		return out, fmt.Errorf("problem saving inbound files: %v", err)
 	}
 
@@ -151,7 +151,7 @@ func (dl *downloaderImpl) CopyFilesFromRemote(agent upload.Agent, shard *service
 		return out, fmt.Errorf("problem downloading reconciliation files: %v", err)
 	}
 	filesDownloaded.With("kind", "reconciliation").Add(float64(len(filepaths)))
-	if err := dl.saveFilepaths(agent, filepaths, filepath.Join(out.dir, agent.ReconciliationPath())); err != nil {
+	if err := saveFilepaths(logger, agent, filepaths, filepath.Join(out.dir, agent.ReconciliationPath())); err != nil {
 		return out, fmt.Errorf("problem saving reconciliation files: %v", err)
 	}
 
@@ -162,7 +162,7 @@ func (dl *downloaderImpl) CopyFilesFromRemote(agent upload.Agent, shard *service
 		return out, fmt.Errorf("problem downloading return files: %v", err)
 	}
 	filesDownloaded.With("kind", "return").Add(float64(len(filepaths)))
-	if err := dl.saveFilepaths(agent, filepaths, filepath.Join(out.dir, agent.ReturnPath())); err != nil {
+	if err := saveFilepaths(logger, agent, filepaths, filepath.Join(out.dir, agent.ReturnPath())); err != nil {
 		return out, fmt.Errorf("problem saving return files: %v", err)
 	}
 
@@ -171,7 +171,7 @@ func (dl *downloaderImpl) CopyFilesFromRemote(agent upload.Agent, shard *service
 
 // saveFilepaths will create files in dir for each file object provided
 // The contents of each file struct will always be closed.
-func (dl *downloaderImpl) saveFilepaths(agent upload.Agent, filepaths []string, dir string) error {
+func saveFilepaths(logger log.Logger, agent upload.Agent, filepaths []string, dir string) error {
 	var firstErr error
 	var errordFilenames []string
 
@@ -180,8 +180,11 @@ func (dl *downloaderImpl) saveFilepaths(agent upload.Agent, filepaths []string, 
 		outPath := filepath.Join(dir, filepath.Base(filepaths[i]))
 		f, err := os.Create(outPath)
 		if err != nil {
+			err = fmt.Errorf("os.create on %s failed: %w", outPath, err)
 			if firstErr == nil {
 				firstErr = err
+			} else {
+				logger.Error().LogError(err)
 			}
 			errordFilenames = append(errordFilenames, filepaths[i])
 			continue
@@ -189,29 +192,38 @@ func (dl *downloaderImpl) saveFilepaths(agent upload.Agent, filepaths []string, 
 
 		file, err := agent.ReadFile(filepaths[i])
 		if err != nil {
+			// Save the error if it's our first, otherwise log
+			err = fmt.Errorf("reading %s failed: %w", filepaths[i], err)
 			if firstErr == nil {
 				firstErr = err
+			} else {
+				logger.Error().LogError(err)
 			}
+		}
+		if file == nil || err != nil {
+			// Record the failure and skip copy
 			errordFilenames = append(errordFilenames, filepaths[i])
 			continue
 		}
 		if _, err = io.Copy(f, file.Contents); err != nil {
+			err = fmt.Errorf("copying %s failed: %w", file.Filepath, err)
 			if firstErr == nil {
 				firstErr = err
+			} else {
+				logger.Error().LogError(err)
 			}
 			errordFilenames = append(errordFilenames, filepaths[i])
-			continue
 		}
 		if err := f.Sync(); err != nil {
-			return err
+			return fmt.Errorf("sync on %s failed: %w", file.Filepath, err)
 		}
 		if err := f.Close(); err != nil {
-			return err
+			return fmt.Errorf("close on %s failed: %w", file.Filepath, err)
 		}
 		if err := file.Close(); err != nil {
-			return err
+			return fmt.Errorf("closing %s had problem: %w", file.Filepath, err)
 		}
-		dl.logger.Logf("saved %s at %s", filepaths[i], outPath)
+		logger.Logf("saved %s at %s", filepaths[i], outPath)
 	}
 	if len(errordFilenames) != 0 {
 		return fmt.Errorf("saveFilepaths problem on: %s: %v", strings.Join(errordFilenames, ", "), firstErr)
