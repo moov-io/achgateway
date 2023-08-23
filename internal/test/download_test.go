@@ -38,6 +38,8 @@ import (
 	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/database"
 	"github.com/moov-io/base/log"
+
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -218,19 +220,19 @@ func TestODFIDownload(t *testing.T) {
 	}
 
 	// Verify Corrections
-	require.Len(t, corrections, 1)
-	require.Equal(t, "cor-c01.ach", corrections[0].Filename)
-	require.Len(t, corrections[0].Corrections, 1)
+	assert.Len(t, corrections, 1)
+	assert.Equal(t, "cor-c01.ach", corrections[0].Filename)
+	assert.Len(t, corrections[0].Corrections, 1)
 
 	// Verify Reconciliations
-	require.Len(t, reconciliations, 1)
-	require.Equal(t, "ppd-debit.ach", reconciliations[0].Filename)
-	require.Len(t, reconciliations[0].Reconciliations, 1)
+	assert.Len(t, reconciliations, 1)
+	assert.Equal(t, "ppd-debit.ach", reconciliations[0].Filename)
+	assert.Len(t, reconciliations[0].Reconciliations, 1)
 
 	// Verify Returns
-	require.Len(t, returns, 1)
-	require.Equal(t, "return-WEB.ach", returns[0].Filename)
-	require.Len(t, returns[0].Returns, 2)
+	assert.Len(t, returns, 1)
+	assert.Equal(t, "return-WEB.ach", returns[0].Filename)
+	assert.Len(t, returns[0].Returns, 2)
 
 	// Check what was downloaded
 	filenames := make([]string, 0)
