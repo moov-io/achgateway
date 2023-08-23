@@ -116,7 +116,7 @@ func TestODFIDownload(t *testing.T) {
 		t.Skip("skipping integration test via -short")
 	}
 
-	logger := log.NewTestLogger()
+	logger := log.NewDefaultLogger()
 
 	// Setup our config with test specific values
 	odfiStorageDir := t.TempDir()
