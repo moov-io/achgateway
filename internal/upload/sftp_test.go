@@ -360,6 +360,9 @@ func TestSFTP_GetReconciliationFiles(t *testing.T) {
 	if !docker.Enabled() {
 		t.Skip("Docker not enabled")
 	}
+	if testing.Short() {
+		t.Skip("skipping due to -short")
+	}
 
 	conf := &service.UploadAgent{
 		SFTP: &service.SFTP{
