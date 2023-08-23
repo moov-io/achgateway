@@ -375,10 +375,46 @@ func TestSFTP_GetReconciliationFiles(t *testing.T) {
 		},
 	}
 	logger := log.NewTestLogger()
-	agent, err := newSFTPTransferAgent(logger, conf)
-	require.NoError(t, err)
 
-	filepaths, err := agent.GetReconciliationFiles()
-	require.NoError(t, err)
-	require.ElementsMatch(t, filepaths, []string{"reconciliation/ppd-debit.ach"})
+	t.Run("relative path", func(t *testing.T) {
+		agent, err := newSFTPTransferAgent(logger, conf)
+		require.NoError(t, err)
+
+		filepaths, err := agent.GetReconciliationFiles()
+		require.NoError(t, err)
+		require.ElementsMatch(t, filepaths, []string{"reconciliation/ppd-debit.ach"})
+	})
+
+	t.Run("relative path with trailing slash", func(t *testing.T) {
+		conf.Paths.Reconciliation = "reconciliation/"
+
+		agent, err := newSFTPTransferAgent(logger, conf)
+		require.NoError(t, err)
+
+		filepaths, err := agent.GetReconciliationFiles()
+		require.NoError(t, err)
+		require.ElementsMatch(t, filepaths, []string{"reconciliation/ppd-debit.ach"})
+	})
+
+	t.Run("root path", func(t *testing.T) {
+		conf.Paths.Reconciliation = "/reconciliation"
+
+		agent, err := newSFTPTransferAgent(logger, conf)
+		require.NoError(t, err)
+
+		filepaths, err := agent.GetReconciliationFiles()
+		require.NoError(t, err)
+		require.ElementsMatch(t, filepaths, []string{"/reconciliation/ppd-debit.ach"})
+	})
+
+	t.Run("root path with trailing slash", func(t *testing.T) {
+		conf.Paths.Reconciliation = "/reconciliation/"
+
+		agent, err := newSFTPTransferAgent(logger, conf)
+		require.NoError(t, err)
+
+		filepaths, err := agent.GetReconciliationFiles()
+		require.NoError(t, err)
+		require.ElementsMatch(t, filepaths, []string{"/reconciliation/ppd-debit.ach"})
+	})
 }
