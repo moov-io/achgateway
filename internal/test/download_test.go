@@ -99,16 +99,15 @@ var (
 						Password: "password",
 					},
 					Paths: service.UploadPaths{
-						Inbound:        "/inbound",
-						Outbound:       "/outbound",
-						Reconciliation: "/reconciliation",
-						Return:         "/returned",
+						Inbound:        "/inbound/",
+						Outbound:       "/outbound/",
+						Reconciliation: "/reconciliation/",
+						Return:         "/returned/",
 					},
 				},
 			},
 		},
 	}
-	// inbound,outbound,reconciliation,returned
 )
 
 func TestODFIDownload(t *testing.T) {
@@ -221,18 +220,24 @@ func TestODFIDownload(t *testing.T) {
 
 	// Verify Corrections
 	assert.Len(t, corrections, 1)
-	assert.Equal(t, "cor-c01.ach", corrections[0].Filename)
-	assert.Len(t, corrections[0].Corrections, 1)
+	if len(corrections) > 0 {
+		assert.Equal(t, "cor-c01.ach", corrections[0].Filename)
+		assert.Len(t, corrections[0].Corrections, 1)
+	}
 
 	// Verify Reconciliations
 	assert.Len(t, reconciliations, 1)
-	assert.Equal(t, "ppd-debit.ach", reconciliations[0].Filename)
-	assert.Len(t, reconciliations[0].Reconciliations, 1)
+	if len(reconciliations) > 0 {
+		assert.Equal(t, "ppd-debit.ach", reconciliations[0].Filename)
+		assert.Len(t, reconciliations[0].Reconciliations, 1)
+	}
 
 	// Verify Returns
 	assert.Len(t, returns, 1)
-	assert.Equal(t, "return-WEB.ach", returns[0].Filename)
-	assert.Len(t, returns[0].Returns, 2)
+	if len(returns) > 0 {
+		assert.Equal(t, "return-WEB.ach", returns[0].Filename)
+		assert.Len(t, returns[0].Returns, 2)
+	}
 
 	// Check what was downloaded
 	filenames := make([]string, 0)
