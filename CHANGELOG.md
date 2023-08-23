@@ -1,3 +1,15 @@
+## v0.23.7 (Released 2023-08-23)
+
+IMPROVEMENTS
+
+- fix: properly skip hidden files
+- incoming/odfi: include shard name in download logs
+- test: add check for verifying ODFI downloads
+- test: check HTTP status on upload
+- test: check collected file count prior to asserting their contents
+- test: cleanup getNonCanceledMatches checks
+- upload: check all path declaration combinations
+
 ## v0.23.6 (Released 2023-08-18)
 
 BUILD
