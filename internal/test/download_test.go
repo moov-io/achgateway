@@ -165,6 +165,11 @@ func TestODFIDownload(t *testing.T) {
 	require.NoError(t, err)
 	err = os.WriteFile(emptyFilepath, buf.Bytes(), info.Mode())
 	require.NoError(t, err)
+	// Fix permissions to allow deleting files on CI
+	if os.Getenv("GITHUB_ACTIONS") != "" {
+		err = os.Chmod(filepath.Dir(emptyFilepath), 0777)
+		require.NoError(t, err)
+	}
 
 	// Trigger inbound processing
 	body := strings.NewReader(`{"shardNames":["testing"]}`)
