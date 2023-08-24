@@ -15,7 +15,7 @@ require (
 	github.com/jlaffaye/ftp v0.2.0
 	github.com/markbates/pkger v0.17.1
 	github.com/moov-io/ach v1.32.2
-	github.com/moov-io/base v0.45.1
+	github.com/moov-io/base v0.46.0
 	github.com/moov-io/cryptfs v0.5.0
 	github.com/moov-io/go-ftp v0.2.0
 	github.com/moov-io/go-sftp v0.11.1
@@ -44,7 +44,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/iam v1.1.1 // indirect
 	cloud.google.com/go/longrunning v0.5.1 // indirect
-	cloud.google.com/go/spanner v1.47.0 // indirect
+	cloud.google.com/go/spanner v1.48.0 // indirect
 	cloud.google.com/go/storage v1.31.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.7.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.3.0 // indirect

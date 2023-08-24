@@ -91,7 +91,13 @@ func bootHTTPServer(name string, routes *mux.Router, errs chan<- error, logger l
 }
 
 func bootAdminServer(errs chan<- error, logger log.Logger, config service.Admin) *admin.Server {
-	adminServer := admin.NewServer(config.BindAddress)
+	adminServer, err := admin.New(admin.Opts{
+		Addr: config.BindAddress,
+	})
+	if err != nil {
+		errs <- logger.Fatal().LogErrorf("problem creating admin server: %v", err).Err()
+		return nil
+	}
 
 	go func() {
 		logger.Info().Log(fmt.Sprintf("listening on %s", adminServer.BindAddr()))

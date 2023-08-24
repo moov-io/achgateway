@@ -27,21 +27,18 @@ import (
 	"time"
 
 	"github.com/moov-io/ach"
+	"github.com/moov-io/achgateway/internal/admintest"
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/pkg/compliance"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base"
-	"github.com/moov-io/base/admin"
-	"gocloud.dev/pubsub"
 
 	"github.com/stretchr/testify/require"
+	"gocloud.dev/pubsub"
 )
 
 func TestEventsAPI_FileUploaded(t *testing.T) {
-	adminServer := admin.NewServer(":0")
-	require.NotNil(t, adminServer)
-	go adminServer.Listen()
-	defer adminServer.Shutdown()
+	adminServer := admintest.Server(t)
 
 	fr := testFileReceiver(t)
 	fr.RegisterAdminRoutes(adminServer)
@@ -126,10 +123,7 @@ func TestEventsAPI_FileUploaded(t *testing.T) {
 }
 
 func TestEventsAPI_FileUploadedErrors(t *testing.T) {
-	adminServer := admin.NewServer(":0")
-	require.NotNil(t, adminServer)
-	go adminServer.Listen()
-	defer adminServer.Shutdown()
+	adminServer := admintest.Server(t)
 
 	fr := testFileReceiver(t)
 	fr.RegisterAdminRoutes(adminServer)
