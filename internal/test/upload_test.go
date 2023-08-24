@@ -39,6 +39,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/moov-io/ach"
+	"github.com/moov-io/achgateway/internal/admintest"
 	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
 	"github.com/moov-io/achgateway/internal/incoming/web"
@@ -48,7 +49,6 @@ import (
 	"github.com/moov-io/achgateway/internal/storage"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base"
-	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/database"
 	"github.com/moov-io/base/log"
 
@@ -164,9 +164,7 @@ func TestUploads(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { fileReceiver.Shutdown() })
 
-	adminServer := admin.NewServer(":0")
-	go adminServer.Listen()
-	defer adminServer.Shutdown()
+	adminServer := admintest.Server(t)
 	fileReceiver.RegisterAdminRoutes(adminServer)
 
 	// Force the stream subscription to fail

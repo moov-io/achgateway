@@ -22,22 +22,20 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/moov-io/achgateway/internal/admintest"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base"
-	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/log"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestWebhookService(t *testing.T) {
-	admin := admin.NewServer(":0")
-	go admin.Listen()
-	t.Cleanup(func() { admin.Shutdown() })
+	adminServer := admintest.Server(t)
 
 	var body *models.FileUploaded
-	admin.AddHandler("/hook", func(w http.ResponseWriter, r *http.Request) {
+	adminServer.AddHandler("/hook", func(w http.ResponseWriter, r *http.Request) {
 		bs, _ := io.ReadAll(r.Body)
 
 		var wrapper models.FileUploaded
@@ -50,7 +48,7 @@ func TestWebhookService(t *testing.T) {
 	})
 
 	svc, err := newWebhookService(log.NewTestLogger(), nil, &service.WebhookConfig{
-		Endpoint: "http://" + admin.BindAddr() + "/hook",
+		Endpoint: "http://" + adminServer.BindAddr() + "/hook",
 	})
 	require.NoError(t, err)
 

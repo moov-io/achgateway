@@ -30,12 +30,12 @@ import (
 	"time"
 
 	"github.com/moov-io/ach"
+	"github.com/moov-io/achgateway/internal/admintest"
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/incoming/odfi"
 	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/models"
-	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/database"
 	"github.com/moov-io/base/log"
 
@@ -153,9 +153,7 @@ func TestODFIDownload(t *testing.T) {
 	}()
 	t.Cleanup(func() { scheduler.Shutdown() })
 
-	adminServer := admin.NewServer(":0")
-	go adminServer.Listen()
-	defer adminServer.Shutdown()
+	adminServer := admintest.Server(t)
 	scheduler.RegisterRoutes(adminServer)
 
 	// Write empty files to reconciliation folder
