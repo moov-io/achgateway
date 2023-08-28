@@ -1,3 +1,11 @@
+## v0.23.8 (Released 2023-08-28)
+
+BUILD
+
+- build: update github.com/go-kit/kit to v0.13.0
+- build: update github.com/moov-io/go-ftp to v0.3.1
+- build: update github.com/moov-io/go-sftp to v0.12.1
+
 ## v0.23.7 (Released 2023-08-23)
 
 IMPROVEMENTS
