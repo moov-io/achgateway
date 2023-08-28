@@ -6,9 +6,9 @@ go 1.20
 
 require (
 	github.com/PagerDuty/go-pagerduty v1.7.0
-	github.com/ProtonMail/go-crypto v0.0.0-20230717121422-5aa5874ade95
+	github.com/ProtonMail/go-crypto v0.0.0-20230828082145-3c4c8a2d2371
 	github.com/Shopify/sarama v1.38.1
-	github.com/go-kit/kit v0.12.0
+	github.com/go-kit/kit v0.13.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-retryablehttp v0.7.4
@@ -17,8 +17,8 @@ require (
 	github.com/moov-io/ach v1.32.2
 	github.com/moov-io/base v0.46.0
 	github.com/moov-io/cryptfs v0.5.0
-	github.com/moov-io/go-ftp v0.2.0
-	github.com/moov-io/go-sftp v0.11.1
+	github.com/moov-io/go-ftp v0.3.1
+	github.com/moov-io/go-sftp v0.12.1
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/ory/mail/v3 v3.0.0
 	github.com/pkg/errors v0.9.1
