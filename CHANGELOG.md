@@ -1,3 +1,9 @@
+## v0.23.9 (Released 2023-08-30)
+
+BUILD
+
+- build: upgrade github.com/moov-io/go-sftp to v0.12.2
+
 ## v0.23.8 (Released 2023-08-28)
 
 BUILD
