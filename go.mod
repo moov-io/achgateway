@@ -18,7 +18,7 @@ require (
 	github.com/moov-io/base v0.46.0
 	github.com/moov-io/cryptfs v0.5.0
 	github.com/moov-io/go-ftp v0.3.1
-	github.com/moov-io/go-sftp v0.12.1
+	github.com/moov-io/go-sftp v0.12.2
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/ory/mail/v3 v3.0.0
 	github.com/pkg/errors v0.9.1

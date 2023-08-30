@@ -1915,8 +1915,8 @@ github.com/moov-io/cryptfs v0.5.0 h1:bllhxEGUWYlchQVQ1gYJ09wRnjUf4OunToMLfoGRfq4
 github.com/moov-io/cryptfs v0.5.0/go.mod h1:7LbOSsAT+FdEfg5Mfy3WellFTzbcXIb6xnBV6EyhSqE=
 github.com/moov-io/go-ftp v0.3.1 h1:U54A7LIjeOxIYaM32XW/wadI82MvxhH1Z2TU9avOL34=
 github.com/moov-io/go-ftp v0.3.1/go.mod h1:YIs6zF0x4/dt/iIYC9OvvzjQQ49hl2IsTykyiYJxrwk=
-github.com/moov-io/go-sftp v0.12.1 h1:9aD3BJ2yj4TeVXQ2gM/uoA6UgO8iAxIThwkt20XFFyo=
-github.com/moov-io/go-sftp v0.12.1/go.mod h1:ER/rbDzrlEoSFAFJSJQXWTIZddLF4AF2fNtybo6cJkU=
+github.com/moov-io/go-sftp v0.12.2 h1:1F8yBmrTRy/kxffrY9ChE8Hhxx/D/kSfpuehlr4MOSw=
+github.com/moov-io/go-sftp v0.12.2/go.mod h1:ER/rbDzrlEoSFAFJSJQXWTIZddLF4AF2fNtybo6cJkU=
 github.com/moov-io/iso4217 v0.3.0 h1:xAxeJEn7QIpEy971eElEGiaLNdj81UwOcCcvE6j2ZAo=
 github.com/moov-io/iso4217 v0.3.0/go.mod h1:/pF1mBInDSJtwyWkLNr8EMdIn1zIl2cyjaVi4Xhpd44=
 github.com/morikuni/aec v1.0.0 h1:nP9CBfwrvYnBRgY6qfDQkygYDmYwOilePFkwzv4dU8A=
