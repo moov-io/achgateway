@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/models"
@@ -90,38 +91,58 @@ func (pc *creditReconciliation) Handle(logger log.Logger, file File) error {
 	})
 	logger.Log("odfi: processing reconciliation file")
 
-	var recons []models.Batch
+	// Transform the recon file according to ACH file conditions.
+	// These conditions could be limiting the max file size or amount.
+	var files []*ach.File
+	files = append(files, file.ACHFile)
 
-	// Attempt to match each Transfer
-	for i := range file.ACHFile.Batches {
-		batch := models.Batch{
-			Header: file.ACHFile.Batches[i].GetHeader(),
-		}
-		entries := file.ACHFile.Batches[i].GetEntries()
-		for j := range entries {
-			logger.With(log.Fields{
-				"traceNumber": log.String(entries[j].TraceNumber),
-			}).Log("odfi: received reconciliation entry")
-
-			// Save off event information
-			batch.Entries = append(batch.Entries, entries[j])
-		}
-		if len(batch.Entries) > 0 {
-			recons = append(recons, batch)
+	var err error
+	if pc.cfg.Conditions != nil {
+		files, err = ach.MergeFilesWith(files, *pc.cfg.Conditions)
+		if err != nil {
+			return fmt.Errorf("applying conditions to reconciliation file failed: %w", err)
 		}
 	}
-	if len(recons) > 0 {
-		g := new(errgroup.Group)
-		g.Go(func() error {
-			return pc.sendEvent(models.ReconciliationFile{
-				Filename:        filepath.Base(file.Filepath),
-				File:            file.ACHFile,
-				Reconciliations: recons,
+
+	// Produce a ReconciliationFile event for each reconciliation file
+	group := new(errgroup.Group)
+	for i := range files {
+		var recons []models.Batch
+
+		achFile := files[i]
+		for j := range achFile.Batches {
+			batch := models.Batch{
+				Header: achFile.Batches[j].GetHeader(),
+			}
+
+			entries := achFile.Batches[j].GetEntries()
+			for k := range entries {
+				logger.With(log.Fields{
+					"traceNumber": log.String(entries[k].TraceNumber),
+				}).Log("odfi: received reconciliation entry")
+
+				// Save off event information
+				batch.Entries = append(batch.Entries, entries[k])
+			}
+
+			if len(batch.Entries) > 0 {
+				recons = append(recons, batch)
+			}
+		}
+
+		// Produce ReconciliationFile event
+		if len(recons) > 0 {
+			group := new(errgroup.Group)
+			group.Go(func() error {
+				return pc.sendEvent(models.ReconciliationFile{
+					Filename:        filepath.Base(file.Filepath),
+					File:            achFile,
+					Reconciliations: recons,
+				})
 			})
-		})
-		return g.Wait()
+		}
 	}
-	return nil
+	return group.Wait()
 }
 
 func (pc *creditReconciliation) sendEvent(event interface{}) error {

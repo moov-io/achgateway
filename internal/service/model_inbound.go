@@ -164,6 +164,8 @@ type ODFIIncoming struct {
 type ODFIReconciliation struct {
 	Enabled     bool
 	PathMatcher string
+
+	Conditions *ach.Conditions
 }
 
 type ODFIPrenotes struct {
