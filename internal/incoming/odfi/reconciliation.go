@@ -88,40 +88,69 @@ func (pc *creditReconciliation) Handle(logger log.Logger, file File) error {
 	logger = logger.With(log.Fields{
 		"filepath": log.String(file.Filepath),
 	})
-	logger.Log("odfi: processing reconciliation file")
 
+	// Either produce a ReconciliationFile event for the entire file or for each entry
+	if pc.cfg.ProduceFileEvents {
+		logger.Log("odfi: producing reconciliation file event")
+
+		return pc.produceFileEvent(logger, file)
+	}
+
+	if pc.cfg.ProduceEntryEvents {
+		logger.Log("odfi: producing reconciliation entry events")
+
+		return pc.produceEntryEvents(logger, file)
+	}
+
+	return nil
+}
+
+func (pc *creditReconciliation) produceFileEvent(logger log.Logger, file File) error {
 	var recons []models.Batch
 
-	// Attempt to match each Transfer
 	for i := range file.ACHFile.Batches {
 		batch := models.Batch{
 			Header: file.ACHFile.Batches[i].GetHeader(),
 		}
-		entries := file.ACHFile.Batches[i].GetEntries()
-		for j := range entries {
-			logger.With(log.Fields{
-				"traceNumber": log.String(entries[j].TraceNumber),
-			}).Log("odfi: received reconciliation entry")
 
-			// Save off event information
-			batch.Entries = append(batch.Entries, entries[j])
-		}
+		entries := file.ACHFile.Batches[i].GetEntries()
+		batch.Entries = append(batch.Entries, entries...)
+
 		if len(batch.Entries) > 0 {
 			recons = append(recons, batch)
 		}
 	}
 	if len(recons) > 0 {
-		g := new(errgroup.Group)
-		g.Go(func() error {
-			return pc.sendEvent(models.ReconciliationFile{
-				Filename:        filepath.Base(file.Filepath),
-				File:            file.ACHFile,
-				Reconciliations: recons,
-			})
+		return pc.sendEvent(models.ReconciliationFile{
+			Filename:        filepath.Base(file.Filepath),
+			File:            file.ACHFile,
+			Reconciliations: recons,
 		})
-		return g.Wait()
 	}
 	return nil
+}
+
+func (pc *creditReconciliation) produceEntryEvents(logger log.Logger, file File) error {
+	g := new(errgroup.Group)
+
+	for i := range file.ACHFile.Batches {
+		batch := file.ACHFile.Batches[i]
+
+		entries := batch.GetEntries()
+		for j := range entries {
+			// Produce ReconciliationEntry event
+			entry := entries[j]
+			g.Go(func() error {
+				return pc.sendEvent(models.ReconciliationEntry{
+					Filename: filepath.Base(file.Filepath),
+					Header:   batch.GetHeader(),
+					Entry:    entry,
+				})
+			})
+		}
+	}
+
+	return g.Wait()
 }
 
 func (pc *creditReconciliation) sendEvent(event interface{}) error {

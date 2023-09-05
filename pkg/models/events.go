@@ -87,6 +87,11 @@ func ReadWithOpts(data []byte, opts *ach.ValidateOpts) (*Event, error) {
 		file.SetValidation(opts)
 		event.Event = &file
 
+	case "ReconciliationEntry":
+		var entry ReconciliationEntry
+		entry.SetValidation(opts)
+		event.Event = &entry
+
 	case "ReconciliationFile":
 		var file ReconciliationFile
 		file.SetValidation(opts)
@@ -189,6 +194,27 @@ func (evt *PrenoteFile) SetValidation(opts *ach.ValidateOpts) {
 		evt.File = ach.NewFile()
 	}
 	evt.File.SetValidation(opts)
+}
+
+// ReconciliationEntry is an ACH entry that was initiated with the ODFI.
+//
+// See the Event struct for wrapping steps.
+type ReconciliationEntry struct {
+	Filename string           `json:"filename"`
+	Header   *ach.BatchHeader `json:"batchHeader"`
+	Entry    *ach.EntryDetail `json:"entry"`
+}
+
+func (evt *ReconciliationEntry) SetValidation(opts *ach.ValidateOpts) {
+	if evt.Header == nil {
+		evt.Header = ach.NewBatchHeader()
+	}
+	evt.Header.SetValidation(opts)
+
+	if evt.Entry == nil {
+		evt.Entry = ach.NewEntryDetail()
+	}
+	evt.Entry.SetValidation(opts)
 }
 
 // ReconciliationFile is a file whose entries match entries initiated with the ODFI.
