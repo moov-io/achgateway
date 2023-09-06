@@ -60,8 +60,9 @@ var (
 						Enabled: true,
 					},
 					Reconciliation: service.ODFIReconciliation{
-						Enabled:     true,
-						PathMatcher: "/reconciliation/",
+						Enabled:           true,
+						PathMatcher:       "/reconciliation/",
+						ProduceFileEvents: true,
 					},
 					Returns: service.ODFIReturns{
 						Enabled: true,

@@ -164,6 +164,9 @@ type ODFIIncoming struct {
 type ODFIReconciliation struct {
 	Enabled     bool
 	PathMatcher string
+
+	ProduceFileEvents  bool
+	ProduceEntryEvents bool
 }
 
 type ODFIPrenotes struct {

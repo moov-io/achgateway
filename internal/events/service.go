@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/compliance"
 	"github.com/moov-io/achgateway/pkg/models"
@@ -64,7 +65,19 @@ func (e *MockEmitter) Send(evt models.Event) error {
 		return fmt.Errorf("mock emitter - reveal: %w", err)
 	}
 
-	found, _ := models.Read(bs)
+	var validateOpts *ach.ValidateOpts
+	switch event := evt.Event.(type) {
+	case models.ReconciliationEntry:
+		validateOpts = &ach.ValidateOpts{
+			AllowMissingFileControl:    true,
+			AllowMissingFileHeader:     true,
+			AllowUnorderedBatchNumbers: true,
+		}
+	case models.ReconciliationFile:
+		validateOpts = event.File.GetValidation()
+	}
+
+	found, err := models.ReadWithOpts(bs, validateOpts)
 	if err != nil {
 		return fmt.Errorf("mock emitter - read: %w", err)
 	}
