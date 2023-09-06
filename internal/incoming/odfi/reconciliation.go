@@ -89,17 +89,22 @@ func (pc *creditReconciliation) Handle(logger log.Logger, file File) error {
 		"filepath": log.String(file.Filepath),
 	})
 
-	// Either produce a ReconciliationFile event for the entire file or for each entry
+	// Produce ReconciliationFile and/or ReconciliationEntry events from the downloaded reconciliation file
 	if pc.cfg.ProduceFileEvents {
 		logger.Log("odfi: producing reconciliation file event")
 
-		return pc.produceFileEvent(logger, file)
+		err := pc.produceFileEvent(logger, file)
+		if err != nil {
+			return fmt.Errorf("producing file event: %w", err)
+		}
 	}
-
 	if pc.cfg.ProduceEntryEvents {
 		logger.Log("odfi: producing reconciliation entry events")
 
-		return pc.produceEntryEvents(logger, file)
+		err := pc.produceEntryEvents(logger, file)
+		if err != nil {
+			return fmt.Errorf("producing entry event: %w", err)
+		}
 	}
 
 	return nil
