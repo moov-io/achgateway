@@ -1,3 +1,14 @@
+## v0.24.0 (Released 2023-09-06)
+
+Moov has encountered performance and scalability issues with `ReconciliationFile` events when they contain large files.
+To handle these larger files we are adding a new `ReconciliationEntry` event produced for each `EntryDetail` of the file.
+
+**To maintain backwards compatability** with the v0.23.x series set `ProduceFileEvents: true` under `Reconciliation` of the ODFI config.
+
+ADDITIONS
+
+- feat: add option to produce recon events per-entry (`ReconciliationEntry`)
+
 ## v0.23.9 (Released 2023-08-30)
 
 BUILD
