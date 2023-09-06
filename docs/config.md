@@ -110,9 +110,11 @@ ACHGateway:
           [ ExcludeReturns: <boolean> | default = false ]
           [ ExcludeReconciliations: <boolean> | default = false ]
         Reconciliation:
-          [ Enabled: <boolean> | default = false]
+          [ Enabled: <boolean> | default = false ]
           # Partial filename to match on. Example: "RECON_"
           [ PathMatcher: <string> | default = "" ]
+          [ ProduceFileEvents: <boolean> | default = false ]
+          [ ProduceEntryEvents: <boolean> | default = false ]
         Prenotes:
           [ Enabled: <boolean> | default = false]
           # Partial filename to match on. Example: "PRENOTE_"
