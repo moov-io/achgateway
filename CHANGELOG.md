@@ -1,3 +1,15 @@
+## v0.24.1 (Released 2023-09-11)
+
+IMPROVEMENTS
+
+- docs/ops: fix port for achgateway admin server
+- docs: add new configs for reconciliation file/entry events
+- stream: unwrap underlying error from sarama.ProducerError
+
+BUILD
+
+- build: switch kafka image to redpanda
+
 ## v0.24.0 (Released 2023-09-06)
 
 Moov has encountered performance and scalability issues with `ReconciliationFile` events when they contain large files.
