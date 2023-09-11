@@ -30,7 +30,7 @@ ACHGateway supports manually triggering inbound or cutoff processing. A list of 
 There is an endpoint to initiate cutoff processing as if a window has approached. This involves merging transfers into files, upload attempts, and audit trail storage.
 
 ```
-$ curl -XPUT http://localhost:9092/trigger-cutoff --data '{"shardNames":["testing"]}'
+$ curl -XPUT http://localhost:9494/trigger-cutoff --data '{"shardNames":["testing"]}'
 {
   "shards": {
     "testing": null,
@@ -44,7 +44,7 @@ $ curl -XPUT http://localhost:9092/trigger-cutoff --data '{"shardNames":["testin
 There is an endpoint to initiate processing of ODFI files which could be incoming transfers, returned files, corrected files, and pre-notifications.
 
 ```
-$ curl -XPUT http://localhost:9092/trigger-inbound
+$ curl -XPUT http://localhost:9494/trigger-inbound
 {
   "shards": {
     "testing": null,
