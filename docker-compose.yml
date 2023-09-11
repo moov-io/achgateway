@@ -47,20 +47,53 @@ services:
       - "2181:2181"
 
   kafka1:
-    image: wurstmeister/kafka:2.13-2.6.0
-    depends_on:
-      - zookeeper
-    ports:
-      - "9092:9092"
-    environment:
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CREATE_TOPICS: test1:1:1
-      PORT_COMMAND: "docker port $$(hostname) 9092/tcp | cut -d: -f2"
-      HOSTNAME_COMMAND: "route -n | awk '/UG[ \t]/{print $$2}'"
+    image: docker.redpanda.com/vectorized/redpanda:v22.3.21
+    container_name: kafka1
+    healthcheck:
+      {
+        test: curl -f localhost:9644/v1/status/ready,
+        interval: 1s,
+        start_period: 30s,
+      }
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    tmpfs: # Run this mysql in memory as its used for testing
-      - /tmp/kafka-logs
+      - redpanda-0:/var/lib/redpanda/data
+    networks:
+      - intranet
+    ports:
+      - 18081:18081
+      - 18082:18082
+      - 19092:19092
+      - 19644:9644
+    command:
+      - redpanda
+      - start
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://kafka1:9092,external://localhost:19092
+      - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
+      - --advertise-pandaproxy-addr internal://kafka1:8082,external://localhost:18082
+      - --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081
+      - --rpc-addr kafka1:33145
+      - --advertise-rpc-addr kafka1:33145
+      - --smp 1
+      - --memory 1G
+      - --mode dev-container
+      - --default-log-level=info
+
+  topics:
+    image: docker.redpanda.com/vectorized/redpanda:v22.3.21
+    depends_on:
+      kafka1:
+        condition: service_healthy
+    networks:
+      - intranet
+    command:
+      - topic
+      - --brokers kafka1:9092
+      - create
+      - ach.outgoing-files
 
 networks:
   intranet: {}
+
+volumes:
+  redpanda-0: null

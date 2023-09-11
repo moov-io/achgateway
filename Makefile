@@ -48,6 +48,7 @@ endif
 .PHONY: teardown
 teardown:
 	-docker-compose down --remove-orphans
+	-docker-compose rm -sfv
 
 docker: update
 	docker build --pull --build-arg VERSION=${VERSION} -t moov/achgateway:${VERSION} -f Dockerfile .
