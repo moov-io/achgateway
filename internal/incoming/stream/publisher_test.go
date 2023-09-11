@@ -6,9 +6,12 @@ package stream
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"testing"
 
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/base/docker"
 	"github.com/moov-io/base/log"
 
 	"github.com/stretchr/testify/require"
@@ -34,7 +37,7 @@ func TestStream(t *testing.T) {
 	defer sub.Shutdown(ctx)
 
 	// quick send and receive
-	send(ctx, topic, "hello, world")
+	send(t, ctx, topic, "hello, world")
 	if msg, err := receive(ctx, sub); err == nil {
 		if msg != "hello, world" {
 			t.Errorf("got %q", msg)
@@ -44,19 +47,63 @@ func TestStream(t *testing.T) {
 	}
 }
 
-func send(ctx context.Context, t Publisher, body string) *pubsub.Message {
+func TestStreamErrors(t *testing.T) {
+	if testing.Short() {
+		t.Skip("-short flag enabled")
+	}
+	if !docker.Enabled() {
+		t.Skip("Docker not enabled")
+	}
+
+	cfg := &service.Config{
+		Inbound: service.Inbound{
+			Kafka: &service.KafkaConfig{
+				Brokers: []string{"localhost:19092"},
+				Key:     "",
+				Secret:  "",
+				Topic:   "test1",
+				TLS:     false,
+			},
+		},
+	}
+	ctx := context.Background()
+	logger := log.NewTestLogger()
+
+	topic, err := Topic(logger, cfg)
+	require.NoError(t, err)
+	defer topic.Shutdown(ctx)
+
+	// Produce a message that's too big
+	msg := &pubsub.Message{
+		Body:     []byte(strings.Repeat("A", 1e9)),
+		Metadata: make(map[string]string),
+	}
+	err = topic.Send(ctx, msg)
+	require.ErrorContains(t, err, "kafka server: Message was too large, server rejected it to avoid allocation error")
+}
+
+func send(t *testing.T, ctx context.Context, topic Publisher, body string) *pubsub.Message {
+	t.Helper()
+
 	msg := &pubsub.Message{
 		Body:     []byte(body),
 		Metadata: make(map[string]string),
 	}
-	t.Send(ctx, msg)
+	err := topic.Send(ctx, msg)
+	if err != nil {
+		t.Error(err)
+	}
 	return msg
 }
 
-func receive(ctx context.Context, t Subscription) (string, error) {
-	msg, err := t.Receive(ctx)
+func receive(ctx context.Context, sub Subscription) (string, error) {
+	msg, err := sub.Receive(ctx)
 	if err != nil {
 		return "", err
 	}
+	if msg == nil {
+		return "", errors.New("nil Message received")
+	}
+	msg.Ack()
 	return string(msg.Body), nil
 }

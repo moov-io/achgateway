@@ -62,11 +62,14 @@ func (kp *kafkaProducer) Send(ctx context.Context, m *pubsub.Message) error {
 	if err != nil {
 		var producerError sarama.ProducerError
 		if kp.topic.ErrorAs(err, &producerError) {
-			return fmt.Errorf("producer error sending message: %w", producerError)
+			return fmt.Errorf("producer error: %w", producerError.Err)
 		}
 		var producerErrors sarama.ProducerErrors
 		if kp.topic.ErrorAs(err, &producerErrors) {
-			return fmt.Errorf("producer errors sending message: %w", producerErrors)
+			if len(producerErrors) > 0 {
+				return fmt.Errorf("first producer error (of %d) - %w", len(producerErrors), producerErrors[0].Err)
+			}
+			return fmt.Errorf("producer errors: %w", producerErrors)
 		}
 		return fmt.Errorf("error sending message: %w", err)
 	}
