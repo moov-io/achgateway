@@ -186,6 +186,7 @@ func (fr *FileReceiver) RegisterAdminRoutes(r *admin.Server) {
 // handleMessage will listen for an incoming.ACHFile to pass off to an aggregator for the shard
 // responsible. It does so with a database lookup and the fixed set of Shards from the file config.
 func (fr *FileReceiver) handleMessage(ctx context.Context, sub stream.Subscription) chan error {
+	// TODO: This locking does not appear to serve any purpose.
 	fr.mu.RLock()
 	defer fr.mu.RUnlock()
 

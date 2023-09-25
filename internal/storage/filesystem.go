@@ -2,6 +2,7 @@ package storage
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -111,5 +112,23 @@ func (fs *filesystem) WriteFile(path string, contents []byte) error {
 		return err
 	}
 
-	return os.WriteFile(filepath.Join(dir, path), contents, 0600)
+	f, err := os.OpenFile(filepath.Join(dir, path), os.O_WRONLY|os.O_CREATE, 0777)
+	if err != nil {
+		return fmt.Errorf("WriteFile: %v", err)
+	}
+	defer f.Close()
+
+	_, err = f.Write(contents)
+	if err != nil {
+		return fmt.Errorf("WriteFile: %v", err)
+	}
+
+	err = f.Sync()
+	if err != nil {
+		return fmt.Errorf("WriteFile: %v", err)
+	}
+
+	return nil
+
+	//return os.WriteFile(filepath.Join(dir, path), contents, 0600)
 }
