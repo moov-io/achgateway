@@ -21,6 +21,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/moov-io/achgateway/internal/incoming"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -191,4 +194,38 @@ func TestFileReceiver__contains(t *testing.T) {
 
 	require.False(t, contains(err, "connect: "))
 	require.False(t, contains(err, "EOF"))
+}
+
+func TestFileReceiver_DuplicateFile(t *testing.T) {
+	fr := testFileReceiver(t)
+
+	fileID := uuid.NewString()
+	file, err := ach.ReadFile(filepath.Join("..", "..", "testdata", "ppd-debit.ach"))
+	require.NoError(t, err)
+
+	err = fr.processACHFile(incoming.ACHFile{
+		FileID:   fileID,
+		ShardKey: "testing",
+		File:     file,
+	})
+	require.NoError(t, err)
+
+	f1Bytes, err := os.ReadFile(filepath.Join(fr.MergingDir, "mergable", "testing", fmt.Sprintf("%s.ach", fileID)))
+
+	err = fr.processACHFile(incoming.ACHFile{
+		FileID:   fileID,
+		ShardKey: "testing",
+		File:     file,
+	})
+	require.NoError(t, err)
+
+	f2Bytes, err := os.ReadFile(filepath.Join(fr.MergingDir, "mergable", "testing", fmt.Sprintf("%s.ach", fileID)))
+
+	dirFile, err := os.Open(filepath.Join(fr.MergingDir, "mergable", "testing"))
+	require.NoError(t, err)
+
+	files, err := dirFile.Readdir(-1)
+	require.NoError(t, err)
+	require.Len(t, files, 1, "expected only one file in merging directory")
+	require.Equal(t, f1Bytes, f2Bytes, "file contents are identical")
 }

@@ -257,8 +257,8 @@ func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 	//
 	// Uncommitted messages will be redelivered and reprocessed, which can delay or
 	// pause processing.
-	committed := fr.shouldAutocommit()
-	if committed {
+	shouldAutocommit := fr.shouldAutocommit()
+	if shouldAutocommit {
 		msg.Ack()
 	}
 
@@ -293,7 +293,7 @@ func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 				"type": log.String(fmt.Sprintf("%T", evt)),
 			}).LogError(err).Err()
 		}
-		if !committed {
+		if !shouldAutocommit {
 			msg.Ack()
 		}
 		return nil
@@ -321,7 +321,7 @@ func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 				}
 				return err
 			}
-			if !committed {
+			if !shouldAutocommit {
 				msg.Ack()
 			}
 			return nil

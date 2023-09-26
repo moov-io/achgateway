@@ -112,7 +112,7 @@ func (fs *filesystem) WriteFile(path string, contents []byte) error {
 		return err
 	}
 
-	f, err := os.OpenFile(filepath.Join(dir, path), os.O_WRONLY|os.O_CREATE, 0777)
+	f, err := os.Create(filepath.Join(dir, path))
 	if err != nil {
 		return fmt.Errorf("WriteFile: %v", err)
 	}
@@ -129,6 +129,4 @@ func (fs *filesystem) WriteFile(path string, contents []byte) error {
 	}
 
 	return nil
-
-	//return os.WriteFile(filepath.Join(dir, path), contents, 0600)
 }
