@@ -211,6 +211,7 @@ func TestFileReceiver_DuplicateFile(t *testing.T) {
 	require.NoError(t, err)
 
 	f1Bytes, err := os.ReadFile(filepath.Join(fr.MergingDir, "mergable", "testing", fmt.Sprintf("%s.ach", fileID)))
+	require.NoError(t, err)
 
 	err = fr.processACHFile(incoming.ACHFile{
 		FileID:   fileID,
@@ -220,6 +221,7 @@ func TestFileReceiver_DuplicateFile(t *testing.T) {
 	require.NoError(t, err)
 
 	f2Bytes, err := os.ReadFile(filepath.Join(fr.MergingDir, "mergable", "testing", fmt.Sprintf("%s.ach", fileID)))
+	require.NoError(t, err)
 
 	dirFile, err := os.Open(filepath.Join(fr.MergingDir, "mergable", "testing"))
 	require.NoError(t, err)
