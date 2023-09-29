@@ -201,7 +201,7 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub stream.Subscripti
 		go func() {
 			msg, err := sub.Receive(ctx)
 			if err != nil {
-				if err == context.Canceled {
+				if errors.Is(err, context.Canceled) {
 					return
 				}
 				if strings.Contains(err.Error(), "Subscription has been Shutdown") {
@@ -268,7 +268,8 @@ func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 	// Optionally decode and decrypt message
 	data, err = compliance.Reveal(fr.transformConfig, data)
 	if err != nil {
-		return logger.LogErrorf("unable to reveal event: %v", err).Err()
+		logger.LogErrorf("unable to reveal event: %v", err)
+		data = msg.Body
 	}
 
 	event, readErr := models.Read(data)
