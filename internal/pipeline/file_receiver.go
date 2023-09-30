@@ -274,7 +274,7 @@ func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 
 	event, readErr := models.Read(data)
 	if readErr != nil {
-		logger.LogErrorf("unable to read %s event: %v", event.Type, readErr)
+		return logger.LogErrorf("unable to read %s event: %v", event.Type, readErr).Err()
 	}
 
 	var file *incoming.ACHFile
