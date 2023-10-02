@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -164,6 +165,10 @@ func TestODFIDownload(t *testing.T) {
 	require.NoError(t, err)
 	err = os.WriteFile(emptyFilepath, buf.Bytes(), info.Mode())
 	require.NoError(t, err)
+	info, err = os.Stat(filepath.Join(filepath.Dir(emptyFilepath), "ppd-debit-bad.ach"))
+	require.NoError(t, err)
+	err = os.WriteFile(emptyFilepath, buf.Bytes(), info.Mode())
+	require.NoError(t, err)
 	// Fix permissions to allow deleting files on CI
 	if os.Getenv("GITHUB_ACTIONS") != "" {
 		err = os.Chmod(filepath.Dir(emptyFilepath), 0777)
@@ -232,11 +237,14 @@ func TestODFIDownload(t *testing.T) {
 	}
 
 	// Verify Reconciliations
-	assert.Len(t, reconciliations, 1)
-	if len(reconciliations) > 0 {
-		assert.Equal(t, "ppd-debit.ach", reconciliations[0].Filename)
-		assert.Len(t, reconciliations[0].Reconciliations, 1)
-	}
+	require.Len(t, reconciliations, 2)
+	sort.Slice(reconciliations, func(i, j int) bool {
+		return reconciliations[i].Filename < reconciliations[j].Filename
+	})
+	assert.Equal(t, "ppd-debit-bad.ach", reconciliations[0].Filename)
+	require.Len(t, reconciliations[0].Reconciliations, 2)
+	assert.Equal(t, "ppd-debit.ach", reconciliations[1].Filename)
+	require.Len(t, reconciliations[1].Reconciliations, 1)
 
 	// Verify Returns
 	assert.Len(t, returns, 1)
@@ -258,7 +266,7 @@ func TestODFIDownload(t *testing.T) {
 	require.NoError(t, err)
 	containsFilepaths(t, filenames, []string{
 		"/inbound/cor-c01.ach", "/inbound/iat-credit.ach",
-		"/reconciliation/empty.txt", "/reconciliation/ppd-debit.ach",
+		"/reconciliation/empty.txt", "/reconciliation/ppd-debit.ach", "/reconciliation/ppd-debit-bad.ach",
 		"/returned/return-WEB.ach",
 	})
 
@@ -279,6 +287,7 @@ func TestODFIDownload(t *testing.T) {
 		fmt.Sprintf("/odfi/127.0.0.1:2222/inbound/%s/cor-c01.ach", yymmdd),
 		fmt.Sprintf("/odfi/127.0.0.1:2222/inbound/%s/iat-credit.ach", yymmdd),
 		fmt.Sprintf("/odfi/127.0.0.1:2222/reconciliation/%s/ppd-debit.ach", yymmdd),
+		fmt.Sprintf("/odfi/127.0.0.1:2222/reconciliation/%s/ppd-debit-bad.ach", yymmdd),
 		fmt.Sprintf("/odfi/127.0.0.1:2222/returned/%s/return-WEB.ach", yymmdd),
 	})
 
