@@ -88,6 +88,17 @@ func TestProcessor_populateHashes(t *testing.T) {
 	require.Equal(t, "389723d3a8293a802169b5db27f288d32e96b9c6", entries[0].ID)
 }
 
+func TestProcessor_populateIatHashes(t *testing.T) {
+	file, err := ach.ReadFile(filepath.Join("testdata", "iat-credit.ach"))
+	require.NoError(t, err)
+
+	populateHashes(file)
+	require.Equal(t, "", file.IATBatches[0].ID)
+
+	entries := file.IATBatches[0].GetEntries()
+	require.Equal(t, "f26f52d2603771f52c983bf6062ba503fd126087", entries[0].ID)
+}
+
 func TestProcessor_MultiReturnCorrection(t *testing.T) {
 	cfg := service.ODFIFiles{
 		Processors: service.ODFIProcessors{
