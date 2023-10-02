@@ -84,12 +84,12 @@ func (pcs Processors) HandleAll(logger log.Logger, file File) error {
 	return el
 }
 
-func ProcessFiles(logger log.Logger, dl *downloadedFiles, alerters alerting.Alerters, auditSaver *AuditSaver, validation ach.ValidateOpts, fileProcessors Processors, agent upload.Agent) error {
+func ProcessFiles(logger log.Logger, allowMissingBatchHeader bool, dl *downloadedFiles, alerters alerting.Alerters, auditSaver *AuditSaver, validation ach.ValidateOpts, fileProcessors Processors, agent upload.Agent) error {
 	var el base.ErrorList
 
 	for _, processingPath := range []string{agent.InboundPath(), agent.ReconciliationPath(), agent.ReturnPath()} {
 		where := filepath.Join(dl.dir, processingPath)
-		validation.AllowMissingBatchHeader = processingPath == agent.ReconciliationPath()
+		validation.AllowMissingBatchHeader = allowMissingBatchHeader && processingPath == agent.ReconciliationPath()
 		if err := processDir(logger, where, alerters, auditSaver, validation, fileProcessors); err != nil {
 			el.Add(fmt.Errorf("processDir %s: %v", where, err))
 		}

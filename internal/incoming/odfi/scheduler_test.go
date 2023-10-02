@@ -40,6 +40,7 @@ func TestScheduler(t *testing.T) {
 					RemoveZeroByteFiles:   true,
 				},
 			},
+			AllowMissingBatchHeader: true,
 		},
 		Upload: service.UploadAgents{
 			Agents: []service.UploadAgent{

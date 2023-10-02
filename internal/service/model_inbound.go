@@ -27,11 +27,12 @@ import (
 )
 
 type Inbound struct {
-	HTTP  HTTPConfig
-	InMem *InMemory
-	Kafka *KafkaConfig
-	ODFI  *ODFIFiles
-	Audit *AuditTrail
+	HTTP                    HTTPConfig
+	InMem                   *InMemory
+	Kafka                   *KafkaConfig
+	ODFI                    *ODFIFiles
+	Audit                   *AuditTrail
+	AllowMissingBatchHeader bool
 }
 
 func (cfg Inbound) Validate() error {

@@ -122,6 +122,7 @@ func TestODFIDownload(t *testing.T) {
 	// Setup our config with test specific values
 	odfiStorageDir := t.TempDir()
 	downloadConf.Inbound.ODFI.Storage.Directory = odfiStorageDir
+	downloadConf.Inbound.AllowMissingBatchHeader = true
 	auditDir := t.TempDir()
 	downloadConf.Inbound.ODFI.Audit = &service.AuditTrail{
 		BucketURI: fmt.Sprintf("file://%s", auditDir),

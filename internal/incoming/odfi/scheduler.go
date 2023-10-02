@@ -37,10 +37,11 @@ type Scheduler interface {
 }
 
 type PeriodicScheduler struct {
-	logger       log.Logger
-	odfi         *service.ODFIFiles
-	sharding     service.Sharding
-	uploadAgents service.UploadAgents
+	logger                  log.Logger
+	odfi                    *service.ODFIFiles
+	allowMissingBatchHeader bool
+	sharding                service.Sharding
+	uploadAgents            service.UploadAgents
 
 	ticker         *time.Ticker
 	inboundTrigger chan manuallyTriggeredInbound
@@ -71,17 +72,18 @@ func NewPeriodicScheduler(logger log.Logger, cfg *service.Config, processors Pro
 	ctx, cancelFunc := context.WithCancel(context.Background())
 
 	return &PeriodicScheduler{
-		logger:         logger,
-		odfi:           cfg.Inbound.ODFI,
-		sharding:       cfg.Sharding,
-		uploadAgents:   cfg.Upload,
-		ticker:         time.NewTicker(cfg.Inbound.ODFI.Interval),
-		inboundTrigger: make(chan manuallyTriggeredInbound, 1),
-		downloader:     dl,
-		processors:     processors,
-		shutdown:       ctx,
-		shutdownFunc:   cancelFunc,
-		alerters:       alerters,
+		logger:                  logger,
+		odfi:                    cfg.Inbound.ODFI,
+		allowMissingBatchHeader: cfg.Inbound.AllowMissingBatchHeader,
+		sharding:                cfg.Sharding,
+		uploadAgents:            cfg.Upload,
+		ticker:                  time.NewTicker(cfg.Inbound.ODFI.Interval),
+		inboundTrigger:          make(chan manuallyTriggeredInbound, 1),
+		downloader:              dl,
+		processors:              processors,
+		shutdown:                ctx,
+		shutdownFunc:            cancelFunc,
+		alerters:                alerters,
 	}, nil
 }
 
@@ -157,7 +159,7 @@ func (s *PeriodicScheduler) tick(logger log.Logger, shard *service.Shard) error 
 	}
 
 	// Run each processor over the files
-	if err := ProcessFiles(logger, dl, s.alerters, auditSaver, s.odfi.Processors.Validation, s.processors, agent); err != nil {
+	if err := ProcessFiles(logger, s.allowMissingBatchHeader, dl, s.alerters, auditSaver, s.odfi.Processors.Validation, s.processors, agent); err != nil {
 		return fmt.Errorf("ERROR: processing files: %v", err)
 	}
 
