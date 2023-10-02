@@ -165,6 +165,37 @@ func TestFileReceiver__InvalidQueueFile(t *testing.T) {
 	require.Contains(t, iqf.Error, "reading QueueACHFile failed: ImmediateDestination")
 }
 
+func TestFileReceiver__CancelFile(t *testing.T) {
+	fr := testFileReceiver(t)
+
+	//file, err := ach.ReadFile(filepath.Join("..", "incoming", "odfi", "testdata", "return-no-batch-controls.ach"))
+	//require.ErrorContains(t, err, ach.ErrFileHeader.Error())
+
+	bs, err := compliance.Protect(nil, models.Event{
+		Event: models.CancelACHFile{
+			FileID:   "return-no-batch-controls.ach",
+			ShardKey: "testing",
+		},
+	})
+	require.NoError(t, err)
+
+	err = fr.Publisher.Send(context.Background(), &pubsub.Message{
+		Body: bs,
+	})
+	require.NoError(t, err)
+
+	require.Eventually(t, func() bool {
+		file2, err := ach.ReadFile(filepath.Join("mergable", "testing", fmt.Sprintf("%s.ach.cancelled", "return-no-batch-controls.ach")))
+		if err != nil {
+			t.Logf("waiting for file to be canceled: %v", err)
+		}
+		if file2 != nil {
+			t.Logf("file2.ID: %s", file2.ID)
+		}
+		return file2 != nil
+	}, 60*time.Second, 500*time.Millisecond)
+}
+
 func TestFileReceiver__shouldAutocommit(t *testing.T) {
 	fr := testFileReceiver(t)
 
