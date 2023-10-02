@@ -89,6 +89,7 @@ func ProcessFiles(logger log.Logger, dl *downloadedFiles, alerters alerting.Aler
 
 	for _, processingPath := range []string{agent.InboundPath(), agent.ReconciliationPath(), agent.ReturnPath()} {
 		where := filepath.Join(dl.dir, processingPath)
+		validation.AllowMissingBatchHeader = processingPath == agent.ReconciliationPath()
 		if err := processDir(logger, where, alerters, auditSaver, validation, fileProcessors); err != nil {
 			el.Add(fmt.Errorf("processDir %s: %v", where, err))
 		}
