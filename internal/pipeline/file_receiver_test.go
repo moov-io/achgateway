@@ -168,12 +168,9 @@ func TestFileReceiver__InvalidQueueFile(t *testing.T) {
 func TestFileReceiver__CancelFile(t *testing.T) {
 	fr := testFileReceiver(t)
 
-	//file, err := ach.ReadFile(filepath.Join("..", "incoming", "odfi", "testdata", "return-no-batch-controls.ach"))
-	//require.ErrorContains(t, err, ach.ErrFileHeader.Error())
-
 	bs, err := compliance.Protect(nil, models.Event{
 		Event: models.CancelACHFile{
-			FileID:   "return-no-batch-controls.ach",
+			FileID:   "return-no-batch-controls",
 			ShardKey: "testing",
 		},
 	})
