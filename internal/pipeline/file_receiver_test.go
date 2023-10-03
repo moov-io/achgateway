@@ -182,7 +182,7 @@ func TestFileReceiver__CancelFile(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Eventually(t, func() bool {
-		file2, err := ach.ReadFile(filepath.Join("mergable", "testing", fmt.Sprintf("%s.ach.cancelled", "return-no-batch-controls.ach")))
+		file2, err := ach.ReadFile(filepath.Join("mergable", "testing", fmt.Sprintf("%s.cancelled", "return-no-batch-controls.ach")))
 		if err != nil {
 			t.Logf("waiting for file to be canceled: %v", err)
 		}
