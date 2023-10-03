@@ -3,6 +3,7 @@ package storage
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -129,4 +130,29 @@ func (fs *filesystem) WriteFile(path string, contents []byte) error {
 	}
 
 	return nil
+}
+
+func (fs *filesystem) GetFileWriter(path string) (io.Writer, func() error, error) {
+	dir, path := filepath.Split(path)
+	dir = filepath.Join(fs.root, dir)
+
+	if err := os.MkdirAll(dir, 0777); err != nil {
+		return nil, nil, err
+	}
+
+	f, err := os.Create(filepath.Join(dir, path))
+	if err != nil {
+		return nil, nil, fmt.Errorf("GetFileWriter: %v", err)
+	}
+
+	continuation := func() error {
+		defer f.Close()
+		err = f.Sync()
+		if err != nil {
+			return fmt.Errorf("WriteFile: %v", err)
+		}
+		return nil
+	}
+
+	return f, continuation, nil
 }
