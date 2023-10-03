@@ -167,6 +167,8 @@ func TestFileReceiver__InvalidQueueFile(t *testing.T) {
 
 func TestFileReceiver__CancelFile(t *testing.T) {
 	fr := testFileReceiver(t)
+	s, err := storage.New(fr.cfg.Upload.Merging.Storage)
+	require.NoError(t, err)
 
 	bs, err := compliance.Protect(nil, models.Event{
 		Event: models.CancelACHFile{
@@ -182,12 +184,12 @@ func TestFileReceiver__CancelFile(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Eventually(t, func() bool {
-		file2, err := ach.ReadFile(filepath.Join("mergable", "testing", fmt.Sprintf("%s.cancelled", "return-no-batch-controls.ach")))
+		file2, err := s.Open(filepath.Join("mergable", "testing", fmt.Sprintf("%s.canceled", "return-no-batch-controls.ach")))
 		if err != nil {
 			t.Logf("waiting for file to be canceled: %v", err)
 		}
 		if file2 != nil {
-			t.Logf("file2.ID: %s", file2.ID)
+			t.Logf("file2.Filename: %s", file2.Filename())
 		}
 		return file2 != nil
 	}, 60*time.Second, 500*time.Millisecond)
