@@ -1,3 +1,11 @@
+## v0.24.2 (Released 2023-10-04)
+
+IMPROVEMENTS
+- add IAT Batches to populateHashes
+
+BUILD
+- remove zookeeper
+
 ## v0.24.1 (Released 2023-09-11)
 
 IMPROVEMENTS
