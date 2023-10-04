@@ -33,6 +33,7 @@ var (
 type Storage interface {
 	// SaveFile will encrypt and copy the ACH file to the configured file storage.
 	SaveFile(filepath string, data []byte) error
+	SaveFileStream(path string, stream io.Reader) error
 
 	GetFile(filepath string) (io.ReadCloser, error)
 

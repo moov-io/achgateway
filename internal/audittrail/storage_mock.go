@@ -40,6 +40,24 @@ func (s *MockStorage) SaveFile(path string, data []byte) error {
 	return s.Err
 }
 
+func (s *MockStorage) SaveFileStream(path string, stream io.Reader) error {
+	if s.Err != nil {
+		uploadFilesErrors.With("type", "mock", "id", "mock").Add(1)
+	} else {
+		uploadedFilesCounter.With("type", "mock", "id", "mock").Add(1)
+
+		s.SavedFilepath = path
+
+		buf := bytes.Buffer{}
+		_, err := io.Copy(&buf, stream)
+		if err != nil {
+			return err
+		}
+		s.SavedContents = buf.Bytes()
+	}
+	return s.Err
+}
+
 func (s *MockStorage) GetFile(_ string) (io.ReadCloser, error) {
 	if s.Err != nil {
 		return nil, s.Err

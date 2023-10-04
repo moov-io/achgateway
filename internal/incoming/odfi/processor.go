@@ -18,7 +18,6 @@
 package odfi
 
 import (
-	"bytes"
 	"crypto/sha1" //nolint:gosec
 	"fmt"
 	"os"
@@ -124,13 +123,15 @@ func processDir(logger log.Logger, dir string, alerters alerting.Alerters, audit
 }
 
 func processFile(logger log.Logger, path string, alerters alerting.Alerters, auditSaver *AuditSaver, validation ach.ValidateOpts, fileProcessors Processors) error {
-	bs, err := os.ReadFile(path)
+	fileHandle, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("problem opening %s: %v", path, err)
 	}
-	bs = bytes.TrimSpace(bs)
+	//bs = bytes.TrimSpace(bs)
 
-	reader := ach.NewReader(bytes.NewReader(bs))
+	hashReader := NewHashFilter(fileHandle)
+
+	reader := ach.NewReader(hashReader)
 	// Enable some default ACH ValidateOpts
 	validation.AllowMissingFileControl = true
 	validation.AllowMissingFileHeader = true
@@ -145,7 +146,7 @@ func processFile(logger log.Logger, path string, alerters alerting.Alerters, aud
 			return fmt.Errorf("problem parsing %s: %v", path, err)
 		}
 	}
-	file.ID = hash(bs)
+	file.ID = fmt.Sprintf("%x", hashReader.Sum())
 	populateHashes(&file)
 
 	dir, filename := filepath.Split(path)
@@ -154,7 +155,11 @@ func processFile(logger log.Logger, path string, alerters alerting.Alerters, aud
 	// Persist the file if needed
 	if auditSaver != nil {
 		path := fmt.Sprintf("odfi/%s/%s/%s/%s", auditSaver.hostname, dir, time.Now().Format("2006-01-02"), filename)
-		err = auditSaver.save(path, bs)
+		_, err = fileHandle.Seek(0, 0)
+		if err != nil {
+			return fmt.Errorf("audittrail %s error: %v", path, err)
+		}
+		err = auditSaver.save(path, fileHandle)
 		if err != nil {
 			return fmt.Errorf("audittrail %s error: %v", path, err)
 		}

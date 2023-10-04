@@ -128,7 +128,7 @@ func (agent *FTPTransferAgent) UploadFile(f File) error {
 }
 
 func (agent *FTPTransferAgent) ReadFile(path string) (*File, error) {
-	file, err := agent.client.Open(path)
+	file, err := agent.client.Reader(path)
 	if err != nil {
 		return nil, fmt.Errorf("ftp open %s failed: %w", path, err)
 	}

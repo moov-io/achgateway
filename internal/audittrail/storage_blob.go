@@ -102,6 +102,10 @@ func (bs *blobStorage) SaveFile(path string, data []byte) error {
 	return nil
 }
 
+func (bs *blobStorage) SaveFileStream(path string, stream io.Reader) error {
+	return nil
+}
+
 func (bs *blobStorage) GetFile(path string) (io.ReadCloser, error) {
 	r, err := bs.bucket.NewReader(context.Background(), path, nil)
 	if err != nil {

@@ -111,7 +111,7 @@ func (agent *SFTPTransferAgent) UploadFile(f File) error {
 }
 
 func (agent *SFTPTransferAgent) ReadFile(path string) (*File, error) {
-	file, err := agent.client.Open(path)
+	file, err := agent.client.Reader(path)
 	if err != nil {
 		return nil, fmt.Errorf("sftp open %s failed: %w", path, err)
 	}
