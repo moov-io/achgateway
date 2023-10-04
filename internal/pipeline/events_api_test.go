@@ -29,6 +29,7 @@ import (
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/admintest"
 	"github.com/moov-io/achgateway/internal/events"
+	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/compliance"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base"
@@ -40,7 +41,7 @@ import (
 func TestEventsAPI_FileUploaded(t *testing.T) {
 	adminServer := admintest.Server(t)
 
-	fr := testFileReceiver(t)
+	fr := testFileReceiver(t, func(conf *service.Config) {})
 	fr.RegisterAdminRoutes(adminServer)
 
 	// Write a file that's produced
@@ -125,7 +126,7 @@ func TestEventsAPI_FileUploaded(t *testing.T) {
 func TestEventsAPI_FileUploadedErrors(t *testing.T) {
 	adminServer := admintest.Server(t)
 
-	fr := testFileReceiver(t)
+	fr := testFileReceiver(t, func(conf *service.Config) {})
 	fr.RegisterAdminRoutes(adminServer)
 
 	t.Run("Call /file-uploaded on a shard that doesn't exist", func(t *testing.T) {

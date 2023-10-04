@@ -64,7 +64,7 @@ func (fr *TestFileReceiver) TriggerCutoff(t *testing.T) {
 	agg.cutoffTrigger <- waiter
 }
 
-func testFileReceiver(t *testing.T) *TestFileReceiver {
+func testFileReceiver(t *testing.T, additionalConfig func(conf *service.Config)) *TestFileReceiver {
 	t.Helper()
 	if testing.Short() {
 		t.Skip("skipping integration test via -short")
@@ -110,6 +110,7 @@ func testFileReceiver(t *testing.T) *TestFileReceiver {
 			},
 		},
 	}
+	additionalConfig(conf)
 
 	shardRepo := shards.NewInMemoryRepository()
 	shardRepo.Add(service.ShardMapping{ShardKey: "testing", ShardName: "testing"}, database.NopInTx)
@@ -133,7 +134,7 @@ func testFileReceiver(t *testing.T) *TestFileReceiver {
 }
 
 func TestFileReceiver__InvalidQueueFile(t *testing.T) {
-	fr := testFileReceiver(t)
+	fr := testFileReceiver(t, func(conf *service.Config) {})
 
 	file, err := ach.ReadFile(filepath.Join("..", "incoming", "odfi", "testdata", "return-no-batch-controls.ach"))
 	require.ErrorContains(t, err, ach.ErrFileHeader.Error())
@@ -165,8 +166,53 @@ func TestFileReceiver__InvalidQueueFile(t *testing.T) {
 	require.Contains(t, iqf.Error, "reading QueueACHFile failed: ImmediateDestination")
 }
 
-func TestFileReceiver__CancelFile(t *testing.T) {
-	fr := testFileReceiver(t)
+func TestFileReceiver__CancelFile_ConsumerEncrypted(t *testing.T) {
+	fr := testFileReceiver(t, func(conf *service.Config) {
+		if conf.Inbound.Kafka == nil {
+			conf.Inbound.Kafka = &service.KafkaConfig{}
+		}
+		conf.Inbound.Kafka.Transform = &models.TransformConfig{
+			Encoding: &models.EncodingConfig{
+				Base64:   true,
+				Compress: true,
+			},
+			Encryption: &models.EncryptionConfig{
+				AES: &models.AESConfig{
+					Key: "1111111111",
+				},
+			},
+		}
+	})
+	s, err := storage.New(fr.cfg.Upload.Merging.Storage)
+	require.NoError(t, err)
+
+	bs, err := compliance.Protect(nil, models.Event{
+		Event: models.CancelACHFile{
+			FileID:   "return-no-batch-controls",
+			ShardKey: "testing",
+		},
+	})
+	require.NoError(t, err)
+
+	err = fr.Publisher.Send(context.Background(), &pubsub.Message{
+		Body: bs,
+	})
+	require.NoError(t, err)
+
+	require.Eventually(t, func() bool {
+		file2, err := s.Open(filepath.Join("mergable", "testing", fmt.Sprintf("%s.canceled", "return-no-batch-controls.ach")))
+		if err != nil {
+			t.Logf("waiting for file to be canceled: %v", err)
+		}
+		if file2 != nil {
+			t.Logf("file2.Filename: %s", file2.Filename())
+		}
+		return file2 != nil
+	}, 60*time.Second, 500*time.Millisecond)
+}
+
+func TestFileReceiver__CancelFile_ConsumerNotEncrypted(t *testing.T) {
+	fr := testFileReceiver(t, func(conf *service.Config) {})
 	s, err := storage.New(fr.cfg.Upload.Merging.Storage)
 	require.NoError(t, err)
 
@@ -196,7 +242,7 @@ func TestFileReceiver__CancelFile(t *testing.T) {
 }
 
 func TestFileReceiver__shouldAutocommit(t *testing.T) {
-	fr := testFileReceiver(t)
+	fr := testFileReceiver(t, func(conf *service.Config) {})
 
 	// Ensure the setup is as we expect
 	require.Nil(t, fr.cfg.Inbound.Kafka)
