@@ -183,6 +183,13 @@ func populateHashes(file *ach.File) {
 			entries[j].ID = hash([]byte(entries[j].String()))
 		}
 	}
+
+	for i := range file.IATBatches {
+		entries := file.IATBatches[i].GetEntries()
+		for j := range entries {
+			entries[j].ID = hash([]byte(entries[j].String()))
+		}
+	}
 }
 
 func hash(data []byte) string {
