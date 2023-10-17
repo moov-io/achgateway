@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -132,10 +133,12 @@ func (xfagg *aggregator) Start(ctx context.Context) {
 			if day.IsHoliday && !day.IsWeekend {
 				xfagg.notifyAboutHoliday(day)
 			}
+			cleanupMemory(xfagg.logger)
 
 		// manually trigger cutoffs
 		case waiter := <-xfagg.cutoffTrigger:
 			xfagg.manualCutoff(waiter)
+			cleanupMemory(xfagg.logger)
 
 		case <-ctx.Done():
 			xfagg.cutoffs.Stop()
@@ -152,6 +155,17 @@ func (xfagg *aggregator) Shutdown() {
 
 	if xfagg.auditStorage != nil {
 		xfagg.auditStorage.Close()
+	}
+}
+
+func cleanupMemory(logger log.Logger) {
+	if strx.Yes(os.Getenv("CLEANUP_MEMORY")) {
+		logger.Debug().Log("manual cleanup of memory")
+
+		start := time.Now()
+		debug.FreeOSMemory()
+
+		logger.Debug().Logf("manual cleanup of memory took %v", time.Since(start))
 	}
 }
 
