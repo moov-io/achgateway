@@ -72,6 +72,16 @@ func TestMerging__getNonCanceledMatches(t *testing.T) {
 	require.NotContains(t, matches[0], filepath.Join("test-2021", cancel2))
 }
 
+func TestMerging_makeIndices(t *testing.T) {
+	indices := makeIndices(122, 5)
+	expected := []int{0, 24, 48, 72, 96, 120, 122}
+	require.Equal(t, expected, indices)
+
+	indices = makeIndices(500, 1)
+	expected = []int{500}
+	require.Equal(t, expected, indices)
+}
+
 func TestMerging__writeACHFile(t *testing.T) {
 	dir := t.TempDir()
 	fs, err := storage.NewFilesystem(dir)
