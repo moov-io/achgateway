@@ -156,6 +156,7 @@ func (fr *FileReceiver) getShardFile() http.HandlerFunc {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
+		defer file.Close()
 
 		hostname, _ := os.Hostname()
 		contents, err := marshalFile(file)

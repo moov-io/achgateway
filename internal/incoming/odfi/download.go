@@ -201,6 +201,9 @@ func saveFilepaths(logger log.Logger, agent upload.Agent, filepaths []string, di
 			}
 		}
 		if file == nil || err != nil {
+			if file != nil {
+				file.Close()
+			}
 			// Record the failure and skip copy
 			errordFilenames = append(errordFilenames, filepaths[i])
 			continue
