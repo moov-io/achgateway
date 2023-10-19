@@ -2,6 +2,7 @@ package storage
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -76,7 +77,7 @@ func (fs *filesystem) ReplaceFile(oldpath, newpath string) error {
 
 	// file doesn't exist, so write newpath
 	if _, err := os.Stat(oldpath); err != nil && os.IsNotExist(err) {
-		return os.WriteFile(newpath, nil, 0600)
+		return write(newpath, nil)
 	}
 
 	// move the existing file
@@ -111,5 +112,20 @@ func (fs *filesystem) WriteFile(path string, contents []byte) error {
 		return err
 	}
 
-	return os.WriteFile(filepath.Join(dir, path), contents, 0600)
+	return write(filepath.Join(dir, path), contents)
+}
+
+func write(where string, data []byte) error {
+	fd, err := os.OpenFile(where, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return fmt.Errorf("creating %s failed: %w", where, err)
+	}
+	defer fd.Close()
+
+	_, err = fd.Write(data)
+	if err != nil {
+		return fmt.Errorf("writing %s failed: %w", where, err)
+	}
+
+	return fd.Sync()
 }
