@@ -210,6 +210,18 @@ func (m *filesystemMerging) readFile(path string) (*ach.File, error) {
 	return &f, nil
 }
 
+func (m *filesystemMerging) readFiles(paths []string) ([]*ach.File, error) {
+	var out []*ach.File
+	for i := range paths {
+		file, err := m.readFile(paths[i])
+		if err != nil {
+			return nil, fmt.Errorf("reading %s failed: %w", paths[i], err)
+		}
+		out = append(out, file)
+	}
+	return out, nil
+}
+
 func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) error) (*processedFiles, error) {
 	processed := &processedFiles{}
 
@@ -229,26 +241,17 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 	dirNames := strings.Join(directoryNames(matches), ", ")
 	logger.Logf("found %d matching ACH files in %v", len(matches), dirNames)
 
-	var files []*ach.File
 	var el base.ErrorList
-	for i := range matches {
-		file, err := m.readFile(matches[i])
-		if err != nil {
-			el.Add(fmt.Errorf("problem reading %s: %v", matches[i], err))
-			continue
-		}
-		if file != nil {
-			files = append(files, file)
-		}
+
+	// Merge files together in groups
+	// TODO(adam): Make the group size configurable
+	var mergeConditions ach.Conditions
+	if m.shard.Mergable.Conditions != nil {
+		mergeConditions = *m.shard.Mergable.Conditions
 	}
 
-	// Combine Batches into one file, force ascending TraceNumbers starting from the first EntryDetail.
-	// Also allow for custom merge conditions (max dollar amount per file, etc)
-	if m.shard.Mergable.Conditions != nil {
-		files, err = ach.MergeFilesWith(files, *m.shard.Mergable.Conditions)
-	} else {
-		files, err = ach.MergeFiles(files)
-	}
+	indices := makeIndices(len(matches), len(matches)/100)
+	files, err := m.chunkFilesTogether(indices, matches, mergeConditions)
 	if err != nil {
 		el.Add(fmt.Errorf("unable to merge files: %v", err))
 	}
@@ -313,6 +316,49 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 	}
 
 	return newProcessedFiles(m.shard.Name, matches), nil
+}
+
+func makeIndices(total, groups int) []int {
+	if groups <= 1 || groups >= total {
+		return []int{total}
+	}
+	xs := []int{0}
+	i := 0
+	for {
+		if i > total {
+			break
+		}
+		i += total / groups
+		if i < total {
+			xs = append(xs, i)
+		}
+	}
+	return append(xs, total)
+}
+
+func (m *filesystemMerging) chunkFilesTogether(indices []int, matches []string, conditions ach.Conditions) ([]*ach.File, error) {
+	if len(indices) <= 1 {
+		files, err := m.readFiles(matches)
+		if err != nil {
+			return nil, err
+		}
+		return ach.MergeFilesWith(files, conditions)
+	}
+
+	var out []*ach.File
+	for i := 0; i < len(indices)-1; i += 0 {
+		files, err := m.readFiles(matches[indices[i]:indices[i+1]])
+		if err != nil {
+			return nil, err
+		}
+		fs, err := ach.MergeFilesWith(files, conditions)
+		if err != nil {
+			return nil, err
+		}
+		i += 1
+		out = append(out, fs...)
+	}
+	return ach.MergeFilesWith(out, conditions)
 }
 
 func directoryNames(matches []string) []string {
