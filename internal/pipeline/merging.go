@@ -244,13 +244,16 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 	var el base.ErrorList
 
 	// Merge files together in groups
-	// TODO(adam): Make the group size configurable
 	var mergeConditions ach.Conditions
 	if m.shard.Mergable.Conditions != nil {
 		mergeConditions = *m.shard.Mergable.Conditions
 	}
 
-	indices := makeIndices(len(matches), len(matches)/100)
+	groupSize := 100
+	if m.shard.Mergable.MergeInGroupsOf > 0 {
+		groupSize = m.shard.Mergable.MergeInGroupsOf
+	}
+	indices := makeIndices(len(matches), len(matches)/groupSize)
 	files, err := m.chunkFilesTogether(indices, matches, mergeConditions)
 	if err != nil {
 		el.Add(fmt.Errorf("unable to merge files: %v", err))

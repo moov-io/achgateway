@@ -144,6 +144,8 @@ func (cfg *PreUpload) Validate() error {
 type MergableConfig struct {
 	Conditions     *ach.Conditions
 	FlattenBatches *FlattenBatches
+
+	MergeInGroupsOf int
 }
 
 type FlattenBatches struct{}

@@ -1,3 +1,14 @@
+## v0.25.0 (Released 2023-10-19)
+
+IMPROVEMENTS
+
+- storage: fsync writes
+- pipeline: start merging files in groups
+
+BUILD
+
+- build: update github.com/moov-io/ach to v1.33.0 with various performance improvements
+
 ## v0.24.2 (Released 2023-10-04)
 
 IMPROVEMENTS
