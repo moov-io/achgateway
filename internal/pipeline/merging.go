@@ -211,13 +211,13 @@ func (m *filesystemMerging) readFile(path string) (*ach.File, error) {
 }
 
 func (m *filesystemMerging) readFiles(paths []string) ([]*ach.File, error) {
-	var out []*ach.File
+	out := make([]*ach.File, len(paths))
 	for i := range paths {
 		file, err := m.readFile(paths[i])
 		if err != nil {
 			return nil, fmt.Errorf("reading %s failed: %w", paths[i], err)
 		}
-		out = append(out, file)
+		out[i] = file
 	}
 	return out, nil
 }
@@ -348,7 +348,7 @@ func (m *filesystemMerging) chunkFilesTogether(indices []int, matches []string, 
 		return ach.MergeFilesWith(files, conditions)
 	}
 
-	var out []*ach.File
+	out := make([]*ach.File, 0, len(indices))
 	for i := 0; i < len(indices)-1; i += 0 {
 		files, err := m.readFiles(matches[indices[i]:indices[i+1]])
 		if err != nil {
