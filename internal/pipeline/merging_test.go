@@ -20,6 +20,7 @@ package pipeline
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -80,6 +81,45 @@ func TestMerging_makeIndices(t *testing.T) {
 	indices = makeIndices(500, 1)
 	expected = []int{500}
 	require.Equal(t, expected, indices)
+}
+
+func copyFile(t *testing.T, src, dest string) {
+	t.Helper()
+
+	s, err := os.Open(src)
+	require.NoError(t, err)
+	defer s.Close()
+
+	d, err := os.Create(dest)
+	require.NoError(t, err)
+	defer d.Close()
+
+	n, err := io.Copy(d, s)
+	require.NoError(t, err)
+	require.Greater(t, n, int64(0))
+}
+
+func TestMerging_chunkFilesTogether(t *testing.T) {
+	dir := t.TempDir()
+
+	copyFile(t, filepath.Join("..", "..", "testdata", "ppd-debit.ach"), filepath.Join(dir, "ppd-debit.ach"))
+	copyFile(t, filepath.Join("..", "..", "testdata", "ppd-debit2.ach"), filepath.Join(dir, "ppd-debit2.ach"))
+
+	fs, err := storage.NewFilesystem(dir)
+	require.NoError(t, err)
+
+	m := &filesystemMerging{
+		logger:  log.NewTestLogger(),
+		storage: fs,
+	}
+
+	indices := makeIndices(2, 1)
+	matches := []string{"ppd-debit.ach", "ppd-debit2.ach"}
+	var conditions ach.Conditions
+	merged, err := m.chunkFilesTogether(indices, matches, conditions)
+	require.NoError(t, err)
+	require.Len(t, merged, 1)
+	require.Len(t, merged[0].Batches[0].GetEntries(), 2)
 }
 
 func TestMerging__writeACHFile(t *testing.T) {
