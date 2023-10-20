@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/incoming"
@@ -164,6 +165,9 @@ func (c *FilesController) CancelFileHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (c *FilesController) cancelFile(shardKey, fileID string) error {
+	// Remove .ach suffix if the request added it
+	fileID = strings.TrimSuffix(fileID, ".ach")
+
 	bs, err := compliance.Protect(c.cfg.Transform, models.Event{
 		Event: incoming.CancelACHFile{
 			FileID:   fileID,

@@ -89,7 +89,7 @@ func TestCancelFileHandler(t *testing.T) {
 	controller.AppendRoutes(r)
 
 	// Cancel our file
-	req := httptest.NewRequest("DELETE", "/shards/s2/files/f2", nil)
+	req := httptest.NewRequest("DELETE", "/shards/s2/files/f2.ach", nil)
 
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -102,6 +102,6 @@ func TestCancelFileHandler(t *testing.T) {
 	var file incoming.CancelACHFile
 	require.NoError(t, models.ReadEvent(msg.Body, &file))
 
-	require.Equal(t, "f2", file.FileID)
+	require.Equal(t, "f2", file.FileID) // make sure .ach suffix is trimmed
 	require.Equal(t, "s2", file.ShardKey)
 }
