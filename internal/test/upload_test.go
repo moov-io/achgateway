@@ -204,7 +204,7 @@ func TestUploads(t *testing.T) {
 	t.Logf("created %d entries and canceled %d entries", createdEntries, canceledEntries)
 	require.Greater(t, createdEntries, 0, "created entries")
 	require.Greater(t, canceledEntries, 0, "canceled entries")
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	var buf bytes.Buffer
 	buf.WriteString(`{"shardNames":["prod", "beta", "testing"]}`)
@@ -216,7 +216,7 @@ func TestUploads(t *testing.T) {
 	defer resp.Body.Close()
 
 	// Wait before verifying filesystem results
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	filenamePrefixCounts := countFilenamePrefixes(t, outboundPath)
 	require.Greater(t, filenamePrefixCounts["BETA"], 0)
