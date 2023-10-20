@@ -176,7 +176,7 @@ func TestUploads(t *testing.T) {
 	createdEntries := 0
 	canceledEntries := 0
 	erroredSubscriptions := 0
-	var createdFileIDs []string
+	var createdFileIDs, canceledFileIDs []string
 
 	for i := 0; i < 500; i++ {
 		shardKey := shardKeys[i%10]
@@ -189,6 +189,7 @@ func TestUploads(t *testing.T) {
 		canceled := maybeCancelFile(t, r, shardKey, fileID, file)
 		if canceled > 0 {
 			canceledEntries += canceled
+			canceledFileIDs = append(canceledFileIDs, fileID)
 		} else {
 			createdFileIDs = append(createdFileIDs, fileID)
 		}
@@ -201,14 +202,23 @@ func TestUploads(t *testing.T) {
 		}
 	}
 
-	t.Logf("created %d entries and canceled %d entries", createdEntries, canceledEntries)
+	t.Logf("created %d entries (in %d files) and canceled %d entries (in %d files)", createdEntries, len(createdFileIDs), canceledEntries, len(canceledFileIDs))
 	require.Greater(t, createdEntries, 0, "created entries")
 	require.Greater(t, canceledEntries, 0, "canceled entries")
-	time.Sleep(10 * time.Second)
 
+	// Pause for long enough that all files get accepted
+	require.Eventually(t, func() bool {
+		// Count how many files are in mergable/beta and mergable/prod, which should be the created + canceled files.
+		betaFDs, _ := os.ReadDir(filepath.Join("storage", "mergable", "beta"))
+		prodFDs, _ := os.ReadDir(filepath.Join("storage", "mergable", "prod"))
+		t.Logf("found %d beta and %d prod mergable files, expected %d + %d", len(betaFDs), len(prodFDs), len(createdFileIDs), len(canceledFileIDs))
+
+		return (len(betaFDs) + len(prodFDs)) >= (len(createdFileIDs) + len(canceledFileIDs))
+	}, 60*time.Second, 10*time.Second)
+
+	// Manual upload of all files
 	var buf bytes.Buffer
 	buf.WriteString(`{"shardNames":["prod", "beta", "testing"]}`)
-
 	req, _ := http.NewRequest("PUT", "http://"+adminServer.BindAddr()+"/trigger-cutoff", &buf)
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
@@ -230,13 +240,13 @@ func TestUploads(t *testing.T) {
 	// Verify each fileID was isolated on disk
 	verifyFilesWereIsolated(t, createdFileIDs)
 
-	createdFiles, err := ach.ReadDir(outboundPath)
+	uploadedFiles, err := ach.ReadDir(outboundPath)
 	require.NoError(t, err)
 
 	expected := createdEntries - canceledEntries
-	found := countAllEntries(createdFiles)
-	t.Logf("found %d entries of %d expected (%d canceled) (%d errored) from %d files", found, expected, canceledEntries, erroredSubscriptions, len(createdFiles))
-	require.Equal(t, found, expected)
+	found := countAllEntries(uploadedFiles)
+	t.Logf("found %d entries of %d expected (%d canceled) (%d errored) from %d uploaded files", found, expected, canceledEntries, erroredSubscriptions, len(uploadedFiles))
+	require.Equal(t, expected, found)
 }
 
 func setupTestDirectory(t *testing.T, cfg *service.Config) string {
@@ -454,6 +464,8 @@ func verifyFilesWereIsolated(t *testing.T, fileIDs []string) {
 		prodMatches, _ := fs.Glob(fsys, filepath.Join(prod, fmt.Sprintf("%s.*", fileIDs[i])))
 
 		total := len(betaMatches) + len(prodMatches)
-		require.Greater(t, total, 0, fmt.Sprintf("fileID[%d] %s not found in beta or prod shard", i, fileIDs[i]))
+		if total == 0 {
+			t.Errorf("fileID[%d] %s not found in beta or prod shard", i, fileIDs[i])
+		}
 	}
 }
