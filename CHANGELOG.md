@@ -1,3 +1,24 @@
+## v0.25.1 (Released 2023-10-26)
+
+IMPROVEMENTS
+
+- incoming/web: normalize fileID when canceling
+- pipeline: test chunkFilesTogether with preallocated arrays
+- test: count mergable files before manual upload
+
+BUILD
+
+- fix(deps): update github.com/ProtonMail/go-crypto to v0.0.0-20230923063757-afb1ddc0824c
+- fix(deps): update github.com/moov-io/ach to v1.33.1
+- fix(deps): update github.com/moov-io/cryptfs to v0.7.0
+- fix(deps): update github.com/moov-io/go-sftp to v0.13.0
+- fix(deps): update github.com/slack-go/slack to v0.12.3
+- fix(deps): update github.com/spf13/viper to v1.17.0
+- fix(deps): update gocloud.dev to v0.34.0
+- fix(deps): update gocloud.dev/pubsub/kafkapubsub to v0.34.0
+- fix(deps): update golang.org/x/exp to v0.0.0-20231006140011-7918f672742d
+- fix(deps): update golang.org/x/sync to v0.4.0
+
 ## v0.25.0 (Released 2023-10-19)
 
 IMPROVEMENTS
