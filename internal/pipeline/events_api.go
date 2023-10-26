@@ -19,6 +19,8 @@ package pipeline
 
 import (
 	"net/http"
+	"path/filepath"
+	"strings"
 
 	"github.com/moov-io/base/log"
 
@@ -46,6 +48,11 @@ func (fr *FileReceiver) manuallyProduceFileUploaded() http.HandlerFunc {
 
 		dir := mux.Vars(r)["isolatedDirectory"]
 		if dir == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		// Reject paths which are trying to traverse the filesystem
+		if strings.Contains(dir, "..") || filepath.IsAbs(dir) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
