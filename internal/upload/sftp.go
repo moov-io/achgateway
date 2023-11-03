@@ -5,6 +5,7 @@
 package upload
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -12,7 +13,10 @@ import (
 
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
+	"github.com/moov-io/base/telemetry"
 	go_sftp "github.com/moov-io/go-sftp"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type SFTPTransferAgent struct {
@@ -62,7 +66,6 @@ func (agent *SFTPTransferAgent) Ping() error {
 	if agent == nil {
 		return errors.New("nil SFTPTransferAgent")
 	}
-
 	return agent.client.Ping()
 }
 
@@ -96,21 +99,36 @@ func (agent *SFTPTransferAgent) Hostname() string {
 	return agent.cfg.SFTP.Hostname
 }
 
-func (agent *SFTPTransferAgent) Delete(path string) error {
+func (agent *SFTPTransferAgent) Delete(ctx context.Context, path string) error {
+	_, span := telemetry.StartSpan(ctx, "agent-sftp-delete", trace.WithAttributes(
+		attribute.String("path", path),
+	))
+	defer span.End()
+
 	return agent.client.Delete(path)
 }
 
 // uploadFile saves the content of File at the given filename in the OutboundPath directory
 //
 // The File's contents will always be closed
-func (agent *SFTPTransferAgent) UploadFile(f File) error {
+func (agent *SFTPTransferAgent) UploadFile(ctx context.Context, f File) error {
 	// Take the base of f.Filepath and our (out of band) OutboundPath to avoid accepting a write like '../../../../etc/passwd'.
 	pathToWrite := filepath.Join(agent.OutboundPath(), filepath.Base(f.Filepath))
+
+	_, span := telemetry.StartSpan(ctx, "agent-sftp-upload", trace.WithAttributes(
+		attribute.String("path", pathToWrite),
+	))
+	defer span.End()
 
 	return agent.client.UploadFile(pathToWrite, f.Contents)
 }
 
-func (agent *SFTPTransferAgent) ReadFile(path string) (*File, error) {
+func (agent *SFTPTransferAgent) ReadFile(ctx context.Context, path string) (*File, error) {
+	_, span := telemetry.StartSpan(ctx, "agent-sftp-read", trace.WithAttributes(
+		attribute.String("path", path),
+	))
+	defer span.End()
+
 	file, err := agent.client.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("sftp open %s failed: %w", path, err)
@@ -121,19 +139,24 @@ func (agent *SFTPTransferAgent) ReadFile(path string) (*File, error) {
 	}, nil
 }
 
-func (agent *SFTPTransferAgent) GetInboundFiles() ([]string, error) {
-	return agent.readFilepaths(agent.cfg.Paths.Inbound)
+func (agent *SFTPTransferAgent) GetInboundFiles(ctx context.Context) ([]string, error) {
+	return agent.readFilepaths(ctx, agent.cfg.Paths.Inbound)
 }
 
-func (agent *SFTPTransferAgent) GetReconciliationFiles() ([]string, error) {
-	return agent.readFilepaths(agent.cfg.Paths.Reconciliation)
+func (agent *SFTPTransferAgent) GetReconciliationFiles(ctx context.Context) ([]string, error) {
+	return agent.readFilepaths(ctx, agent.cfg.Paths.Reconciliation)
 }
 
-func (agent *SFTPTransferAgent) GetReturnFiles() ([]string, error) {
-	return agent.readFilepaths(agent.cfg.Paths.Return)
+func (agent *SFTPTransferAgent) GetReturnFiles(ctx context.Context) ([]string, error) {
+	return agent.readFilepaths(ctx, agent.cfg.Paths.Return)
 }
 
-func (agent *SFTPTransferAgent) readFilepaths(dir string) ([]string, error) {
+func (agent *SFTPTransferAgent) readFilepaths(ctx context.Context, dir string) ([]string, error) {
+	_, span := telemetry.StartSpan(ctx, "agent-sftp-list", trace.WithAttributes(
+		attribute.String("path", dir),
+	))
+	defer span.End()
+
 	filepaths, err := agent.client.ListFiles(dir)
 	if err != nil {
 		return nil, err

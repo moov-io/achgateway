@@ -59,15 +59,14 @@ func (rt *RetryAgent) newBackoff() (retry.Backoff, error) {
 	return fib, nil
 }
 
-func (rt *RetryAgent) retryFiles(f func() ([]string, error)) ([]string, error) {
+func (rt *RetryAgent) retryFiles(ctx context.Context, f func(context.Context) ([]string, error)) ([]string, error) {
 	backoff, err := rt.newBackoff()
 	if err != nil {
 		return nil, err
 	}
 	var files []string
-	ctx := context.Background()
 	err = retry.Do(ctx, backoff, func(ctx context.Context) error {
-		fs, err := f()
+		fs, err := f(ctx)
 		if err := isRetryableError(err); err != nil {
 			return err
 		}
@@ -78,49 +77,46 @@ func (rt *RetryAgent) retryFiles(f func() ([]string, error)) ([]string, error) {
 }
 
 // Network'd calls
-func (rt *RetryAgent) GetInboundFiles() ([]string, error) {
-	return rt.retryFiles(rt.underlying.GetInboundFiles)
+func (rt *RetryAgent) GetInboundFiles(ctx context.Context) ([]string, error) {
+	return rt.retryFiles(ctx, rt.underlying.GetInboundFiles)
 }
 
-func (rt *RetryAgent) GetReconciliationFiles() ([]string, error) {
-	return rt.retryFiles(rt.underlying.GetReconciliationFiles)
+func (rt *RetryAgent) GetReconciliationFiles(ctx context.Context) ([]string, error) {
+	return rt.retryFiles(ctx, rt.underlying.GetReconciliationFiles)
 }
 
-func (rt *RetryAgent) GetReturnFiles() ([]string, error) {
-	return rt.retryFiles(rt.underlying.GetReturnFiles)
+func (rt *RetryAgent) GetReturnFiles(ctx context.Context) ([]string, error) {
+	return rt.retryFiles(ctx, rt.underlying.GetReturnFiles)
 }
 
-func (rt *RetryAgent) UploadFile(f File) error {
+func (rt *RetryAgent) UploadFile(ctx context.Context, f File) error {
 	backoff, err := rt.newBackoff()
 	if err != nil {
 		return err
 	}
-	ctx := context.Background()
 	return retry.Do(ctx, backoff, func(ctx context.Context) error {
-		return isRetryableError(rt.underlying.UploadFile(f))
+		return isRetryableError(rt.underlying.UploadFile(ctx, f))
 	})
 }
 
-func (rt *RetryAgent) Delete(path string) error {
+func (rt *RetryAgent) Delete(ctx context.Context, path string) error {
 	backoff, err := rt.newBackoff()
 	if err != nil {
 		return err
 	}
-	ctx := context.Background()
 	return retry.Do(ctx, backoff, func(ctx context.Context) error {
-		return isRetryableError(rt.underlying.Delete(path))
+		return isRetryableError(rt.underlying.Delete(ctx, path))
 	})
 }
 
-func (rt *RetryAgent) ReadFile(path string) (*File, error) {
+func (rt *RetryAgent) ReadFile(ctx context.Context, path string) (*File, error) {
 	backoff, err := rt.newBackoff()
 	if err != nil {
 		return nil, err
 	}
 	var file *File
-	ctx := context.Background()
 	err = retry.Do(ctx, backoff, func(ctx context.Context) error {
-		file, err = rt.underlying.ReadFile(path)
+		file, err = rt.underlying.ReadFile(ctx, path)
 		if err := isRetryableError(err); err != nil {
 			return err
 		}

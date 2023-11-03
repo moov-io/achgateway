@@ -6,6 +6,7 @@ package upload
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"sync"
 )
@@ -28,28 +29,28 @@ func (a *MockAgent) ID() string {
 	return "mock-agent"
 }
 
-func (a *MockAgent) GetInboundFiles() ([]string, error) {
+func (a *MockAgent) GetInboundFiles(_ context.Context) ([]string, error) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
 	return a.InboundFilepaths, nil
 }
 
-func (a *MockAgent) GetReconciliationFiles() ([]string, error) {
+func (a *MockAgent) GetReconciliationFiles(_ context.Context) ([]string, error) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
 	return a.ReconciliationFilepaths, nil
 }
 
-func (a *MockAgent) GetReturnFiles() ([]string, error) {
+func (a *MockAgent) GetReturnFiles(_ context.Context) ([]string, error) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
 	return a.ReturnFilepaths, nil
 }
 
-func (a *MockAgent) UploadFile(f File) error {
+func (a *MockAgent) UploadFile(_ context.Context, f File) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
@@ -60,7 +61,7 @@ func (a *MockAgent) UploadFile(f File) error {
 	return nil
 }
 
-func (a *MockAgent) Delete(path string) error {
+func (a *MockAgent) Delete(_ context.Context, path string) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
@@ -68,7 +69,7 @@ func (a *MockAgent) Delete(path string) error {
 	return nil
 }
 
-func (a *MockAgent) ReadFile(path string) (*File, error) {
+func (a *MockAgent) ReadFile(_ context.Context, path string) (*File, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 

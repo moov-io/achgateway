@@ -5,6 +5,7 @@
 package upload
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -12,10 +13,13 @@ import (
 
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
+	"github.com/moov-io/base/telemetry"
 	go_ftp "github.com/moov-io/go-ftp"
 
 	"github.com/go-kit/kit/metrics/prometheus"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var (
@@ -111,23 +115,39 @@ func (agent *FTPTransferAgent) Hostname() string {
 	return agent.cfg.FTP.Hostname
 }
 
-func (agent *FTPTransferAgent) Delete(path string) error {
+func (agent *FTPTransferAgent) Delete(ctx context.Context, path string) error {
+	_, span := telemetry.StartSpan(ctx, "agent-ftp-delete", trace.WithAttributes(
+		attribute.String("path", path),
+	))
+	defer span.End()
+
 	return agent.client.Delete(path)
 }
 
 // uploadFile saves the content of File at the given filename in the OutboundPath directory
 //
 // The File's contents will always be closed
-func (agent *FTPTransferAgent) UploadFile(f File) error {
+func (agent *FTPTransferAgent) UploadFile(ctx context.Context, f File) error {
 	if agent == nil || agent.cfg.FTP == nil {
 		return errors.New("missing FTP client or config")
 	}
 
 	pathToWrite := filepath.Join(agent.OutboundPath(), f.Filepath)
+
+	_, span := telemetry.StartSpan(ctx, "agent-ftp-upload", trace.WithAttributes(
+		attribute.String("path", pathToWrite),
+	))
+	defer span.End()
+
 	return agent.client.UploadFile(pathToWrite, f.Contents)
 }
 
-func (agent *FTPTransferAgent) ReadFile(path string) (*File, error) {
+func (agent *FTPTransferAgent) ReadFile(ctx context.Context, path string) (*File, error) {
+	_, span := telemetry.StartSpan(ctx, "agent-ftp-read", trace.WithAttributes(
+		attribute.String("path", path),
+	))
+	defer span.End()
+
 	file, err := agent.client.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("ftp open %s failed: %w", path, err)
@@ -138,19 +158,24 @@ func (agent *FTPTransferAgent) ReadFile(path string) (*File, error) {
 	}, nil
 }
 
-func (agent *FTPTransferAgent) GetInboundFiles() ([]string, error) {
-	return agent.readFilepaths(agent.cfg.Paths.Inbound)
+func (agent *FTPTransferAgent) GetInboundFiles(ctx context.Context) ([]string, error) {
+	return agent.readFilepaths(ctx, agent.cfg.Paths.Inbound)
 }
 
-func (agent *FTPTransferAgent) GetReconciliationFiles() ([]string, error) {
-	return agent.readFilepaths(agent.cfg.Paths.Reconciliation)
+func (agent *FTPTransferAgent) GetReconciliationFiles(ctx context.Context) ([]string, error) {
+	return agent.readFilepaths(ctx, agent.cfg.Paths.Reconciliation)
 }
 
-func (agent *FTPTransferAgent) GetReturnFiles() ([]string, error) {
-	return agent.readFilepaths(agent.cfg.Paths.Return)
+func (agent *FTPTransferAgent) GetReturnFiles(ctx context.Context) ([]string, error) {
+	return agent.readFilepaths(ctx, agent.cfg.Paths.Return)
 }
 
-func (agent *FTPTransferAgent) readFilepaths(dir string) ([]string, error) {
+func (agent *FTPTransferAgent) readFilepaths(ctx context.Context, dir string) ([]string, error) {
+	_, span := telemetry.StartSpan(ctx, "agent-ftp-list", trace.WithAttributes(
+		attribute.String("path", dir),
+	))
+	defer span.End()
+
 	filepaths, err := agent.client.ListFiles(dir)
 	if err != nil {
 		return nil, err

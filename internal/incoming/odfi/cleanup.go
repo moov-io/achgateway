@@ -84,7 +84,7 @@ func deleteFilesOnRemote(ctx context.Context, logger log.Logger, agent upload.Ag
 	var el base.ErrorList
 	for i := range infos {
 		path := filepath.Join(suffix, filepath.Base(infos[i].Name()))
-		if err := agent.Delete(path); err != nil {
+		if err := agent.Delete(ctx, path); err != nil {
 			// Ignore the error if it's about deleting a remote file that's gone
 			if os.IsNotExist(err) {
 				continue
@@ -134,7 +134,7 @@ func deleteEmptyFiles(ctx context.Context, logger log.Logger, agent upload.Agent
 		os.Remove(info.Name())
 
 		// Go ahead and delete the remote file
-		if err := agent.Delete(path); err != nil {
+		if err := agent.Delete(ctx, path); err != nil {
 			el.Add(err)
 		}
 

@@ -6,6 +6,7 @@ package upload
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -210,13 +211,14 @@ func TestFTP__getInboundFiles(t *testing.T) {
 	defer agent.Close()
 	defer svc.Shutdown()
 
-	filenames, err := agent.GetInboundFiles()
+	ctx := context.Background()
+	filenames, err := agent.GetInboundFiles(ctx)
 	require.NoError(t, err)
 	require.Len(t, filenames, 3)
 
 	for i := range filenames {
 		if filenames[i] == "inbound/iat-credit.ach" {
-			file, err := agent.ReadFile(filenames[i])
+			file, err := agent.ReadFile(ctx, filenames[i])
 			require.NoError(t, err)
 
 			bs, _ := io.ReadAll(file.Contents)
@@ -228,7 +230,7 @@ func TestFTP__getInboundFiles(t *testing.T) {
 	}
 
 	// make sure we perform the same call and get the same result
-	filenames, err = agent.GetInboundFiles()
+	filenames, err = agent.GetInboundFiles(ctx)
 	require.NoError(t, err)
 	require.Len(t, filenames, 3)
 	require.ElementsMatch(t, filenames, []string{"inbound/iat-credit.ach", "inbound/cor-c01.ach", "inbound/prenote-ppd-debit.ach"})
@@ -239,14 +241,15 @@ func TestFTP__getReconciliationFiles(t *testing.T) {
 	defer agent.Close()
 	defer svc.Shutdown()
 
-	filenames, err := agent.GetReconciliationFiles()
+	ctx := context.Background()
+	filenames, err := agent.GetReconciliationFiles(ctx)
 	require.NoError(t, err)
 	require.Len(t, filenames, 1)
 	require.ElementsMatch(t, filenames, []string{"reconciliation/ppd-debit.ach"})
 
 	for i := range filenames {
 		if filenames[i] == "reconciliation/ppd-debit.ach" {
-			file, err := agent.ReadFile(filenames[i])
+			file, err := agent.ReadFile(ctx, filenames[i])
 			require.NoError(t, err)
 
 			bs, _ := io.ReadAll(file.Contents)
@@ -258,7 +261,7 @@ func TestFTP__getReconciliationFiles(t *testing.T) {
 	}
 
 	// make sure we perform the same call and get the same result
-	filenames, err = agent.GetReconciliationFiles()
+	filenames, err = agent.GetReconciliationFiles(ctx)
 	require.NoError(t, err)
 	require.ElementsMatch(t, filenames, []string{"reconciliation/ppd-debit.ach"})
 }
@@ -268,13 +271,14 @@ func TestFTP__getReturnFiles(t *testing.T) {
 	defer agent.Close()
 	defer svc.Shutdown()
 
-	filenames, err := agent.GetReturnFiles()
+	ctx := context.Background()
+	filenames, err := agent.GetReturnFiles(ctx)
 	require.NoError(t, err)
 	require.Len(t, filenames, 1)
 	require.Equal(t, "returned/return-WEB.ach", filenames[0])
 
 	// read the returned file and verify its contents
-	file, err := agent.ReadFile(filenames[0])
+	file, err := agent.ReadFile(ctx, filenames[0])
 	require.NoError(t, err)
 
 	bs, _ := io.ReadAll(file.Contents)
@@ -284,7 +288,7 @@ func TestFTP__getReturnFiles(t *testing.T) {
 	}
 
 	// make sure we perform the same call and get the same result
-	filenames, err = agent.GetReturnFiles()
+	filenames, err = agent.GetReturnFiles(ctx)
 	require.NoError(t, err)
 	require.Len(t, filenames, 1)
 	require.Equal(t, "returned/return-WEB.ach", filenames[0])
@@ -307,7 +311,8 @@ func TestFTP__uploadFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := agent.UploadFile(f); err != nil {
+	ctx := context.Background()
+	if err := agent.UploadFile(ctx, f); err != nil {
 		t.Fatal(err)
 	}
 
@@ -322,13 +327,13 @@ func TestFTP__uploadFile(t *testing.T) {
 	require.Equal(t, content, string(bs))
 
 	// delete the file
-	if err := agent.Delete(path); err != nil {
+	if err := agent.Delete(ctx, path); err != nil {
 		t.Fatal(err)
 	}
 
 	// get an error with no FTP configs
 	agent.cfg.FTP = nil
-	if err := agent.UploadFile(f); err == nil {
+	if err := agent.UploadFile(ctx, f); err == nil {
 		t.Error("expected error")
 	}
 }
@@ -349,7 +354,8 @@ func TestFTP__Issue494(t *testing.T) {
 	defer os.Remove(path)
 
 	// Read without an error
-	files, err := agent.GetReturnFiles()
+	ctx := context.Background()
+	files, err := agent.GetReturnFiles(ctx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -363,7 +369,8 @@ func TestFTP__DeleteMissing(t *testing.T) {
 	defer agent.Close()
 	defer svc.Shutdown()
 
-	err := agent.Delete("/missing.txt")
+	ctx := context.Background()
+	err := agent.Delete(ctx, "/missing.txt")
 	require.NoError(t, err)
 }
 
@@ -385,13 +392,15 @@ func TestFTP_GetReconciliationFiles(t *testing.T) {
 			Reconciliation: "reconciliation",
 		},
 	}
+
+	ctx := context.Background()
 	logger := log.NewTestLogger()
 
 	t.Run("relative path", func(t *testing.T) {
 		agent, err := newFTPTransferAgent(logger, conf)
 		require.NoError(t, err)
 
-		filepaths, err := agent.GetReconciliationFiles()
+		filepaths, err := agent.GetReconciliationFiles(ctx)
 		require.NoError(t, err)
 		require.ElementsMatch(t, filepaths, []string{"reconciliation/ppd-debit.ach"})
 	})
@@ -402,7 +411,7 @@ func TestFTP_GetReconciliationFiles(t *testing.T) {
 		agent, err := newFTPTransferAgent(logger, conf)
 		require.NoError(t, err)
 
-		filepaths, err := agent.GetReconciliationFiles()
+		filepaths, err := agent.GetReconciliationFiles(ctx)
 		require.NoError(t, err)
 		require.ElementsMatch(t, filepaths, []string{"reconciliation/ppd-debit.ach"})
 	})
@@ -413,7 +422,7 @@ func TestFTP_GetReconciliationFiles(t *testing.T) {
 		agent, err := newFTPTransferAgent(logger, conf)
 		require.NoError(t, err)
 
-		filepaths, err := agent.GetReconciliationFiles()
+		filepaths, err := agent.GetReconciliationFiles(ctx)
 		require.NoError(t, err)
 		require.ElementsMatch(t, filepaths, []string{"/reconciliation/ppd-debit.ach"})
 	})
@@ -424,7 +433,7 @@ func TestFTP_GetReconciliationFiles(t *testing.T) {
 		agent, err := newFTPTransferAgent(logger, conf)
 		require.NoError(t, err)
 
-		filepaths, err := agent.GetReconciliationFiles()
+		filepaths, err := agent.GetReconciliationFiles(ctx)
 		require.NoError(t, err)
 		require.ElementsMatch(t, filepaths, []string{"/reconciliation/ppd-debit.ach"})
 	})

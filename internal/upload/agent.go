@@ -5,6 +5,7 @@
 package upload
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -17,12 +18,12 @@ import (
 type Agent interface {
 	ID() string
 
-	GetInboundFiles() ([]string, error)
-	GetReconciliationFiles() ([]string, error)
-	GetReturnFiles() ([]string, error)
-	UploadFile(f File) error
-	Delete(path string) error
-	ReadFile(path string) (*File, error)
+	GetInboundFiles(ctx context.Context) ([]string, error)
+	GetReconciliationFiles(ctx context.Context) ([]string, error)
+	GetReturnFiles(ctx context.Context) ([]string, error)
+	UploadFile(ctx context.Context, f File) error
+	Delete(ctx context.Context, path string) error
+	ReadFile(ctx context.Context, path string) (*File, error)
 
 	InboundPath() string
 	OutboundPath() string

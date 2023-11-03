@@ -8,6 +8,7 @@
 package upload
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -164,13 +165,14 @@ func TestSFTP__password(t *testing.T) {
 	err := deployment.agent.Ping()
 	require.NoError(t, err)
 
-	err = deployment.agent.UploadFile(File{
+	ctx := context.Background()
+	err = deployment.agent.UploadFile(ctx, File{
 		Filepath: "upload.ach",
 		Contents: io.NopCloser(strings.NewReader("test data")),
 	})
 	require.NoError(t, err)
 
-	err = deployment.agent.Delete(deployment.agent.OutboundPath() + "upload.ach")
+	err = deployment.agent.Delete(ctx, deployment.agent.OutboundPath()+"upload.ach")
 	require.NoError(t, err)
 
 	// Inbound files (IAT in our testdata/sftp-server/)
@@ -181,7 +183,7 @@ func TestSFTP__password(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	filepaths, err := deployment.agent.GetInboundFiles()
+	filepaths, err := deployment.agent.GetInboundFiles(ctx)
 	require.NoError(t, err)
 	require.Len(t, filepaths, 1)
 	require.Equal(t, "/upload/inbound/iat-credit.ach", filepaths[0])
@@ -196,7 +198,7 @@ func TestSFTP__password(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	filepaths, err = deployment.agent.GetReturnFiles()
+	filepaths, err = deployment.agent.GetReturnFiles(ctx)
 	require.NoError(t, err)
 	require.Len(t, filepaths, 1)
 	require.Equal(t, "/upload/returned/return-WEB.ach", filepaths[0])
@@ -209,22 +211,23 @@ func TestSFTP__readFilesEmpty(t *testing.T) {
 	require.NoError(t, err)
 
 	// Upload an empty file
+	ctx := context.Background()
 	filename := fmt.Sprintf("%s.ach", base.ID())
-	err = deployment.agent.UploadFile(File{
+	err = deployment.agent.UploadFile(ctx, File{
 		Filepath: filename,
 		Contents: io.NopCloser(strings.NewReader("")),
 	})
 	require.NoError(t, err)
 
 	// Read the empty file
-	filepaths, err := deployment.agent.readFilepaths(deployment.agent.OutboundPath())
+	filepaths, err := deployment.agent.readFilepaths(ctx, deployment.agent.OutboundPath())
 	require.NoError(t, err)
 	require.Len(t, filepaths, 1)
 	require.ElementsMatch(t, filepaths, []string{
 		filepath.Join(deployment.agent.OutboundPath(), filename),
 	})
 
-	file, err := deployment.agent.ReadFile(filepaths[0])
+	file, err := deployment.agent.ReadFile(ctx, filepaths[0])
 	require.NoError(t, err)
 
 	bs, err := io.ReadAll(file.Contents)
@@ -232,7 +235,7 @@ func TestSFTP__readFilesEmpty(t *testing.T) {
 	require.Equal(t, "", string(bs))
 
 	// read a non-existent directory
-	filepaths, err = deployment.agent.readFilepaths("/dev/null")
+	filepaths, err = deployment.agent.readFilepaths(ctx, "/dev/null")
 	require.NoError(t, err)
 	require.Len(t, filepaths, 0)
 }
@@ -240,12 +243,14 @@ func TestSFTP__readFilesEmpty(t *testing.T) {
 func TestSFTP__uploadFile(t *testing.T) {
 	deployment := spawnSFTP(t)
 
+	ctx := context.Background()
+
 	err := deployment.agent.Ping()
 	require.NoError(t, err)
 
 	// force out OutboundPath to create more directories
 	deployment.agent.cfg.Paths.Outbound = filepath.Join("upload", "foo")
-	err = deployment.agent.UploadFile(File{
+	err = deployment.agent.UploadFile(ctx, File{
 		Filepath: "upload.ach",
 		Contents: io.NopCloser(strings.NewReader("test data")),
 	})
@@ -253,7 +258,7 @@ func TestSFTP__uploadFile(t *testing.T) {
 
 	// fail to create the OutboundPath
 	deployment.agent.cfg.Paths.Outbound = string(os.PathSeparator) + filepath.Join("home", "bad-path")
-	err = deployment.agent.UploadFile(File{
+	err = deployment.agent.UploadFile(ctx, File{
 		Filepath: "upload.ach",
 		Contents: io.NopCloser(strings.NewReader("test data")),
 	})
@@ -340,7 +345,8 @@ func TestSFTP__Issue494(t *testing.T) {
 	require.NoError(t, err)
 
 	// Read without an error
-	files, err := deploy.agent.GetReturnFiles()
+	ctx := context.Background()
+	files, err := deploy.agent.GetReturnFiles(ctx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -352,7 +358,8 @@ func TestSFTP__Issue494(t *testing.T) {
 func TestSFTP__DeleteMissing(t *testing.T) {
 	deploy := spawnSFTP(t)
 
-	err := deploy.agent.Delete("/missing.txt")
+	ctx := context.Background()
+	err := deploy.agent.Delete(ctx, "/missing.txt")
 	require.NoError(t, err)
 }
 
@@ -374,13 +381,15 @@ func TestSFTP_GetReconciliationFiles(t *testing.T) {
 			Reconciliation: "reconciliation",
 		},
 	}
+
+	ctx := context.Background()
 	logger := log.NewTestLogger()
 
 	t.Run("relative path", func(t *testing.T) {
 		agent, err := newSFTPTransferAgent(logger, conf)
 		require.NoError(t, err)
 
-		filepaths, err := agent.GetReconciliationFiles()
+		filepaths, err := agent.GetReconciliationFiles(ctx)
 		require.NoError(t, err)
 		require.ElementsMatch(t, filepaths, []string{"reconciliation/ppd-debit.ach"})
 	})
@@ -391,7 +400,7 @@ func TestSFTP_GetReconciliationFiles(t *testing.T) {
 		agent, err := newSFTPTransferAgent(logger, conf)
 		require.NoError(t, err)
 
-		filepaths, err := agent.GetReconciliationFiles()
+		filepaths, err := agent.GetReconciliationFiles(ctx)
 		require.NoError(t, err)
 		require.ElementsMatch(t, filepaths, []string{"reconciliation/ppd-debit.ach"})
 	})
@@ -402,7 +411,7 @@ func TestSFTP_GetReconciliationFiles(t *testing.T) {
 		agent, err := newSFTPTransferAgent(logger, conf)
 		require.NoError(t, err)
 
-		filepaths, err := agent.GetReconciliationFiles()
+		filepaths, err := agent.GetReconciliationFiles(ctx)
 		require.NoError(t, err)
 		require.ElementsMatch(t, filepaths, []string{"/reconciliation/ppd-debit.ach"})
 	})
@@ -413,7 +422,7 @@ func TestSFTP_GetReconciliationFiles(t *testing.T) {
 		agent, err := newSFTPTransferAgent(logger, conf)
 		require.NoError(t, err)
 
-		filepaths, err := agent.GetReconciliationFiles()
+		filepaths, err := agent.GetReconciliationFiles(ctx)
 		require.NoError(t, err)
 		require.ElementsMatch(t, filepaths, []string{"/reconciliation/ppd-debit.ach"})
 	})

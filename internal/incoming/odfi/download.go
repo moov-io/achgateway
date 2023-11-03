@@ -81,7 +81,7 @@ func (d *downloadedFiles) deleteEmptyDirs(ctx context.Context, agent upload.Agen
 			return -1
 		}
 
-		ctx, span := telemetry.StartSpan(ctx, "odfi-delete-empty-dirs", trace.WithAttributes(
+		_, span := telemetry.StartSpan(ctx, "odfi-delete-empty-dirs", trace.WithAttributes(
 			attribute.String("path", path),
 			attribute.Int("files", len(infos)),
 		))
@@ -145,35 +145,35 @@ func (dl *downloaderImpl) CopyFilesFromRemote(ctx context.Context, agent upload.
 	})
 
 	// copy down files from our "inbound" directory
-	filepaths, err := agent.GetInboundFiles()
+	filepaths, err := agent.GetInboundFiles(ctx)
 	logger.Logf("%T found %d inbound files in %s", agent, len(filepaths), agent.InboundPath())
 	if err != nil {
 		return out, fmt.Errorf("problem downloading inbound files: %v", err)
 	}
 	filesDownloaded.With("kind", "inbound").Add(float64(len(filepaths)))
-	if err := saveFilepaths(logger, agent, filepaths, filepath.Join(out.dir, agent.InboundPath())); err != nil {
+	if err := saveFilepaths(ctx, logger, agent, filepaths, filepath.Join(out.dir, agent.InboundPath())); err != nil {
 		return out, fmt.Errorf("problem saving inbound files: %v", err)
 	}
 
 	// copy down files from out "reconciliation" directory
-	filepaths, err = agent.GetReconciliationFiles()
+	filepaths, err = agent.GetReconciliationFiles(ctx)
 	logger.Logf("%T found %d reconciliation files in %s", agent, len(filepaths), agent.ReconciliationPath())
 	if err != nil {
 		return out, fmt.Errorf("problem downloading reconciliation files: %v", err)
 	}
 	filesDownloaded.With("kind", "reconciliation").Add(float64(len(filepaths)))
-	if err := saveFilepaths(logger, agent, filepaths, filepath.Join(out.dir, agent.ReconciliationPath())); err != nil {
+	if err := saveFilepaths(ctx, logger, agent, filepaths, filepath.Join(out.dir, agent.ReconciliationPath())); err != nil {
 		return out, fmt.Errorf("problem saving reconciliation files: %v", err)
 	}
 
 	// copy down files from out "return" directory
-	filepaths, err = agent.GetReturnFiles()
+	filepaths, err = agent.GetReturnFiles(ctx)
 	logger.Logf("%T found %d return files in %s", agent, len(filepaths), agent.ReturnPath())
 	if err != nil {
 		return out, fmt.Errorf("problem downloading return files: %v", err)
 	}
 	filesDownloaded.With("kind", "return").Add(float64(len(filepaths)))
-	if err := saveFilepaths(logger, agent, filepaths, filepath.Join(out.dir, agent.ReturnPath())); err != nil {
+	if err := saveFilepaths(ctx, logger, agent, filepaths, filepath.Join(out.dir, agent.ReturnPath())); err != nil {
 		return out, fmt.Errorf("problem saving return files: %v", err)
 	}
 
@@ -182,7 +182,7 @@ func (dl *downloaderImpl) CopyFilesFromRemote(ctx context.Context, agent upload.
 
 // saveFilepaths will create files in dir for each file object provided
 // The contents of each file struct will always be closed.
-func saveFilepaths(logger log.Logger, agent upload.Agent, filepaths []string, dir string) error {
+func saveFilepaths(ctx context.Context, logger log.Logger, agent upload.Agent, filepaths []string, dir string) error {
 	var firstErr error
 	var errordFilenames []string
 
@@ -201,7 +201,7 @@ func saveFilepaths(logger log.Logger, agent upload.Agent, filepaths []string, di
 			continue
 		}
 
-		file, err := agent.ReadFile(filepaths[i])
+		file, err := agent.ReadFile(ctx, filepaths[i])
 		if err != nil {
 			// Save the error if it's our first, otherwise log
 			err = fmt.Errorf("reading %s failed: %w", filepaths[i], err)
