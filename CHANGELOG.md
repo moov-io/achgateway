@@ -1,3 +1,9 @@
+## v0.26.0 (Released 2023-11-03)
+
+ADDITIONS
+
+- Adding OpenTelemetry (OTEL) tracing of events and endpoints
+
 ## v0.25.1 (Released 2023-10-26)
 
 IMPROVEMENTS
