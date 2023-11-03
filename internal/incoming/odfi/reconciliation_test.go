@@ -18,6 +18,7 @@
 package odfi
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 	"time"
@@ -89,7 +90,7 @@ func TestCreditReconciliation(t *testing.T) {
 		emitter := CreditReconciliationEmitter(cfg, eventsService)
 		require.NotNil(t, emitter)
 
-		err := emitter.Handle(logger, reconFile)
+		err := emitter.Handle(context.Background(), logger, reconFile)
 		require.NoError(t, err)
 
 		var sent []models.Event
@@ -112,7 +113,7 @@ func TestCreditReconciliation(t *testing.T) {
 		emitter := CreditReconciliationEmitter(cfg, eventsService)
 		require.NotNil(t, emitter)
 
-		err := emitter.Handle(logger, reconFile)
+		err := emitter.Handle(context.Background(), logger, reconFile)
 		require.NoError(t, err)
 
 		var sent []models.Event

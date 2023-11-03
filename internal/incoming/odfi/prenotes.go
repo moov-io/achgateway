@@ -18,6 +18,7 @@
 package odfi
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -27,6 +28,9 @@ import (
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
+	"github.com/moov-io/base/telemetry"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/go-kit/kit/metrics/prometheus"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
@@ -59,11 +63,16 @@ func (pc *prenoteEmitter) Type() string {
 	return "prenote"
 }
 
-func (pc *prenoteEmitter) Handle(logger log.Logger, file File) error {
+func (pc *prenoteEmitter) Handle(ctx context.Context, logger log.Logger, file File) error {
 	// Ignore files if they don't contain the PathMatcher value
 	if pc.cfg.PathMatcher != "" && !strings.Contains(strings.ToLower(file.Filepath), pc.cfg.PathMatcher) {
 		return nil // skip the file
 	}
+
+	ctx, span := telemetry.StartSpan(ctx, "odfi-prenotes-file", trace.WithAttributes(
+		attribute.String("filepath", file.Filepath),
+	))
+	defer span.End()
 
 	var batches []models.Batch
 
@@ -95,7 +104,7 @@ func (pc *prenoteEmitter) Handle(logger log.Logger, file File) error {
 	if len(batches) > 0 {
 		g := new(errgroup.Group)
 		g.Go(func() error {
-			return pc.sendEvent(models.PrenoteFile{
+			return pc.sendEvent(ctx, models.PrenoteFile{
 				Filename: filepath.Base(file.Filepath),
 				File:     file.ACHFile,
 				Batches:  batches,
@@ -106,9 +115,9 @@ func (pc *prenoteEmitter) Handle(logger log.Logger, file File) error {
 	return nil
 }
 
-func (pc *prenoteEmitter) sendEvent(event interface{}) error {
+func (pc *prenoteEmitter) sendEvent(ctx context.Context, event interface{}) error {
 	if pc.svc != nil {
-		err := pc.svc.Send(models.Event{Event: event})
+		err := pc.svc.Send(ctx, models.Event{Event: event})
 		if err != nil {
 			return fmt.Errorf("sending pre-note event: %w", err)
 		}

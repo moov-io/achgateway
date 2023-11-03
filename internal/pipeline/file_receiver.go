@@ -33,8 +33,11 @@ import (
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/log"
+	"github.com/moov-io/base/telemetry"
 
 	"github.com/Shopify/sarama"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"gocloud.dev/pubsub"
 )
 
@@ -119,17 +122,27 @@ func (fr *FileReceiver) Start(ctx context.Context) {
 		// Create a context that will be shutdown by its parent or after a read iteration
 		innerCtx, cancelFunc := context.WithCancel(ctx)
 
+		var span trace.Span
+		innerCtx, span = telemetry.StartSpan(innerCtx, "file-receiver-handle")
+		defer span.End()
+
 		select {
 		case err := <-fr.handleMessage(innerCtx, fr.httpFiles):
+			telemetry.SetAttributes(innerCtx, attribute.String("source", "http"))
 			incomingHTTPFiles.With().Add(1)
 			if err != nil {
+				telemetry.RecordError(innerCtx, err)
+
 				httpFileProcessingErrors.With().Add(1)
 				fr.logger.LogErrorf("error handling http file: %v", err)
 			}
 
 		case err := <-fr.handleMessage(innerCtx, fr.streamFiles):
+			telemetry.SetAttributes(innerCtx, attribute.String("source", "stream"))
 			incomingStreamFiles.With().Add(1)
 			if err != nil {
+				telemetry.RecordError(innerCtx, err)
+
 				streamFileProcessingErrors.With().Add(1)
 				fr.logger.LogErrorf("error handling stream file: %v", err)
 
@@ -200,7 +213,14 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub stream.Subscripti
 		receiver := make(chan *pubsub.Message)
 		go func() {
 			msg, err := sub.Receive(ctx)
+
+			var span trace.Span
+			ctx, span = telemetry.StartSpan(ctx, "file-receiver-handle-message")
+			defer span.End()
+
 			if err != nil {
+				telemetry.RecordError(ctx, err)
+
 				if err == context.Canceled {
 					return
 				}
@@ -220,7 +240,7 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub stream.Subscripti
 		select {
 		case msg := <-receiver:
 			if msg != nil {
-				out <- fr.processMessage(msg)
+				out <- fr.processMessage(ctx, msg)
 				return
 			} else {
 				cleanup()
@@ -249,7 +269,7 @@ func contains(err error, options ...string) bool {
 	return false
 }
 
-func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
+func (fr *FileReceiver) processMessage(ctx context.Context, msg *pubsub.Message) error {
 	// AutoCommit is a setting which will acknowledge messages with the pubsub service
 	// immediately after receiving it. With this disabled messages are committed after
 	// successful processing.
@@ -286,7 +306,7 @@ func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 		file = &evt
 
 	case *models.CancelACHFile:
-		err = fr.cancelACHFile(evt)
+		err = fr.cancelACHFile(ctx, evt)
 		if err != nil {
 			return logger.With(log.Fields{
 				"type": log.String(fmt.Sprintf("%T", evt)),
@@ -305,16 +325,16 @@ func (fr *FileReceiver) processMessage(msg *pubsub.Message) error {
 	if file != nil {
 		// Quit after we failed to read the event's file
 		if readErr != nil {
-			producerErr := fr.produceInvalidQueueFile(logger, *file, readErr)
+			producerErr := fr.produceInvalidQueueFile(ctx, logger, *file, readErr)
 			if err != nil {
 				return logger.LogErrorf("problem producing InvalidQueueFile: %w", producerErr).Err()
 			}
 			return readErr
 		} else {
 			// Process the event like normal
-			err = fr.processACHFile(*file)
+			err = fr.processACHFile(ctx, *file)
 			if err != nil {
-				producerErr := fr.produceInvalidQueueFile(logger, *file, err)
+				producerErr := fr.produceInvalidQueueFile(ctx, logger, *file, err)
 				if err != nil {
 					return logger.LogErrorf("problem producing InvalidQueueFile after processing file: %w", producerErr).Err()
 				}
@@ -359,10 +379,10 @@ func (fr *FileReceiver) msgWrappedLogger(msg *pubsub.Message) log.Logger {
 	return logger
 }
 
-func (fr *FileReceiver) produceInvalidQueueFile(logger log.Logger, file incoming.ACHFile, err error) error {
+func (fr *FileReceiver) produceInvalidQueueFile(ctx context.Context, logger log.Logger, file incoming.ACHFile, err error) error {
 	logger.Info().Log("producing InvalidQueueFile")
 
-	return fr.eventEmitter.Send(models.Event{
+	return fr.eventEmitter.Send(ctx, models.Event{
 		Event: models.InvalidQueueFile{
 			File:  models.QueueACHFile(file),
 			Error: err.Error(),
@@ -370,7 +390,7 @@ func (fr *FileReceiver) produceInvalidQueueFile(logger log.Logger, file incoming
 	})
 }
 
-func (fr *FileReceiver) getAggregator(shardKey string) *aggregator {
+func (fr *FileReceiver) getAggregator(ctx context.Context, shardKey string) *aggregator {
 	shardName, err := fr.shardRepository.Lookup(shardKey)
 	if err != nil {
 		fr.logger.Error().LogErrorf("problem looking up shardKey=%s: %v", shardKey, err)
@@ -383,6 +403,8 @@ func (fr *FileReceiver) getAggregator(shardKey string) *aggregator {
 			"shard_key":  log.String(shardKey),
 			"shard_name": log.String(shardName),
 		}).Log("found no shard so using default shard")
+
+		telemetry.RecordError(ctx, fmt.Errorf("shardKey=%s shardName%s not found", shardKey, shardName))
 
 		agg, exists = fr.shardAggregators[fr.defaultShardName]
 		if !exists {
@@ -398,18 +420,19 @@ func (fr *FileReceiver) getAggregator(shardKey string) *aggregator {
 	return agg
 }
 
-func (fr *FileReceiver) processACHFile(file incoming.ACHFile) error {
+func (fr *FileReceiver) processACHFile(ctx context.Context, file incoming.ACHFile) error {
 	if file.FileID == "" || file.ShardKey == "" {
 		return errors.New("missing fileID or shardKey")
 	}
 
 	err := file.Validate()
 	if err != nil {
+		telemetry.RecordError(ctx, err)
 		fr.logger.Error().LogErrorf("invalid ACHFile: %v", err)
 		return nil
 	}
 
-	agg := fr.getAggregator(file.ShardKey)
+	agg := fr.getAggregator(ctx, file.ShardKey)
 	if agg == nil {
 		return fmt.Errorf("no aggregator for shard key %s found", file.ShardKey)
 	}
@@ -421,7 +444,7 @@ func (fr *FileReceiver) processACHFile(file incoming.ACHFile) error {
 	})
 	logger.Log("begin handling of received ACH file")
 
-	err = agg.acceptFile(file)
+	err = agg.acceptFile(ctx, file)
 	if err != nil {
 		return logger.Error().LogErrorf("problem accepting file under shardName=%s", agg.shard.Name).Err()
 	}
@@ -433,12 +456,12 @@ func (fr *FileReceiver) processACHFile(file incoming.ACHFile) error {
 	return nil
 }
 
-func (fr *FileReceiver) cancelACHFile(cancel *models.CancelACHFile) error {
+func (fr *FileReceiver) cancelACHFile(ctx context.Context, cancel *models.CancelACHFile) error {
 	if cancel == nil || cancel.FileID == "" || cancel.ShardKey == "" {
 		return errors.New("missing fileID or shardKey")
 	}
 
-	agg := fr.getAggregator(cancel.ShardKey)
+	agg := fr.getAggregator(ctx, cancel.ShardKey)
 	if agg == nil {
 		return nil
 	}
@@ -452,7 +475,7 @@ func (fr *FileReceiver) cancelACHFile(cancel *models.CancelACHFile) error {
 
 	evt := incoming.CancelACHFile(*cancel)
 
-	err := agg.cancelFile(evt)
+	err := agg.cancelFile(ctx, evt)
 	if err != nil {
 		return logger.Error().LogErrorf("problem canceling file: %v", err).Err()
 	}

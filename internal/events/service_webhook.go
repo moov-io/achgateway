@@ -19,6 +19,7 @@ package events
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/url"
 
@@ -55,15 +56,17 @@ func newWebhookService(logger log.Logger, transformConfig *models.TransformConfi
 	}, nil
 }
 
-func (w *webhookService) Send(evt models.Event) error {
+func (w *webhookService) Send(_ context.Context, evt models.Event) error {
 	bs, err := compliance.Protect(w.transformConfig, evt)
 	if err != nil {
 		return err
 	}
+
 	req, err := retryablehttp.NewRequest("POST", w.endpoint.String(), bytes.NewReader(bs))
 	if err != nil {
 		return fmt.Errorf("error preparing request: %v", err)
 	}
+
 	resp, err := w.client.Do(req)
 	if err != nil {
 		w.logger.Info().Logf("problem sending event: %v", err)

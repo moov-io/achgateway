@@ -6,11 +6,13 @@ package audittrail
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"path/filepath"
 	"testing"
 
 	"github.com/moov-io/achgateway/internal/service"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -30,11 +32,11 @@ func TestBlobStorage(t *testing.T) {
 	defer store.Close()
 
 	data := []byte("nacha formatted data")
-	if err := store.SaveFile("ftp.dev.com/saved.ach", data); err != nil {
+	if err := store.SaveFile(context.Background(), "ftp.dev.com/saved.ach", data); err != nil {
 		t.Fatal(err)
 	}
 
-	r, err := store.GetFile("ftp.dev.com/saved.ach")
+	r, err := store.GetFile(context.Background(), "ftp.dev.com/saved.ach")
 	require.NoError(t, err)
 	defer r.Close()
 
@@ -55,10 +57,10 @@ func TestBlobStorage__NoGPG(t *testing.T) {
 	defer store.Close()
 
 	data := []byte("nacha formatted data")
-	err = store.SaveFile("ftp.dev.com/saved.ach", data)
+	err = store.SaveFile(context.Background(), "ftp.dev.com/saved.ach", data)
 	require.NoError(t, err)
 
-	r, err := store.GetFile("ftp.dev.com/saved.ach")
+	r, err := store.GetFile(context.Background(), "ftp.dev.com/saved.ach")
 	require.NoError(t, err)
 	defer r.Close()
 

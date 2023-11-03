@@ -18,6 +18,7 @@
 package odfi
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -25,19 +26,22 @@ import (
 	"github.com/moov-io/achgateway/internal/upload"
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/log"
+	"github.com/moov-io/base/telemetry"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Cleanup deletes files on remote servers if enabled via config
-func Cleanup(logger log.Logger, agent upload.Agent, dl *downloadedFiles) error {
+func Cleanup(ctx context.Context, logger log.Logger, agent upload.Agent, dl *downloadedFiles) error {
 	var el base.ErrorList
 
-	if err := deleteFilesOnRemote(logger, agent, dl.dir, agent.InboundPath()); err != nil {
+	if err := deleteFilesOnRemote(ctx, logger, agent, dl.dir, agent.InboundPath()); err != nil {
 		el.Add(err)
 	}
-	if err := deleteFilesOnRemote(logger, agent, dl.dir, agent.ReconciliationPath()); err != nil {
+	if err := deleteFilesOnRemote(ctx, logger, agent, dl.dir, agent.ReconciliationPath()); err != nil {
 		el.Add(err)
 	}
-	if err := deleteFilesOnRemote(logger, agent, dl.dir, agent.ReturnPath()); err != nil {
+	if err := deleteFilesOnRemote(ctx, logger, agent, dl.dir, agent.ReturnPath()); err != nil {
 		el.Add(err)
 	}
 	if el.Empty() {
@@ -47,13 +51,13 @@ func Cleanup(logger log.Logger, agent upload.Agent, dl *downloadedFiles) error {
 }
 
 // CleanupEmptyFiles deletes empty ACH files if file is older than value in config
-func CleanupEmptyFiles(logger log.Logger, agent upload.Agent, dl *downloadedFiles) error {
+func CleanupEmptyFiles(ctx context.Context, logger log.Logger, agent upload.Agent, dl *downloadedFiles) error {
 	var el base.ErrorList
 	for _, path := range []string{agent.InboundPath(), agent.ReconciliationPath(), agent.ReturnPath()} {
 		if _, err := os.Stat(filepath.Join(dl.dir, path)); err != nil {
 			continue // skip if the directory doesn't exist
 		}
-		if err := deleteEmptyFiles(logger, agent, dl.dir, path); err != nil {
+		if err := deleteEmptyFiles(ctx, logger, agent, dl.dir, path); err != nil {
 			el.Add(err)
 		}
 	}
@@ -64,12 +68,18 @@ func CleanupEmptyFiles(logger log.Logger, agent upload.Agent, dl *downloadedFile
 }
 
 // deleteFilesOnRemote deletes all files for a given directory
-func deleteFilesOnRemote(logger log.Logger, agent upload.Agent, localDir, suffix string) error {
+func deleteFilesOnRemote(ctx context.Context, logger log.Logger, agent upload.Agent, localDir, suffix string) error {
 	baseDir := filepath.Join(localDir, suffix)
 	infos, err := os.ReadDir(baseDir)
 	if err != nil {
 		return fmt.Errorf("reading %s: %v", baseDir, err)
 	}
+
+	ctx, span := telemetry.StartSpan(ctx, "odfi-delete-files-on-remote", trace.WithAttributes(
+		attribute.String("dir", baseDir),
+		attribute.Int("files", len(infos)),
+	))
+	defer span.End()
 
 	var el base.ErrorList
 	for i := range infos {
@@ -92,12 +102,18 @@ func deleteFilesOnRemote(logger log.Logger, agent upload.Agent, localDir, suffix
 }
 
 // deleteEmptyFiles deletes all empty files that are older than after (time.Duration)
-func deleteEmptyFiles(logger log.Logger, agent upload.Agent, localDir, suffix string) error {
+func deleteEmptyFiles(ctx context.Context, logger log.Logger, agent upload.Agent, localDir, suffix string) error {
 	baseDir := filepath.Join(localDir, suffix)
 	entries, err := os.ReadDir(baseDir)
 	if err != nil {
 		return fmt.Errorf("reading %s: %v", baseDir, err)
 	}
+
+	ctx, span := telemetry.StartSpan(ctx, "odfi-delete-empty-files", trace.WithAttributes(
+		attribute.String("dir", baseDir),
+		attribute.Int("files", len(entries)),
+	))
+	defer span.End()
 
 	var el base.ErrorList
 	for i := range entries {

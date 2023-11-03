@@ -18,6 +18,7 @@
 package events
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -30,7 +31,7 @@ import (
 )
 
 type Emitter interface {
-	Send(evt models.Event) error
+	Send(ctx context.Context, evt models.Event) error
 }
 
 func NewEmitter(logger log.Logger, cfg *service.EventsConfig) (Emitter, error) {
@@ -51,7 +52,7 @@ type MockEmitter struct {
 	sent []models.Event
 }
 
-func (e *MockEmitter) Send(evt models.Event) error {
+func (e *MockEmitter) Send(_ context.Context, evt models.Event) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 

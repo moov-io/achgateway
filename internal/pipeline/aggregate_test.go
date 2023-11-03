@@ -73,7 +73,7 @@ func TestAggregateACHFile(t *testing.T) {
 	file, err := ach.ReadFile(filepath.Join("..", "..", "testdata", "ppd-debit.ach"))
 	require.NoError(t, err)
 
-	err = xfagg.acceptFile(incoming.ACHFile{
+	err = xfagg.acceptFile(context.Background(), incoming.ACHFile{
 		FileID:   "ppd-file1",
 		ShardKey: "test",
 		File:     file,

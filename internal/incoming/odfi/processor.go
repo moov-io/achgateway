@@ -19,6 +19,7 @@ package odfi
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha1" //nolint:gosec
 	"fmt"
 	"os"
@@ -52,7 +53,7 @@ type FileProcessor interface {
 	Type() string
 
 	// Handle processes an ACH file with whatever logic is implemented
-	Handle(logger log.Logger, file File) error
+	Handle(ctx context.Context, logger log.Logger, file File) error
 }
 
 type Processors []FileProcessor
@@ -68,11 +69,11 @@ func SetupProcessors(pcs ...FileProcessor) Processors {
 	return out
 }
 
-func (pcs Processors) HandleAll(logger log.Logger, file File) error {
+func (pcs Processors) HandleAll(ctx context.Context, logger log.Logger, file File) error {
 	var el base.ErrorList
 	for i := range pcs {
 		proc := pcs[i]
-		if err := proc.Handle(logger, file); err != nil {
+		if err := proc.Handle(ctx, logger, file); err != nil {
 			processingErrors.With("processor", fmt.Sprintf("%T", proc)).Add(1)
 
 			el.Add(fmt.Errorf("%s: %v", proc.Type(), err))
@@ -84,12 +85,12 @@ func (pcs Processors) HandleAll(logger log.Logger, file File) error {
 	return el
 }
 
-func ProcessFiles(logger log.Logger, dl *downloadedFiles, alerters alerting.Alerters, auditSaver *AuditSaver, validation ach.ValidateOpts, fileProcessors Processors, agent upload.Agent) error {
+func ProcessFiles(ctx context.Context, logger log.Logger, dl *downloadedFiles, alerters alerting.Alerters, auditSaver *AuditSaver, validation ach.ValidateOpts, fileProcessors Processors, agent upload.Agent) error {
 	var el base.ErrorList
 
 	for _, processingPath := range []string{agent.InboundPath(), agent.ReconciliationPath(), agent.ReturnPath()} {
 		where := filepath.Join(dl.dir, processingPath)
-		if err := processDir(logger, where, alerters, auditSaver, validation, fileProcessors); err != nil {
+		if err := processDir(ctx, logger, where, alerters, auditSaver, validation, fileProcessors); err != nil {
 			el.Add(fmt.Errorf("processDir %s: %v", where, err))
 		}
 	}
@@ -100,7 +101,7 @@ func ProcessFiles(logger log.Logger, dl *downloadedFiles, alerters alerting.Aler
 	return el
 }
 
-func processDir(logger log.Logger, dir string, alerters alerting.Alerters, auditSaver *AuditSaver, validation ach.ValidateOpts, fileProcessors Processors) error {
+func processDir(ctx context.Context, logger log.Logger, dir string, alerters alerting.Alerters, auditSaver *AuditSaver, validation ach.ValidateOpts, fileProcessors Processors) error {
 	infos, err := os.ReadDir(dir)
 	if err != nil {
 		return fmt.Errorf("reading %s: %v", dir, err)
@@ -112,7 +113,7 @@ func processDir(logger log.Logger, dir string, alerters alerting.Alerters, audit
 		logger = logger.With(log.Fields{
 			"filename": log.String(where),
 		})
-		if err := processFile(logger, where, alerters, auditSaver, validation, fileProcessors); err != nil {
+		if err := processFile(ctx, logger, where, alerters, auditSaver, validation, fileProcessors); err != nil {
 			el.Add(err)
 		}
 	}
@@ -123,7 +124,7 @@ func processDir(logger log.Logger, dir string, alerters alerting.Alerters, audit
 	return el
 }
 
-func processFile(logger log.Logger, path string, alerters alerting.Alerters, auditSaver *AuditSaver, validation ach.ValidateOpts, fileProcessors Processors) error {
+func processFile(ctx context.Context, logger log.Logger, path string, alerters alerting.Alerters, auditSaver *AuditSaver, validation ach.ValidateOpts, fileProcessors Processors) error {
 	bs, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("problem opening %s: %v", path, err)
@@ -154,14 +155,14 @@ func processFile(logger log.Logger, path string, alerters alerting.Alerters, aud
 	// Persist the file if needed
 	if auditSaver != nil {
 		path := fmt.Sprintf("odfi/%s/%s/%s/%s", auditSaver.hostname, dir, time.Now().Format("2006-01-02"), filename)
-		err = auditSaver.save(path, bs)
+		err = auditSaver.save(ctx, path, bs)
 		if err != nil {
 			return fmt.Errorf("audittrail %s error: %v", path, err)
 		}
 	}
 
 	// Pass the file off to our handler
-	err = fileProcessors.HandleAll(logger, File{
+	err = fileProcessors.HandleAll(ctx, logger, File{
 		Filepath: path,
 		ACHFile:  &file,
 	})

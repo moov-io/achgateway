@@ -23,6 +23,9 @@ import (
 	"strings"
 
 	"github.com/moov-io/base/log"
+	"github.com/moov-io/base/telemetry"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/gorilla/mux"
 )
@@ -57,6 +60,11 @@ func (fr *FileReceiver) manuallyProduceFileUploaded() http.HandlerFunc {
 			return
 		}
 
+		ctx, span := telemetry.StartSpan(r.Context(), "pipeline-manual-file-uploaded", trace.WithAttributes(
+			attribute.String("dir", dir),
+		))
+		defer span.End()
+
 		matches, err := m.getNonCanceledMatches(dir)
 		if err != nil {
 			logger.LogErrorf("problem listing matches: %v", err)
@@ -71,7 +79,7 @@ func (fr *FileReceiver) manuallyProduceFileUploaded() http.HandlerFunc {
 			return
 		}
 
-		err = agg.emitFilesUploaded(processed)
+		err = agg.emitFilesUploaded(ctx, processed)
 		if err != nil {
 			logger.LogErrorf("problem emitting FileUploaded: %v", err)
 			w.WriteHeader(http.StatusBadRequest)

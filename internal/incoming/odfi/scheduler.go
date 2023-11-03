@@ -28,6 +28,10 @@ import (
 	"github.com/moov-io/achgateway/internal/upload"
 	"github.com/moov-io/base/admin"
 	"github.com/moov-io/base/log"
+	"github.com/moov-io/base/telemetry"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Scheduler interface {
@@ -123,11 +127,17 @@ func (s *PeriodicScheduler) tickAll() error {
 			continue
 		}
 
+		ctx, span := telemetry.StartSpan(context.Background(), "odfi-scheduler", trace.WithAttributes(
+			attribute.String("shard", shardName),
+		))
+		defer span.End()
+
 		logger.Info().Logf("starting odfi periodic processing for %s", shard.Name)
-		err := s.tick(logger, shard)
+		err := s.tick(ctx, logger, shard)
 		if err != nil {
 			// Push this alert outside achgateway
 			s.alertOnError(fmt.Errorf("%s %v", shardName, err))
+			telemetry.RecordError(ctx, err)
 			logger.Warn().Logf("error with odfi periodic processing: %v", err)
 		} else {
 			logger.Info().Logf("finished odfi periodic processing for %s", shard.Name)
@@ -136,16 +146,19 @@ func (s *PeriodicScheduler) tickAll() error {
 	return nil
 }
 
-func (s *PeriodicScheduler) tick(logger log.Logger, shard *service.Shard) error {
+func (s *PeriodicScheduler) tick(ctx context.Context, logger log.Logger, shard *service.Shard) error {
 	agent, err := upload.New(logger, s.uploadAgents, shard.UploadAgent)
 	if err != nil {
 		return fmt.Errorf("agent: %v", err)
 	}
 
 	logger.Logf("start retrieving and processing of inbound files in %s", agent.Hostname())
+	telemetry.AddEvent(ctx, "odfi-scheduler-tick", trace.WithAttributes(
+		attribute.String("shard", shard.Name),
+	))
 
 	// Download and process files
-	dl, err := s.downloader.CopyFilesFromRemote(agent, shard)
+	dl, err := s.downloader.CopyFilesFromRemote(ctx, agent, shard)
 	if err != nil {
 		return fmt.Errorf("ERROR: problem copying files: %v", err)
 	}
@@ -157,25 +170,25 @@ func (s *PeriodicScheduler) tick(logger log.Logger, shard *service.Shard) error 
 	}
 
 	// Run each processor over the files
-	if err := ProcessFiles(logger, dl, s.alerters, auditSaver, s.odfi.Processors.Validation, s.processors, agent); err != nil {
+	if err := ProcessFiles(ctx, logger, dl, s.alerters, auditSaver, s.odfi.Processors.Validation, s.processors, agent); err != nil {
 		return fmt.Errorf("ERROR: processing files: %v", err)
 	}
 
 	// Start our cleanup routines
 	if !s.odfi.Storage.KeepRemoteFiles {
-		if err := Cleanup(logger, agent, dl); err != nil {
+		if err := Cleanup(ctx, logger, agent, dl); err != nil {
 			return fmt.Errorf("ERROR: deleting remote files: %v", err)
 		}
 	}
 	if s.odfi.Storage.RemoveZeroByteFiles {
-		if err := CleanupEmptyFiles(logger, agent, dl); err != nil {
+		if err := CleanupEmptyFiles(ctx, logger, agent, dl); err != nil {
 			return fmt.Errorf("ERROR: deleting zero byte files: %v", err)
 		}
 	}
 	if s.odfi.Storage.CleanupLocalDirectory {
 		return dl.deleteFiles()
 	}
-	return dl.deleteEmptyDirs(agent)
+	return dl.deleteEmptyDirs(ctx, agent)
 }
 
 func (s *PeriodicScheduler) alertOnError(err error) {

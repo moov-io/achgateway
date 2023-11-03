@@ -10,7 +10,11 @@ import (
 	"io"
 
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/base/telemetry"
 	"github.com/moov-io/cryptfs"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"gocloud.dev/blob"
 	_ "gocloud.dev/blob/azureblob"
@@ -60,7 +64,13 @@ func (bs *blobStorage) Close() error {
 	return bs.bucket.Close()
 }
 
-func (bs *blobStorage) SaveFile(path string, data []byte) error {
+func (bs *blobStorage) SaveFile(ctx context.Context, path string, data []byte) error {
+	ctx, span := telemetry.StartSpan(ctx, "audittrail-save-file", trace.WithAttributes(
+		attribute.String("path", path),
+		attribute.Int("data_bytes", len(data)),
+	))
+	defer span.End()
+
 	var encrypted []byte
 	var err error
 	if bs.cryptor != nil {
@@ -73,7 +83,7 @@ func (bs *blobStorage) SaveFile(path string, data []byte) error {
 		return err
 	}
 
-	exists, err := bs.bucket.Exists(context.Background(), path)
+	exists, err := bs.bucket.Exists(ctx, path)
 	if exists {
 		return nil
 	}
@@ -82,7 +92,7 @@ func (bs *blobStorage) SaveFile(path string, data []byte) error {
 		return err
 	}
 
-	w, err := bs.bucket.NewWriter(context.Background(), path, nil)
+	w, err := bs.bucket.NewWriter(ctx, path, nil)
 	if err != nil {
 		uploadFilesErrors.With("type", "blob", "id", bs.id).Add(1)
 		return err
@@ -102,8 +112,13 @@ func (bs *blobStorage) SaveFile(path string, data []byte) error {
 	return nil
 }
 
-func (bs *blobStorage) GetFile(path string) (io.ReadCloser, error) {
-	r, err := bs.bucket.NewReader(context.Background(), path, nil)
+func (bs *blobStorage) GetFile(ctx context.Context, path string) (io.ReadCloser, error) {
+	ctx, span := telemetry.StartSpan(ctx, "audittrail-get-file", trace.WithAttributes(
+		attribute.String("path", path),
+	))
+	defer span.End()
+
+	r, err := bs.bucket.NewReader(ctx, path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("get file: %v", err)
 	}

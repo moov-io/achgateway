@@ -3,6 +3,8 @@
 ACHGateway:
   Admin:
     BindAddress: ":9494"
+  Telemetry:
+    ServiceName: "achgateway"
   Inbound:
     HTTP:
       BindAddress: ":8484"

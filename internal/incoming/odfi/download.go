@@ -18,6 +18,7 @@
 package odfi
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -28,6 +29,9 @@ import (
 	"github.com/moov-io/achgateway/internal/upload"
 	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/strx"
+	"github.com/moov-io/base/telemetry"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/go-kit/kit/metrics/prometheus"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
@@ -41,7 +45,7 @@ var (
 )
 
 type Downloader interface {
-	CopyFilesFromRemote(agent upload.Agent, shard *service.Shard) (*downloadedFiles, error)
+	CopyFilesFromRemote(ctx context.Context, agent upload.Agent, shard *service.Shard) (*downloadedFiles, error)
 }
 
 func NewDownloader(logger log.Logger, cfg service.ODFIStorage) (Downloader, error) {
@@ -70,25 +74,32 @@ func (d *downloadedFiles) deleteFiles() error {
 	return os.RemoveAll(d.dir)
 }
 
-func (d *downloadedFiles) deleteEmptyDirs(agent upload.Agent) error {
-	count := func(path string) int {
+func (d *downloadedFiles) deleteEmptyDirs(ctx context.Context, agent upload.Agent) error {
+	count := func(ctx context.Context, path string) int {
 		infos, err := os.ReadDir(path)
 		if err != nil {
 			return -1
 		}
+
+		ctx, span := telemetry.StartSpan(ctx, "odfi-delete-empty-dirs", trace.WithAttributes(
+			attribute.String("path", path),
+			attribute.Int("files", len(infos)),
+		))
+		defer span.End()
+
 		return len(infos)
 	}
-	if path := filepath.Join(d.dir, agent.InboundPath()); count(path) == 0 {
+	if path := filepath.Join(d.dir, agent.InboundPath()); count(ctx, path) == 0 {
 		if err := os.RemoveAll(path); err != nil {
 			return fmt.Errorf("delete inbound: %v", err)
 		}
 	}
-	if path := filepath.Join(d.dir, agent.ReconciliationPath()); count(path) == 0 {
+	if path := filepath.Join(d.dir, agent.ReconciliationPath()); count(ctx, path) == 0 {
 		if err := os.RemoveAll(path); err != nil {
 			return fmt.Errorf("delete reconciliation: %v", err)
 		}
 	}
-	if path := filepath.Join(d.dir, agent.ReturnPath()); count(path) == 0 {
+	if path := filepath.Join(d.dir, agent.ReturnPath()); count(ctx, path) == 0 {
 		if err := os.RemoveAll(path); err != nil {
 			return fmt.Errorf("delete return: %v", err)
 		}
@@ -123,7 +134,7 @@ func (dl *downloaderImpl) setup(agent upload.Agent) (*downloadedFiles, error) {
 	}, nil
 }
 
-func (dl *downloaderImpl) CopyFilesFromRemote(agent upload.Agent, shard *service.Shard) (*downloadedFiles, error) {
+func (dl *downloaderImpl) CopyFilesFromRemote(ctx context.Context, agent upload.Agent, shard *service.Shard) (*downloadedFiles, error) {
 	out, err := dl.setup(agent)
 	if err != nil {
 		return nil, err

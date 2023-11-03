@@ -18,6 +18,7 @@
 package odfi
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -67,7 +68,7 @@ func TestScheduler(t *testing.T) {
 		Name:        "mock",
 		UploadAgent: "ftp-test",
 	}
-	if err := ss.tick(cfg.Logger, mock); err != nil {
+	if err := ss.tick(context.Background(), cfg.Logger, mock); err != nil {
 		t.Fatal(err)
 	}
 }
