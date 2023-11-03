@@ -1,4 +1,4 @@
-// Licensedjos The Moov Authors under one or more contributor
+// Licensed to The Moov Authors under one or more contributor
 // license agreements. See the NOTICE file distributed with
 // this work for additional information regarding copyright
 // ownership. The Moov Authors licenses this file to you under
