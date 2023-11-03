@@ -26,7 +26,7 @@ import (
 	"net/http"
 	"time"
 
-	_ "github.com/moov-io/achgateway"
+	"github.com/moov-io/achgateway"
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/incoming/odfi"
 	"github.com/moov-io/achgateway/internal/incoming/stream"
@@ -39,6 +39,7 @@ import (
 	"github.com/moov-io/base/database"
 	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/stime"
+	"github.com/moov-io/base/telemetry"
 
 	"github.com/gorilla/mux"
 	"gocloud.dev/pubsub"
@@ -52,6 +53,7 @@ type Environment struct {
 	DB             *sql.DB
 	InternalClient *http.Client
 	Events         events.Emitter
+	Telemetry      telemetry.Config
 
 	PublicRouter *mux.Router
 	AdminServer  *admin.Server
@@ -94,12 +96,22 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 	}
 	env.Config.Logger = env.Logger
 
+	telemetryShutdownFunc, err := telemetry.SetupTelemetry(context.Background(), env.Config.Telemetry, achgateway.Version)
+	if err != nil {
+		return env, fmt.Errorf("setting up telemetry failed: %w", err)
+	}
+	prev := env.Shutdown
+	env.Shutdown = func() {
+		prev()
+		telemetryShutdownFunc()
+	}
+
 	// db setup
 	if env.DB == nil && env.Config.Database.MySQL != nil {
 		db, close, err := initializeDatabase(env.Logger, env.Config.Database)
 		if err != nil {
 			close()
-			return env, err
+			return env, fmt.Errorf("setting up database failed: %w", err)
 		}
 		env.DB = db
 

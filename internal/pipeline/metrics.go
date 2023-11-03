@@ -18,6 +18,10 @@
 package pipeline
 
 import (
+	"context"
+
+	"github.com/moov-io/base/telemetry"
+
 	"github.com/go-kit/kit/metrics/prometheus"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 )
@@ -68,7 +72,9 @@ func init() {
 	streamFileProcessingErrors.With().Add(0)
 }
 
-func recordFileUploadError(shardName string) {
+func recordFileUploadError(ctx context.Context, shardName string, err error) {
+	telemetry.RecordError(ctx, err)
+
 	uploadFilesErrors.With("shard", shardName).Add(1)
 }
 

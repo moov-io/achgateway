@@ -43,6 +43,10 @@ import (
 	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/stime"
 	"github.com/moov-io/base/strx"
+	"github.com/moov-io/base/telemetry"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type aggregator struct {
@@ -155,12 +159,12 @@ func (xfagg *aggregator) Shutdown() {
 	}
 }
 
-func (xfagg *aggregator) acceptFile(msg incoming.ACHFile) error {
-	return xfagg.merger.HandleXfer(msg)
+func (xfagg *aggregator) acceptFile(ctx context.Context, msg incoming.ACHFile) error {
+	return xfagg.merger.HandleXfer(ctx, msg)
 }
 
-func (xfagg *aggregator) cancelFile(msg incoming.CancelACHFile) error {
-	return xfagg.merger.HandleCancel(msg)
+func (xfagg *aggregator) cancelFile(ctx context.Context, msg incoming.CancelACHFile) error {
+	return xfagg.merger.HandleCancel(ctx, msg)
 }
 
 func (xfagg *aggregator) withEachFile(when time.Time) error {
@@ -176,13 +180,20 @@ func (xfagg *aggregator) withEachFile(when time.Time) error {
 		"shard": log.String(xfagg.shard.Name),
 	}).Logf("ended %s %s cutoff window processing", window, tzname)
 
-	processed, err := xfagg.merger.WithEachMerged(xfagg.runTransformers)
+	ctx, span := telemetry.StartSpan(context.Background(), "automated-cutoff", trace.WithAttributes(
+		attribute.String("shard", xfagg.shard.Name),
+		attribute.String("timezone", tzname),
+		attribute.String("window", window),
+	))
+	defer span.End()
+
+	processed, err := xfagg.merger.WithEachMerged(ctx, xfagg.runTransformers)
 	if err != nil {
 		logger.LogErrorf("ERROR inside WithEachMerged: %v", err)
 		return fmt.Errorf("merging ACH files: %v", err)
 	}
 
-	if err := xfagg.emitFilesUploaded(processed); err != nil {
+	if err := xfagg.emitFilesUploaded(ctx, processed); err != nil {
 		logger.LogErrorf("ERROR sending files uploaded event: %v", err)
 	}
 
@@ -195,12 +206,17 @@ func (xfagg *aggregator) manualCutoff(waiter manuallyTriggeredCutoff) {
 	})
 	logger.Info().Log("starting manual cutoff window processing")
 
-	if processed, err := xfagg.merger.WithEachMerged(xfagg.runTransformers); err != nil {
+	ctx, span := telemetry.StartSpan(context.Background(), "manual-cutoff", trace.WithAttributes(
+		attribute.String("shard", xfagg.shard.Name),
+	))
+	defer span.End()
+
+	if processed, err := xfagg.merger.WithEachMerged(ctx, xfagg.runTransformers); err != nil {
 		logger.LogErrorf("ERROR inside manual WithEachMerged: %v", err)
 		waiter.C <- err
 	} else {
 		// Publish event of File uploads
-		if err := xfagg.emitFilesUploaded(processed); err != nil {
+		if err := xfagg.emitFilesUploaded(ctx, processed); err != nil {
 			logger.LogErrorf("ERROR sending manual files uploaded event: %v", err)
 		}
 		waiter.C <- err
@@ -211,10 +227,10 @@ func (xfagg *aggregator) manualCutoff(waiter manuallyTriggeredCutoff) {
 	}).Log("ended manual cutoff window processing")
 }
 
-func (xfagg *aggregator) emitFilesUploaded(proc *processedFiles) error {
+func (xfagg *aggregator) emitFilesUploaded(ctx context.Context, proc *processedFiles) error {
 	var el base.ErrorList
 	for i := range proc.fileIDs {
-		err := xfagg.eventEmitter.Send(models.Event{
+		err := xfagg.eventEmitter.Send(ctx, models.Event{
 			Event: models.FileUploaded{
 				FileID:     proc.fileIDs[i],
 				ShardKey:   proc.shardKey,
@@ -231,15 +247,15 @@ func (xfagg *aggregator) emitFilesUploaded(proc *processedFiles) error {
 	return el
 }
 
-func (xfagg *aggregator) runTransformers(index int, agent upload.Agent, outgoing *ach.File) error {
+func (xfagg *aggregator) runTransformers(ctx context.Context, index int, agent upload.Agent, outgoing *ach.File) error {
 	result, err := transform.ForUpload(outgoing, xfagg.preuploadTransformers)
 	if err != nil {
 		return err
 	}
-	return xfagg.uploadFile(index, agent, result)
+	return xfagg.uploadFile(ctx, index, agent, result)
 }
 
-func (xfagg *aggregator) uploadFile(index int, agent upload.Agent, res *transform.Result) error {
+func (xfagg *aggregator) uploadFile(ctx context.Context, index int, agent upload.Agent, res *transform.Result) error {
 	if res == nil || res.File == nil {
 		return errors.New("uploadFile: nil Result / File")
 	}
@@ -252,13 +268,18 @@ func (xfagg *aggregator) uploadFile(index int, agent upload.Agent, res *transfor
 	}
 	filename, err := upload.RenderACHFilename(xfagg.shard.FilenameTemplate(), data)
 	if err != nil {
-		recordFileUploadError(xfagg.shard.Name)
+		recordFileUploadError(ctx, xfagg.shard.Name, err)
 		return fmt.Errorf("problem rendering filename template: %v", err)
 	}
 
+	telemetry.AddEvent(ctx, "prepare-file", trace.WithAttributes(
+		attribute.String("filename", filename),
+		attribute.String("shard", xfagg.shard.Name),
+	))
+
 	var buf bytes.Buffer
 	if err := xfagg.outputFormatter.Format(&buf, res); err != nil {
-		recordFileUploadError(xfagg.shard.Name)
+		recordFileUploadError(ctx, xfagg.shard.Name, err)
 		return fmt.Errorf("problem formatting output: %v", err)
 	}
 
@@ -268,16 +289,21 @@ func (xfagg *aggregator) uploadFile(index int, agent upload.Agent, res *transfor
 		basePath = strx.Or(xfagg.shard.Audit.BasePath, basePath)
 	}
 	path := fmt.Sprintf("%s/%s/%s/%s", basePath, agent.Hostname(), time.Now().Format("2006-01-02"), filename)
-	if err := xfagg.auditStorage.SaveFile(path, buf.Bytes()); err != nil {
-		recordFileUploadError(xfagg.shard.Name)
+	if err := xfagg.auditStorage.SaveFile(ctx, path, buf.Bytes()); err != nil {
+		recordFileUploadError(ctx, xfagg.shard.Name, err)
 		return fmt.Errorf("problem saving file in audit record: %v", err)
 	}
 
 	// Upload our file
-	err = agent.UploadFile(upload.File{
+	err = agent.UploadFile(ctx, upload.File{
 		Filepath: filename,
 		Contents: io.NopCloser(&buf),
 	})
+
+	telemetry.AddEvent(ctx, "uploaded-file", trace.WithAttributes(
+		attribute.String("filename", filename),
+		attribute.String("shard", xfagg.shard.Name),
+	))
 
 	// Send Slack/PD or whatever notifications after the file is uploaded
 	if err := xfagg.notifyAfterUpload(filename, res.File, agent, err); err != nil {
@@ -286,7 +312,7 @@ func (xfagg *aggregator) uploadFile(index int, agent upload.Agent, res *transfor
 
 	// record our upload metrics
 	if err != nil {
-		recordFileUploadError(xfagg.shard.Name)
+		recordFileUploadError(ctx, xfagg.shard.Name, err)
 	} else {
 		uploadedFilesCounter.With("shard", xfagg.shard.Name).Add(1)
 	}

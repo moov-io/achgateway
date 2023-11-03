@@ -18,6 +18,7 @@
 package odfi
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -27,9 +28,12 @@ import (
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
+	"github.com/moov-io/base/telemetry"
 
 	"github.com/go-kit/kit/metrics/prometheus"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -66,7 +70,7 @@ func isReconciliationFile(cfg service.ODFIReconciliation, file File) bool {
 	return cfg.PathMatcher != "" && strings.Contains(strings.ToLower(file.Filepath), cfg.PathMatcher)
 }
 
-func (pc *creditReconciliation) Handle(logger log.Logger, file File) error {
+func (pc *creditReconciliation) Handle(ctx context.Context, logger log.Logger, file File) error {
 	if file.ACHFile == nil {
 		return errors.New("nil ach.File")
 	}
@@ -79,6 +83,11 @@ func (pc *creditReconciliation) Handle(logger log.Logger, file File) error {
 	if !isReconciliationFile(pc.cfg, file) {
 		return nil // skip the file
 	}
+
+	ctx, span := telemetry.StartSpan(ctx, "odfi-reconciliation-file", trace.WithAttributes(
+		attribute.String("filepath", file.Filepath),
+	))
+	defer span.End()
 
 	// Record that we've encountered this ACH file
 	creditReconciliationFilesProcessed.With(
@@ -93,7 +102,7 @@ func (pc *creditReconciliation) Handle(logger log.Logger, file File) error {
 	if pc.cfg.ProduceFileEvents {
 		logger.Log("odfi: producing reconciliation file event")
 
-		err := pc.produceFileEvent(logger, file)
+		err := pc.produceFileEvent(ctx, logger, file)
 		if err != nil {
 			return fmt.Errorf("producing file event: %w", err)
 		}
@@ -101,7 +110,7 @@ func (pc *creditReconciliation) Handle(logger log.Logger, file File) error {
 	if pc.cfg.ProduceEntryEvents {
 		logger.Log("odfi: producing reconciliation entry events")
 
-		err := pc.produceEntryEvents(logger, file)
+		err := pc.produceEntryEvents(ctx, logger, file)
 		if err != nil {
 			return fmt.Errorf("producing entry event: %w", err)
 		}
@@ -110,7 +119,7 @@ func (pc *creditReconciliation) Handle(logger log.Logger, file File) error {
 	return nil
 }
 
-func (pc *creditReconciliation) produceFileEvent(logger log.Logger, file File) error {
+func (pc *creditReconciliation) produceFileEvent(ctx context.Context, logger log.Logger, file File) error {
 	var recons []models.Batch
 
 	for i := range file.ACHFile.Batches {
@@ -126,7 +135,7 @@ func (pc *creditReconciliation) produceFileEvent(logger log.Logger, file File) e
 		}
 	}
 	if len(recons) > 0 {
-		return pc.sendEvent(models.ReconciliationFile{
+		return pc.sendEvent(ctx, models.ReconciliationFile{
 			Filename:        filepath.Base(file.Filepath),
 			File:            file.ACHFile,
 			Reconciliations: recons,
@@ -135,7 +144,7 @@ func (pc *creditReconciliation) produceFileEvent(logger log.Logger, file File) e
 	return nil
 }
 
-func (pc *creditReconciliation) produceEntryEvents(logger log.Logger, file File) error {
+func (pc *creditReconciliation) produceEntryEvents(ctx context.Context, logger log.Logger, file File) error {
 	g := new(errgroup.Group)
 
 	for i := range file.ACHFile.Batches {
@@ -146,7 +155,7 @@ func (pc *creditReconciliation) produceEntryEvents(logger log.Logger, file File)
 			// Produce ReconciliationEntry event
 			entry := entries[j]
 			g.Go(func() error {
-				return pc.sendEvent(models.ReconciliationEntry{
+				return pc.sendEvent(ctx, models.ReconciliationEntry{
 					Filename: filepath.Base(file.Filepath),
 					Header:   batch.GetHeader(),
 					Entry:    entry,
@@ -158,9 +167,9 @@ func (pc *creditReconciliation) produceEntryEvents(logger log.Logger, file File)
 	return g.Wait()
 }
 
-func (pc *creditReconciliation) sendEvent(event interface{}) error {
+func (pc *creditReconciliation) sendEvent(ctx context.Context, event interface{}) error {
 	if pc.svc != nil {
-		err := pc.svc.Send(models.Event{Event: event})
+		err := pc.svc.Send(ctx, models.Event{Event: event})
 		if err != nil {
 			return fmt.Errorf("sending reconciliations event: %w", err)
 		}

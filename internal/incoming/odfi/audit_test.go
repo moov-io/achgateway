@@ -18,6 +18,7 @@
 package odfi
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -25,8 +26,8 @@ import (
 
 func TestAuditSaver(t *testing.T) {
 	var saver *AuditSaver = nil
-	require.NoError(t, saver.save("foo.ach", nil))
+	require.NoError(t, saver.save(context.Background(), "foo.ach", nil))
 
 	saver = &AuditSaver{}
-	require.NoError(t, saver.save("foo.ach", nil))
+	require.NoError(t, saver.save(context.Background(), "foo.ach", nil))
 }

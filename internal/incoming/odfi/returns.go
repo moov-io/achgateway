@@ -18,6 +18,7 @@
 package odfi
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -26,9 +27,12 @@ import (
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
+	"github.com/moov-io/base/telemetry"
 
 	"github.com/go-kit/kit/metrics/prometheus"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var (
@@ -61,7 +65,7 @@ func isReturnFile(file File) bool {
 	return len(file.ACHFile.ReturnEntries) >= 0
 }
 
-func (pc *returnEmitter) Handle(logger log.Logger, file File) error {
+func (pc *returnEmitter) Handle(ctx context.Context, logger log.Logger, file File) error {
 	if !isReturnFile(file) {
 		return nil
 	}
@@ -81,6 +85,11 @@ func (pc *returnEmitter) Handle(logger log.Logger, file File) error {
 		"destination": log.String(file.ACHFile.Header.ImmediateDestination),
 	})
 	logger.Log("odfi: processing return file")
+
+	telemetry.AddEvent(ctx, "return-file", trace.WithAttributes(
+		attribute.String("filename", file.Filepath),
+		attribute.Int("return_entries", len(file.ACHFile.ReturnEntries)),
+	))
 
 	for i := range file.ACHFile.ReturnEntries {
 		entries := file.ACHFile.ReturnEntries[i].GetEntries()
@@ -106,12 +115,12 @@ func (pc *returnEmitter) Handle(logger log.Logger, file File) error {
 			}).Log(fmt.Sprintf("odfi: return batch %d entry %d code %s", i, j, returnCode.Code))
 		}
 	}
-	return pc.sendEvent(msg)
+	return pc.sendEvent(ctx, msg)
 }
 
-func (pc *returnEmitter) sendEvent(event interface{}) error {
+func (pc *returnEmitter) sendEvent(ctx context.Context, event interface{}) error {
 	if pc.svc != nil {
-		err := pc.svc.Send(models.Event{Event: event})
+		err := pc.svc.Send(ctx, models.Event{Event: event})
 		if err != nil {
 			return fmt.Errorf("sending return event: %w", err)
 		}

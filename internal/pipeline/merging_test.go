@@ -19,6 +19,7 @@ package pipeline
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -151,7 +152,7 @@ func TestMerging__writeACHFile(t *testing.T) {
 		BypassDestinationValidation: true,
 	})
 
-	err = m.HandleXfer(incoming.ACHFile(xfer))
+	err = m.HandleXfer(context.Background(), incoming.ACHFile(xfer))
 	require.NoError(t, err)
 
 	// Read the pending file

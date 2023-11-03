@@ -33,7 +33,7 @@ func TestStreamService(t *testing.T) {
 	svc := &streamService{topic: pub}
 
 	shardKey, fileID := base.ID(), base.ID()
-	err := svc.Send(models.Event{
+	err := svc.Send(context.Background(), models.Event{
 		Event: models.FileUploaded{
 			FileID:   fileID,
 			ShardKey: shardKey,

@@ -61,12 +61,12 @@ func newStreamService(logger log.Logger, transformConfig *models.TransformConfig
 	}, nil
 }
 
-func (ss *streamService) Send(evt models.Event) error {
+func (ss *streamService) Send(ctx context.Context, evt models.Event) error {
 	bs, err := compliance.Protect(ss.transformConfig, evt)
 	if err != nil {
 		return err
 	}
-	err = ss.topic.Send(context.Background(), &pubsub.Message{
+	err = ss.topic.Send(ctx, &pubsub.Message{
 		Body: bs,
 	})
 	if err != nil {

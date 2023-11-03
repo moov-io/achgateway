@@ -18,6 +18,7 @@
 package odfi
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -26,6 +27,9 @@ import (
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
+	"github.com/moov-io/base/telemetry"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type incomingEmitter struct {
@@ -49,7 +53,7 @@ func (pc *incomingEmitter) Type() string {
 	return "incoming"
 }
 
-func (pc *incomingEmitter) Handle(logger log.Logger, file File) error {
+func (pc *incomingEmitter) Handle(ctx context.Context, logger log.Logger, file File) error {
 	// Ignore files if they don't contain the PathMatcher value
 	if pc.cfg.PathMatcher != "" && !strings.Contains(strings.ToLower(file.Filepath), pc.cfg.PathMatcher) {
 		return nil // skip the file
@@ -79,17 +83,22 @@ func (pc *incomingEmitter) Handle(logger log.Logger, file File) error {
 		return nil
 	}
 
+	ctx, span := telemetry.StartSpan(ctx, "odfi-incoming-file", trace.WithAttributes(
+		attribute.String("filepath", file.Filepath),
+	))
+	defer span.End()
+
 	logger.Log("emitting IncomingFile event")
-	err := pc.sendEvent(models.IncomingFile{
+	err := pc.sendEvent(ctx, models.IncomingFile{
 		Filename: filepath.Base(file.Filepath),
 		File:     file.ACHFile,
 	})
 	return err
 }
 
-func (pc *incomingEmitter) sendEvent(event interface{}) error {
+func (pc *incomingEmitter) sendEvent(ctx context.Context, event interface{}) error {
 	if pc.svc != nil {
-		err := pc.svc.Send(models.Event{Event: event})
+		err := pc.svc.Send(ctx, models.Event{Event: event})
 		if err != nil {
 			return fmt.Errorf("sending incoming file event: %w", err)
 		}

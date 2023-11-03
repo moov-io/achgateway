@@ -18,6 +18,8 @@
 package pipeline
 
 import (
+	"context"
+
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/upload"
@@ -31,17 +33,17 @@ type MockXferMerging struct {
 	Err error
 }
 
-func (merge *MockXferMerging) HandleXfer(xfer incoming.ACHFile) error {
+func (merge *MockXferMerging) HandleXfer(_ context.Context, xfer incoming.ACHFile) error {
 	merge.LatestFile = &xfer
 	return merge.Err
 }
 
-func (merge *MockXferMerging) HandleCancel(cancel incoming.CancelACHFile) error {
+func (merge *MockXferMerging) HandleCancel(_ context.Context, cancel incoming.CancelACHFile) error {
 	merge.LatestCancel = &cancel
 	return merge.Err
 }
 
-func (merge *MockXferMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) error) (*processedFiles, error) {
+func (merge *MockXferMerging) WithEachMerged(_ context.Context, f func(context.Context, int, upload.Agent, *ach.File) error) (*processedFiles, error) {
 	if merge.Err != nil {
 		return nil, merge.Err
 	}

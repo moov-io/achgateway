@@ -18,6 +18,7 @@
 package odfi
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -72,7 +73,7 @@ func TestDownloader__deleteEmptyDirs(t *testing.T) {
 	if err := os.WriteFile(path, []byte("testing"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	if err := dl.deleteEmptyDirs(agent); err != nil {
+	if err := dl.deleteEmptyDirs(context.Background(), agent); err != nil {
 		t.Fatal(err)
 	}
 

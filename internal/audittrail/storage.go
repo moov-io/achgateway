@@ -5,6 +5,7 @@
 package audittrail
 
 import (
+	"context"
 	"errors"
 	"io"
 
@@ -32,9 +33,9 @@ var (
 // File retention after upload is not part of this storage.
 type Storage interface {
 	// SaveFile will encrypt and copy the ACH file to the configured file storage.
-	SaveFile(filepath string, data []byte) error
+	SaveFile(ctx context.Context, filepath string, data []byte) error
 
-	GetFile(filepath string) (io.ReadCloser, error)
+	GetFile(ctx context.Context, filepath string) (io.ReadCloser, error)
 
 	Close() error
 }

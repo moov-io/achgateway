@@ -18,6 +18,7 @@
 package odfi
 
 import (
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
@@ -48,7 +49,7 @@ func TestCleanupErr(t *testing.T) {
 	}
 
 	// test out cleanup func
-	if err := Cleanup(log.NewTestLogger(), agent, dl); err == nil {
+	if err := Cleanup(context.Background(), log.NewTestLogger(), agent, dl); err == nil {
 		t.Error("expected error")
 	}
 
@@ -74,7 +75,7 @@ func Test_CleanupEmptyFiles_InboundPath_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := CleanupEmptyFiles(log.NewTestLogger(), agent, dl)
+	err := CleanupEmptyFiles(context.Background(), log.NewTestLogger(), agent, dl)
 	require.NoError(t, err)
 
 	if agent.DeletedFile != filepath.Join("inbound", "empty_file.ach") {
@@ -99,7 +100,7 @@ func Test_CleanupEmptyFiles_ReconciliationPath_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := CleanupEmptyFiles(log.NewTestLogger(), agent, dl)
+	err := CleanupEmptyFiles(context.Background(), log.NewTestLogger(), agent, dl)
 	require.NoError(t, err)
 
 	if agent.DeletedFile != filepath.Join("reconciliation", "empty_file.ach") {
@@ -124,7 +125,7 @@ func Test_CleanupEmptyFiles_ReturnPath_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := CleanupEmptyFiles(log.NewTestLogger(), agent, dl)
+	err := CleanupEmptyFiles(context.Background(), log.NewTestLogger(), agent, dl)
 	require.NoError(t, err)
 
 	if agent.DeletedFile != filepath.Join("return", "empty_file.ach") {
@@ -149,7 +150,7 @@ func Test_CleanupEmptyFiles_PopulatedFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := CleanupEmptyFiles(log.NewTestLogger(), agent, dl)
+	err := CleanupEmptyFiles(context.Background(), log.NewTestLogger(), agent, dl)
 	require.NoError(t, err)
 
 	if agent.DeletedFile != "" {

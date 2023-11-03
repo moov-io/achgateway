@@ -19,6 +19,7 @@ package pipeline
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -35,7 +36,10 @@ import (
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/strx"
+	"github.com/moov-io/base/telemetry"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/maps"
 )
 
@@ -47,10 +51,10 @@ import (
 // On the cutoff trigger WithEachMerged is called to merge files together and offer
 // each merged file for an upload.
 type XferMerging interface {
-	HandleXfer(xfer incoming.ACHFile) error
-	HandleCancel(cancel incoming.CancelACHFile) error
+	HandleXfer(ctx context.Context, xfer incoming.ACHFile) error
+	HandleCancel(ctx context.Context, cancel incoming.CancelACHFile) error
 
-	WithEachMerged(f func(int, upload.Agent, *ach.File) error) (*processedFiles, error)
+	WithEachMerged(ctx context.Context, f func(context.Context, int, upload.Agent, *ach.File) error) (*processedFiles, error)
 }
 
 func NewMerging(logger log.Logger, shard service.Shard, cfg service.UploadAgents) (XferMerging, error) {
@@ -81,14 +85,16 @@ type filesystemMerging struct {
 	shard   service.Shard
 }
 
-func (m *filesystemMerging) HandleXfer(xfer incoming.ACHFile) error {
-	if err := m.writeACHFile(xfer); err != nil {
+func (m *filesystemMerging) HandleXfer(ctx context.Context, xfer incoming.ACHFile) error {
+	if err := m.writeACHFile(ctx, xfer); err != nil {
+		telemetry.RecordError(ctx, err)
+
 		return m.logger.LogErrorf("problem writing ACH file: %v", err).Err()
 	}
 	return nil
 }
 
-func (m *filesystemMerging) writeACHFile(xfer incoming.ACHFile) error {
+func (m *filesystemMerging) writeACHFile(ctx context.Context, xfer incoming.ACHFile) error {
 	// First, write the Nacha formatted file to disk
 	var buf bytes.Buffer
 	if err := ach.NewWriter(&buf).Write(xfer.File); err != nil {
@@ -120,11 +126,15 @@ func (m *filesystemMerging) writeACHFile(xfer incoming.ACHFile) error {
 	return nil
 }
 
-func (m *filesystemMerging) HandleCancel(cancel incoming.CancelACHFile) error {
+func (m *filesystemMerging) HandleCancel(ctx context.Context, cancel incoming.CancelACHFile) error {
 	path := filepath.Join("mergable", m.shard.Name, fmt.Sprintf("%s.ach", cancel.FileID))
 
 	// Write the canceled File
-	return m.storage.ReplaceFile(path, path+".canceled")
+	err := m.storage.ReplaceFile(path, path+".canceled")
+	if err != nil {
+		telemetry.RecordError(ctx, err)
+	}
+	return err
 }
 
 func (m *filesystemMerging) isolateMergableDir() (string, error) {
@@ -222,7 +232,7 @@ func (m *filesystemMerging) readFiles(paths []string) ([]*ach.File, error) {
 	return out, nil
 }
 
-func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) error) (*processedFiles, error) {
+func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.Context, int, upload.Agent, *ach.File) error) (*processedFiles, error) {
 	processed := &processedFiles{}
 
 	// move the current directory so it's isolated and easier to debug later on
@@ -258,6 +268,15 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 	if err != nil {
 		el.Add(fmt.Errorf("unable to merge files: %v", err))
 	}
+
+	telemetry.AddEvent(ctx, "merging-files", trace.WithAttributes(
+		attribute.String("isolated_dir", dir),
+		attribute.String("shard", m.shard.Name),
+		attribute.Int("group_size", groupSize),
+		attribute.Int("indices_num", len(indices)),
+		attribute.Int("matches", len(matches)),
+		attribute.Int("files", len(files)),
+	))
 
 	if len(matches) > 0 {
 		logger.Logf("merged %d files into %d files", len(matches), len(files))
@@ -301,7 +320,9 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 		}
 
 		// Upload the file
-		if err := f(i, agent, files[i]); err != nil {
+		if err := f(ctx, i, agent, files[i]); err != nil {
+			telemetry.RecordError(ctx, err)
+
 			el.Add(fmt.Errorf("problem from callback: %v", err))
 		} else {
 			successfulRemoteWrites++
@@ -313,6 +334,11 @@ func (m *filesystemMerging) WithEachMerged(f func(int, upload.Agent, *ach.File) 
 	}
 
 	logger.Logf("wrote %d of %d files to remote agent", successfulRemoteWrites, len(files))
+	telemetry.AddEvent(ctx, "uploaded-files", trace.WithAttributes(
+		attribute.String("shard", m.shard.Name),
+		attribute.Int("successful_remote_writes", successfulRemoteWrites),
+		attribute.Int("files", len(files)),
+	))
 
 	if !el.Empty() {
 		return nil, el

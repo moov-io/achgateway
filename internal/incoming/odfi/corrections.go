@@ -18,6 +18,7 @@
 package odfi
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -26,6 +27,9 @@ import (
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
+	"github.com/moov-io/base/telemetry"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/go-kit/kit/metrics/prometheus"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
@@ -61,7 +65,7 @@ func isCorrectionFile(file File) bool {
 	return len(file.ACHFile.NotificationOfChange) >= 0
 }
 
-func (pc *correctionProcessor) Handle(logger log.Logger, file File) error {
+func (pc *correctionProcessor) Handle(ctx context.Context, logger log.Logger, file File) error {
 	if !isCorrectionFile(file) {
 		return nil
 	}
@@ -70,6 +74,12 @@ func (pc *correctionProcessor) Handle(logger log.Logger, file File) error {
 	if pc.cfg.PathMatcher != "" && !strings.Contains(strings.ToLower(file.Filepath), pc.cfg.PathMatcher) {
 		return nil // skip the file
 	}
+
+	ctx, span := telemetry.StartSpan(ctx, "odfi-correction-file", trace.WithAttributes(
+		attribute.String("filepath", file.Filepath),
+		attribute.Int("corrections", len(file.ACHFile.NotificationOfChange)),
+	))
+	defer span.End()
 
 	msg := models.CorrectionFile{
 		Filename: filepath.Base(file.Filepath),
@@ -106,12 +116,12 @@ func (pc *correctionProcessor) Handle(logger log.Logger, file File) error {
 			}).Log(fmt.Sprintf("odfi: correction batch %d entry %d code %s", i, j, changeCode.Code))
 		}
 	}
-	return pc.sendEvent(msg)
+	return pc.sendEvent(ctx, msg)
 }
 
-func (pc *correctionProcessor) sendEvent(event interface{}) error {
+func (pc *correctionProcessor) sendEvent(ctx context.Context, event interface{}) error {
 	if pc.svc != nil {
-		err := pc.svc.Send(models.Event{Event: event})
+		err := pc.svc.Send(ctx, models.Event{Event: event})
 		if err != nil {
 			return fmt.Errorf("sending correction event: %w", err)
 		}

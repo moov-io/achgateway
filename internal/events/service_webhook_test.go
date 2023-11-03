@@ -18,6 +18,7 @@
 package events
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"testing"
@@ -53,7 +54,7 @@ func TestWebhookService(t *testing.T) {
 	require.NoError(t, err)
 
 	shardKey, fileID := base.ID(), base.ID()
-	err = svc.Send(models.Event{
+	err = svc.Send(context.Background(), models.Event{
 		Event: models.FileUploaded{
 			FileID:   fileID,
 			ShardKey: shardKey,

@@ -6,6 +6,7 @@ package audittrail
 
 import (
 	"bytes"
+	"context"
 	"io"
 )
 
@@ -28,7 +29,7 @@ func (s *MockStorage) Close() error {
 	return s.Err
 }
 
-func (s *MockStorage) SaveFile(path string, data []byte) error {
+func (s *MockStorage) SaveFile(_ context.Context, path string, data []byte) error {
 	if s.Err != nil {
 		uploadFilesErrors.With("type", "mock", "id", "mock").Add(1)
 	} else {
@@ -40,7 +41,7 @@ func (s *MockStorage) SaveFile(path string, data []byte) error {
 	return s.Err
 }
 
-func (s *MockStorage) GetFile(_ string) (io.ReadCloser, error) {
+func (s *MockStorage) GetFile(_ context.Context, _ string) (io.ReadCloser, error) {
 	if s.Err != nil {
 		return nil, s.Err
 	}

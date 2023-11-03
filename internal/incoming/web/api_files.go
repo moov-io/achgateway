@@ -32,8 +32,11 @@ import (
 	"github.com/moov-io/achgateway/pkg/compliance"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/log"
+	"github.com/moov-io/base/telemetry"
 
 	"github.com/gorilla/mux"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"gocloud.dev/pubsub"
 )
 
@@ -75,6 +78,12 @@ func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	ctx, span := telemetry.StartSpan(r.Context(), "create-file-handler", trace.WithAttributes(
+		attribute.String("shardKey", shardKey),
+		attribute.String("fileID", fileID),
+	))
+	defer span.End()
+
 	bs, err := c.readBody(r)
 	if err != nil {
 		c.logger.LogErrorf("error reading file: %v", err)
@@ -93,7 +102,7 @@ func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Reque
 		file = *f
 	}
 
-	if err := c.publishFile(shardKey, fileID, &file); err != nil {
+	if err := c.publishFile(ctx, shardKey, fileID, &file); err != nil {
 		c.logger.With(log.Fields{
 			"shard_key": log.String(shardKey),
 			"file_id":   log.String(fileID),
@@ -121,7 +130,7 @@ func (c *FilesController) readBody(req *http.Request) ([]byte, error) {
 	return compliance.Reveal(c.cfg.Transform, bs)
 }
 
-func (c *FilesController) publishFile(shardKey, fileID string, file *ach.File) error {
+func (c *FilesController) publishFile(ctx context.Context, shardKey, fileID string, file *ach.File) error {
 	bs, err := compliance.Protect(c.cfg.Transform, models.Event{
 		Event: incoming.ACHFile{
 			FileID:   fileID,
@@ -137,7 +146,7 @@ func (c *FilesController) publishFile(shardKey, fileID string, file *ach.File) e
 	meta["fileID"] = fileID
 	meta["shardKey"] = shardKey
 
-	return c.publisher.Send(context.Background(), &pubsub.Message{
+	return c.publisher.Send(ctx, &pubsub.Message{
 		Body:     bs,
 		Metadata: meta,
 	})
@@ -151,7 +160,13 @@ func (c *FilesController) CancelFileHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := c.cancelFile(shardKey, fileID); err != nil {
+	ctx, span := telemetry.StartSpan(r.Context(), "cancel-file-handler", trace.WithAttributes(
+		attribute.String("shardKey", shardKey),
+		attribute.String("fileID", fileID),
+	))
+	defer span.End()
+
+	if err := c.cancelFile(ctx, shardKey, fileID); err != nil {
 		c.logger.With(log.Fields{
 			"shard_key": log.String(shardKey),
 			"file_id":   log.String(fileID),
@@ -164,7 +179,7 @@ func (c *FilesController) CancelFileHandler(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusOK)
 }
 
-func (c *FilesController) cancelFile(shardKey, fileID string) error {
+func (c *FilesController) cancelFile(ctx context.Context, shardKey, fileID string) error {
 	// Remove .ach suffix if the request added it
 	fileID = strings.TrimSuffix(fileID, ".ach")
 
@@ -182,7 +197,7 @@ func (c *FilesController) cancelFile(shardKey, fileID string) error {
 	meta["fileID"] = fileID
 	meta["shardKey"] = shardKey
 
-	return c.publisher.Send(context.Background(), &pubsub.Message{
+	return c.publisher.Send(ctx, &pubsub.Message{
 		Body:     bs,
 		Metadata: meta,
 	})

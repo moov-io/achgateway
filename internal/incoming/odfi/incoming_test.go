@@ -19,6 +19,7 @@ package odfi
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -68,7 +69,7 @@ func TestIncoming(t *testing.T) {
 	require.NotNil(t, emitter)
 
 	t.Run("no ACH file", func(t *testing.T) {
-		err := emitter.Handle(logger, File{})
+		err := emitter.Handle(context.Background(), logger, File{})
 		require.NoError(t, err)
 		require.Equal(t, "", output.String())
 	})
@@ -86,7 +87,7 @@ func TestIncoming(t *testing.T) {
 		file.Header.FileCreationDate = ""
 		file.Header.FileCreationTime = ""
 
-		err = emitter.Handle(logger, File{
+		err = emitter.Handle(context.Background(), logger, File{
 			ACHFile: &file,
 		})
 		require.NoError(t, err)

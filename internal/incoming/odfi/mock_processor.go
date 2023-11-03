@@ -18,6 +18,8 @@
 package odfi
 
 import (
+	"context"
+
 	"github.com/moov-io/base/log"
 )
 
@@ -30,7 +32,7 @@ func (pc *MockProcessor) Type() string {
 	return "mock"
 }
 
-func (pc *MockProcessor) Handle(logger log.Logger, file File) error {
+func (pc *MockProcessor) Handle(_ context.Context, logger log.Logger, file File) error {
 	pc.HandledFile = &file
 	return pc.Err
 }
