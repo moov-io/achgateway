@@ -73,8 +73,10 @@ func init() {
 }
 
 func recordFileUploadError(ctx context.Context, shardName string, err error) {
+	if err == nil {
+		return
+	}
 	telemetry.RecordError(ctx, err)
-
 	uploadFilesErrors.With("shard", shardName).Add(1)
 }
 

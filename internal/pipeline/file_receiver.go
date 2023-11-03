@@ -36,8 +36,6 @@ import (
 	"github.com/moov-io/base/telemetry"
 
 	"github.com/Shopify/sarama"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 	"gocloud.dev/pubsub"
 )
 
@@ -122,27 +120,17 @@ func (fr *FileReceiver) Start(ctx context.Context) {
 		// Create a context that will be shutdown by its parent or after a read iteration
 		innerCtx, cancelFunc := context.WithCancel(ctx)
 
-		var span trace.Span
-		innerCtx, span = telemetry.StartSpan(innerCtx, "file-receiver-handle")
-		defer span.End()
-
 		select {
 		case err := <-fr.handleMessage(innerCtx, fr.httpFiles):
-			telemetry.SetAttributes(innerCtx, attribute.String("source", "http"))
 			incomingHTTPFiles.With().Add(1)
 			if err != nil {
-				telemetry.RecordError(innerCtx, err)
-
 				httpFileProcessingErrors.With().Add(1)
 				fr.logger.LogErrorf("error handling http file: %v", err)
 			}
 
 		case err := <-fr.handleMessage(innerCtx, fr.streamFiles):
-			telemetry.SetAttributes(innerCtx, attribute.String("source", "stream"))
 			incomingStreamFiles.With().Add(1)
 			if err != nil {
-				telemetry.RecordError(innerCtx, err)
-
 				streamFileProcessingErrors.With().Add(1)
 				fr.logger.LogErrorf("error handling stream file: %v", err)
 
@@ -219,18 +207,20 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub stream.Subscripti
 		go func() {
 			msg, err := sub.Receive(ctx)
 
-			ctx, span := telemetry.StartSpan(ctx, "file-receiver-handle-message")
+			traceCtx, span := telemetry.StartSpan(context.Background(), "file-receiver-handle-message")
 			defer span.End()
 
 			if err != nil {
-				telemetry.RecordError(ctx, err)
-
 				if err == context.Canceled {
 					return
 				}
 				if strings.Contains(err.Error(), "Subscription has been Shutdown") {
 					return
 				}
+
+				// Include the error in the span since it's interesting
+				telemetry.RecordError(traceCtx, err)
+
 				// Bubble up some errors to alerting
 				if isNetworkError(err) {
 					out <- err
@@ -239,7 +229,7 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub stream.Subscripti
 				fr.logger.LogErrorf("ERROR receiving message: %v", err)
 			}
 			receiver <- &processableMessage{
-				ctx: ctx,
+				ctx: traceCtx,
 				msg: msg,
 			}
 		}()
