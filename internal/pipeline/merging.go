@@ -137,22 +137,39 @@ func (m *filesystemMerging) HandleCancel(ctx context.Context, cancel incoming.Ca
 	return err
 }
 
-func (m *filesystemMerging) isolateMergableDir() (string, error) {
+func (m *filesystemMerging) isolateMergableDir(ctx context.Context) (string, error) {
 	newdir := filepath.Join(fmt.Sprintf("%s-%v", m.shard.Name, time.Now().Format("20060102-150405")))
+
+	_, span := telemetry.StartSpan(ctx, "isolate-mergable-dir", trace.WithAttributes(
+		attribute.String("shard", m.shard.Name),
+		attribute.String("dir", newdir),
+	))
+	defer span.End()
 
 	// Otherwise attempt to isolate the directory
 	return newdir, m.storage.ReplaceDir(filepath.Join("mergable", m.shard.Name), newdir)
 }
 
-func (m *filesystemMerging) getNonCanceledMatches(path string) ([]string, error) {
-	positiveMatches, err := m.storage.Glob(path + "/*.ach")
+func (m *filesystemMerging) getNonCanceledMatches(ctx context.Context, dir string) ([]string, error) {
+	_, span := telemetry.StartSpan(ctx, "get-non-canceled-matches", trace.WithAttributes(
+		attribute.String("shard", m.shard.Name),
+		attribute.String("dir", dir),
+	))
+	defer span.End()
+
+	positiveMatches, err := m.storage.Glob(dir + "/*.ach")
 	if err != nil {
 		return nil, err
 	}
-	negativeMatches, err := m.storage.Glob(path + "/*.canceled")
+	negativeMatches, err := m.storage.Glob(dir + "/*.canceled")
 	if err != nil {
 		return nil, err
 	}
+
+	span.SetAttributes(
+		attribute.Int("positive_matches", len(positiveMatches)),
+		attribute.Int("negative_matches", len(negativeMatches)),
+	)
 
 	var out []string
 	for i := range positiveMatches {
@@ -236,12 +253,18 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 	processed := &processedFiles{}
 
 	// move the current directory so it's isolated and easier to debug later on
-	dir, err := m.isolateMergableDir()
+	dir, err := m.isolateMergableDir(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("problem isolating newdir=%s error=%v", dir, err)
 	}
 
-	matches, err := m.getNonCanceledMatches(dir)
+	_, span := telemetry.StartSpan(ctx, "with-each-merged", trace.WithAttributes(
+		attribute.String("shard", m.shard.Name),
+		attribute.String("dir", dir),
+	))
+	defer span.End()
+
+	matches, err := m.getNonCanceledMatches(ctx, dir)
 	if err != nil {
 		return nil, fmt.Errorf("problem with %s glob: %v", dir, err)
 	}
@@ -264,19 +287,10 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 		groupSize = m.shard.Mergable.MergeInGroupsOf
 	}
 	indices := makeIndices(len(matches), len(matches)/groupSize)
-	files, err := m.chunkFilesTogether(indices, matches, mergeConditions)
+	files, err := m.chunkFilesTogether(ctx, indices, matches, mergeConditions)
 	if err != nil {
 		el.Add(fmt.Errorf("unable to merge files: %v", err))
 	}
-
-	telemetry.AddEvent(ctx, "merged-files", trace.WithAttributes(
-		attribute.String("isolated_dir", dir),
-		attribute.String("shard", m.shard.Name),
-		attribute.Int("group_size", groupSize),
-		attribute.Int("indices_num", len(indices)),
-		attribute.Int("matches", len(matches)),
-		attribute.Int("files", len(files)),
-	))
 
 	if len(matches) > 0 {
 		logger.Logf("merged %d files into %d files", len(matches), len(files))
@@ -334,11 +348,10 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 	}
 
 	logger.Logf("wrote %d of %d files to remote agent", successfulRemoteWrites, len(files))
-	telemetry.AddEvent(ctx, "uploaded-files", trace.WithAttributes(
-		attribute.String("shard", m.shard.Name),
+
+	span.SetAttributes(
 		attribute.Int("successful_remote_writes", successfulRemoteWrites),
-		attribute.Int("files", len(files)),
-	))
+	)
 
 	if !el.Empty() {
 		return nil, el
@@ -365,7 +378,14 @@ func makeIndices(total, groups int) []int {
 	return append(xs, total)
 }
 
-func (m *filesystemMerging) chunkFilesTogether(indices []int, matches []string, conditions ach.Conditions) ([]*ach.File, error) {
+func (m *filesystemMerging) chunkFilesTogether(ctx context.Context, indices []int, matches []string, conditions ach.Conditions) ([]*ach.File, error) {
+	_, span := telemetry.StartSpan(context.Background(), "chunk-files-together", trace.WithAttributes(
+		attribute.String("shard", m.shard.Name),
+		attribute.Int("indices_num", len(indices)),
+		attribute.Int("matches", len(matches)),
+	))
+	defer span.End()
+
 	if len(indices) <= 1 {
 		files, err := m.readFiles(matches)
 		if err != nil {

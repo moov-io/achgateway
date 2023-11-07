@@ -65,7 +65,7 @@ func (fr *FileReceiver) manuallyProduceFileUploaded() http.HandlerFunc {
 		))
 		defer span.End()
 
-		matches, err := m.getNonCanceledMatches(dir)
+		matches, err := m.getNonCanceledMatches(ctx, dir)
 		if err != nil {
 			logger.LogErrorf("problem listing matches: %v", err)
 			w.WriteHeader(http.StatusBadRequest)

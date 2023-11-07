@@ -147,15 +147,17 @@ func (s *PeriodicScheduler) tickAll() error {
 }
 
 func (s *PeriodicScheduler) tick(ctx context.Context, logger log.Logger, shard *service.Shard) error {
+	ctx, span := telemetry.StartSpan(ctx, "odfi-scheduler-tick", trace.WithAttributes(
+		attribute.String("shard", shard.Name),
+	))
+	defer span.End()
+
 	agent, err := upload.New(logger, s.uploadAgents, shard.UploadAgent)
 	if err != nil {
 		return fmt.Errorf("agent: %v", err)
 	}
 
 	logger.Logf("start retrieving and processing of inbound files in %s", agent.Hostname())
-	telemetry.AddEvent(ctx, "odfi-scheduler-tick", trace.WithAttributes(
-		attribute.String("shard", shard.Name),
-	))
 
 	// Download and process files
 	dl, err := s.downloader.CopyFilesFromRemote(ctx, agent, shard)

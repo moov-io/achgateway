@@ -63,7 +63,7 @@ func TestMerging__getNonCanceledMatches(t *testing.T) {
 		storage: fs,
 	}
 
-	matches, err := m.getNonCanceledMatches("test-2021")
+	matches, err := m.getNonCanceledMatches(context.Background(), "test-2021")
 	require.NoError(t, err)
 
 	require.Len(t, matches, 1)
@@ -117,7 +117,7 @@ func TestMerging_chunkFilesTogether(t *testing.T) {
 	indices := makeIndices(2, 1)
 	matches := []string{"ppd-debit.ach", "ppd-debit2.ach"}
 	var conditions ach.Conditions
-	merged, err := m.chunkFilesTogether(indices, matches, conditions)
+	merged, err := m.chunkFilesTogether(context.Background(), indices, matches, conditions)
 	require.NoError(t, err)
 	require.Len(t, merged, 1)
 	require.Len(t, merged[0].Batches[0].GetEntries(), 2)

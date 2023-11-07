@@ -272,10 +272,11 @@ func (xfagg *aggregator) uploadFile(ctx context.Context, index int, agent upload
 		return fmt.Errorf("problem rendering filename template: %v", err)
 	}
 
-	telemetry.AddEvent(ctx, "prepare-file", trace.WithAttributes(
+	ctx, span := telemetry.StartSpan(ctx, "upload-file", trace.WithAttributes(
 		attribute.String("filename", filename),
 		attribute.String("shard", xfagg.shard.Name),
 	))
+	defer span.End()
 
 	var buf bytes.Buffer
 	if err := xfagg.outputFormatter.Format(&buf, res); err != nil {
@@ -299,11 +300,6 @@ func (xfagg *aggregator) uploadFile(ctx context.Context, index int, agent upload
 		Filepath: filename,
 		Contents: io.NopCloser(&buf),
 	})
-
-	telemetry.AddEvent(ctx, "uploaded-file", trace.WithAttributes(
-		attribute.String("filename", filename),
-		attribute.String("shard", xfagg.shard.Name),
-	))
 
 	// Send Slack/PD or whatever notifications after the file is uploaded
 	if err := xfagg.notifyAfterUpload(filename, res.File, agent, err); err != nil {
