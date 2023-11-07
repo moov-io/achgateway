@@ -76,8 +76,8 @@ func (pc *correctionProcessor) Handle(ctx context.Context, logger log.Logger, fi
 	}
 
 	ctx, span := telemetry.StartSpan(ctx, "odfi-correction-file", trace.WithAttributes(
-		attribute.String("filepath", file.Filepath),
-		attribute.Int("corrections", len(file.ACHFile.NotificationOfChange)),
+		attribute.String("achgateway.filepath", file.Filepath),
+		attribute.Int("achgateway.corrections", len(file.ACHFile.NotificationOfChange)),
 	))
 	defer span.End()
 

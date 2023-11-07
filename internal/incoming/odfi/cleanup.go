@@ -76,8 +76,8 @@ func deleteFilesOnRemote(ctx context.Context, logger log.Logger, agent upload.Ag
 	}
 
 	ctx, span := telemetry.StartSpan(ctx, "odfi-delete-files-on-remote", trace.WithAttributes(
-		attribute.String("dir", baseDir),
-		attribute.Int("files", len(infos)),
+		attribute.String("achgateway.dir", baseDir),
+		attribute.Int("achgateway.files", len(infos)),
 	))
 	defer span.End()
 
@@ -110,8 +110,8 @@ func deleteEmptyFiles(ctx context.Context, logger log.Logger, agent upload.Agent
 	}
 
 	ctx, span := telemetry.StartSpan(ctx, "odfi-delete-empty-files", trace.WithAttributes(
-		attribute.String("dir", baseDir),
-		attribute.Int("files", len(entries)),
+		attribute.String("achgateway.dir", baseDir),
+		attribute.Int("achgateway.files", len(entries)),
 	))
 	defer span.End()
 

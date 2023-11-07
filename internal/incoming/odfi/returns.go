@@ -87,8 +87,8 @@ func (pc *returnEmitter) Handle(ctx context.Context, logger log.Logger, file Fil
 	logger.Log("odfi: processing return file")
 
 	ctx, span := telemetry.StartSpan(ctx, "odfi-return-file", trace.WithAttributes(
-		attribute.String("filename", file.Filepath),
-		attribute.Int("return_entries", len(file.ACHFile.ReturnEntries)),
+		attribute.String("achgateway.filename", file.Filepath),
+		attribute.Int("achgateway.return_entries", len(file.ACHFile.ReturnEntries)),
 	))
 	defer span.End()
 

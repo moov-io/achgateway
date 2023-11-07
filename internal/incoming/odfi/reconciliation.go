@@ -85,7 +85,7 @@ func (pc *creditReconciliation) Handle(ctx context.Context, logger log.Logger, f
 	}
 
 	ctx, span := telemetry.StartSpan(ctx, "odfi-reconciliation-file", trace.WithAttributes(
-		attribute.String("filepath", file.Filepath),
+		attribute.String("achgateway.filepath", file.Filepath),
 	))
 	defer span.End()
 

@@ -66,8 +66,8 @@ func (bs *blobStorage) Close() error {
 
 func (bs *blobStorage) SaveFile(ctx context.Context, path string, data []byte) error {
 	ctx, span := telemetry.StartSpan(ctx, "audittrail-save-file", trace.WithAttributes(
-		attribute.String("path", path),
-		attribute.Int("data_bytes", len(data)),
+		attribute.String("achgateway.path", path),
+		attribute.Int("achgateway.data_bytes", len(data)),
 	))
 	defer span.End()
 
@@ -114,7 +114,7 @@ func (bs *blobStorage) SaveFile(ctx context.Context, path string, data []byte) e
 
 func (bs *blobStorage) GetFile(ctx context.Context, path string) (io.ReadCloser, error) {
 	ctx, span := telemetry.StartSpan(ctx, "audittrail-get-file", trace.WithAttributes(
-		attribute.String("path", path),
+		attribute.String("achgateway.path", path),
 	))
 	defer span.End()
 

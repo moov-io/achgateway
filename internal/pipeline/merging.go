@@ -141,8 +141,8 @@ func (m *filesystemMerging) isolateMergableDir(ctx context.Context) (string, err
 	newdir := filepath.Join(fmt.Sprintf("%s-%v", m.shard.Name, time.Now().Format("20060102-150405")))
 
 	_, span := telemetry.StartSpan(ctx, "isolate-mergable-dir", trace.WithAttributes(
-		attribute.String("shard", m.shard.Name),
-		attribute.String("dir", newdir),
+		attribute.String("achgateway.shard", m.shard.Name),
+		attribute.String("achgateway.dir", newdir),
 	))
 	defer span.End()
 
@@ -152,8 +152,8 @@ func (m *filesystemMerging) isolateMergableDir(ctx context.Context) (string, err
 
 func (m *filesystemMerging) getNonCanceledMatches(ctx context.Context, dir string) ([]string, error) {
 	_, span := telemetry.StartSpan(ctx, "get-non-canceled-matches", trace.WithAttributes(
-		attribute.String("shard", m.shard.Name),
-		attribute.String("dir", dir),
+		attribute.String("achgateway.shard", m.shard.Name),
+		attribute.String("achgateway.dir", dir),
 	))
 	defer span.End()
 
@@ -167,8 +167,8 @@ func (m *filesystemMerging) getNonCanceledMatches(ctx context.Context, dir strin
 	}
 
 	span.SetAttributes(
-		attribute.Int("positive_matches", len(positiveMatches)),
-		attribute.Int("negative_matches", len(negativeMatches)),
+		attribute.Int("achgateway.positive_matches", len(positiveMatches)),
+		attribute.Int("achgateway.negative_matches", len(negativeMatches)),
 	)
 
 	var out []string
@@ -259,8 +259,8 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 	}
 
 	_, span := telemetry.StartSpan(ctx, "with-each-merged", trace.WithAttributes(
-		attribute.String("shard", m.shard.Name),
-		attribute.String("dir", dir),
+		attribute.String("achgateway.shard", m.shard.Name),
+		attribute.String("achgateway.dir", dir),
 	))
 	defer span.End()
 
@@ -350,7 +350,7 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 	logger.Logf("wrote %d of %d files to remote agent", successfulRemoteWrites, len(files))
 
 	span.SetAttributes(
-		attribute.Int("successful_remote_writes", successfulRemoteWrites),
+		attribute.Int("achgateway.successful_remote_writes", successfulRemoteWrites),
 	)
 
 	if !el.Empty() {
@@ -379,10 +379,10 @@ func makeIndices(total, groups int) []int {
 }
 
 func (m *filesystemMerging) chunkFilesTogether(ctx context.Context, indices []int, matches []string, conditions ach.Conditions) ([]*ach.File, error) {
-	_, span := telemetry.StartSpan(context.Background(), "chunk-files-together", trace.WithAttributes(
-		attribute.String("shard", m.shard.Name),
-		attribute.Int("indices_num", len(indices)),
-		attribute.Int("matches", len(matches)),
+	_, span := telemetry.StartSpan(ctx, "chunk-files-together", trace.WithAttributes(
+		attribute.String("achgateway.shard", m.shard.Name),
+		attribute.Int("achgateway.indices_num", len(indices)),
+		attribute.Int("achgateway.matches", len(matches)),
 	))
 	defer span.End()
 

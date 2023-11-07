@@ -128,7 +128,7 @@ func (s *PeriodicScheduler) tickAll() error {
 		}
 
 		ctx, span := telemetry.StartSpan(context.Background(), "odfi-scheduler", trace.WithAttributes(
-			attribute.String("shard", shardName),
+			attribute.String("achgateway.shard", shardName),
 		))
 		defer span.End()
 
@@ -148,7 +148,7 @@ func (s *PeriodicScheduler) tickAll() error {
 
 func (s *PeriodicScheduler) tick(ctx context.Context, logger log.Logger, shard *service.Shard) error {
 	ctx, span := telemetry.StartSpan(ctx, "odfi-scheduler-tick", trace.WithAttributes(
-		attribute.String("shard", shard.Name),
+		attribute.String("achgateway.shard", shard.Name),
 	))
 	defer span.End()
 

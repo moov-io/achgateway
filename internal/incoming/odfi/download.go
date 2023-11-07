@@ -82,8 +82,8 @@ func (d *downloadedFiles) deleteEmptyDirs(ctx context.Context, agent upload.Agen
 		}
 
 		_, span := telemetry.StartSpan(ctx, "odfi-delete-empty-dirs", trace.WithAttributes(
-			attribute.String("path", path),
-			attribute.Int("files", len(infos)),
+			attribute.String("achgateway.path", path),
+			attribute.Int("achgateway.files", len(infos)),
 		))
 		defer span.End()
 

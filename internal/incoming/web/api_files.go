@@ -79,8 +79,8 @@ func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	ctx, span := telemetry.StartSpan(r.Context(), "create-file-handler", trace.WithAttributes(
-		attribute.String("shardKey", shardKey),
-		attribute.String("fileID", fileID),
+		attribute.String("achgateway.shardKey", shardKey),
+		attribute.String("achgateway.fileID", fileID),
 	))
 	defer span.End()
 
@@ -161,8 +161,8 @@ func (c *FilesController) CancelFileHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	ctx, span := telemetry.StartSpan(r.Context(), "cancel-file-handler", trace.WithAttributes(
-		attribute.String("shardKey", shardKey),
-		attribute.String("fileID", fileID),
+		attribute.String("achgateway.shardKey", shardKey),
+		attribute.String("achgateway.fileID", fileID),
 	))
 	defer span.End()
 

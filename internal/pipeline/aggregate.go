@@ -181,9 +181,9 @@ func (xfagg *aggregator) withEachFile(when time.Time) error {
 	}).Logf("ended %s %s cutoff window processing", window, tzname)
 
 	ctx, span := telemetry.StartSpan(context.Background(), "automated-cutoff", trace.WithAttributes(
-		attribute.String("shard", xfagg.shard.Name),
-		attribute.String("timezone", tzname),
-		attribute.String("window", window),
+		attribute.String("achgateway.shard", xfagg.shard.Name),
+		attribute.String("achgateway.timezone", tzname),
+		attribute.String("achgateway.window", window),
 	))
 	defer span.End()
 
@@ -207,7 +207,7 @@ func (xfagg *aggregator) manualCutoff(waiter manuallyTriggeredCutoff) {
 	logger.Info().Log("starting manual cutoff window processing")
 
 	ctx, span := telemetry.StartSpan(context.Background(), "manual-cutoff", trace.WithAttributes(
-		attribute.String("shard", xfagg.shard.Name),
+		attribute.String("achgateway.shard", xfagg.shard.Name),
 	))
 	defer span.End()
 
@@ -273,8 +273,8 @@ func (xfagg *aggregator) uploadFile(ctx context.Context, index int, agent upload
 	}
 
 	ctx, span := telemetry.StartSpan(ctx, "upload-file", trace.WithAttributes(
-		attribute.String("filename", filename),
-		attribute.String("shard", xfagg.shard.Name),
+		attribute.String("achgateway.filename", filename),
+		attribute.String("achgateway.shard", xfagg.shard.Name),
 	))
 	defer span.End()
 

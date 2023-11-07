@@ -61,7 +61,7 @@ func (fr *FileReceiver) manuallyProduceFileUploaded() http.HandlerFunc {
 		}
 
 		ctx, span := telemetry.StartSpan(r.Context(), "pipeline-manual-file-uploaded", trace.WithAttributes(
-			attribute.String("dir", dir),
+			attribute.String("achgateway.dir", dir),
 		))
 		defer span.End()
 
