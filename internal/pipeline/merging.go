@@ -269,7 +269,7 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 		el.Add(fmt.Errorf("unable to merge files: %v", err))
 	}
 
-	telemetry.AddEvent(ctx, "merging-files", trace.WithAttributes(
+	telemetry.AddEvent(ctx, "merged-files", trace.WithAttributes(
 		attribute.String("isolated_dir", dir),
 		attribute.String("shard", m.shard.Name),
 		attribute.Int("group_size", groupSize),
