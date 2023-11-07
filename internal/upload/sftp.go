@@ -101,6 +101,7 @@ func (agent *SFTPTransferAgent) Hostname() string {
 
 func (agent *SFTPTransferAgent) Delete(ctx context.Context, path string) error {
 	_, span := telemetry.StartSpan(ctx, "agent-sftp-delete", trace.WithAttributes(
+		attribute.String("hostname", agent.Hostname()),
 		attribute.String("path", path),
 	))
 	defer span.End()
@@ -116,6 +117,7 @@ func (agent *SFTPTransferAgent) UploadFile(ctx context.Context, f File) error {
 	pathToWrite := filepath.Join(agent.OutboundPath(), filepath.Base(f.Filepath))
 
 	_, span := telemetry.StartSpan(ctx, "agent-sftp-upload", trace.WithAttributes(
+		attribute.String("hostname", agent.Hostname()),
 		attribute.String("path", pathToWrite),
 	))
 	defer span.End()
@@ -125,6 +127,7 @@ func (agent *SFTPTransferAgent) UploadFile(ctx context.Context, f File) error {
 
 func (agent *SFTPTransferAgent) ReadFile(ctx context.Context, path string) (*File, error) {
 	_, span := telemetry.StartSpan(ctx, "agent-sftp-read", trace.WithAttributes(
+		attribute.String("hostname", agent.Hostname()),
 		attribute.String("path", path),
 	))
 	defer span.End()
@@ -153,6 +156,7 @@ func (agent *SFTPTransferAgent) GetReturnFiles(ctx context.Context) ([]string, e
 
 func (agent *SFTPTransferAgent) readFilepaths(ctx context.Context, dir string) ([]string, error) {
 	_, span := telemetry.StartSpan(ctx, "agent-sftp-list", trace.WithAttributes(
+		attribute.String("hostname", agent.Hostname()),
 		attribute.String("path", dir),
 	))
 	defer span.End()

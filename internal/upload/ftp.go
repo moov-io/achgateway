@@ -117,6 +117,7 @@ func (agent *FTPTransferAgent) Hostname() string {
 
 func (agent *FTPTransferAgent) Delete(ctx context.Context, path string) error {
 	_, span := telemetry.StartSpan(ctx, "agent-ftp-delete", trace.WithAttributes(
+		attribute.String("hostname", agent.Hostname()),
 		attribute.String("path", path),
 	))
 	defer span.End()
@@ -135,6 +136,7 @@ func (agent *FTPTransferAgent) UploadFile(ctx context.Context, f File) error {
 	pathToWrite := filepath.Join(agent.OutboundPath(), f.Filepath)
 
 	_, span := telemetry.StartSpan(ctx, "agent-ftp-upload", trace.WithAttributes(
+		attribute.String("hostname", agent.Hostname()),
 		attribute.String("path", pathToWrite),
 	))
 	defer span.End()
@@ -144,6 +146,7 @@ func (agent *FTPTransferAgent) UploadFile(ctx context.Context, f File) error {
 
 func (agent *FTPTransferAgent) ReadFile(ctx context.Context, path string) (*File, error) {
 	_, span := telemetry.StartSpan(ctx, "agent-ftp-read", trace.WithAttributes(
+		attribute.String("hostname", agent.Hostname()),
 		attribute.String("path", path),
 	))
 	defer span.End()
@@ -172,6 +175,7 @@ func (agent *FTPTransferAgent) GetReturnFiles(ctx context.Context) ([]string, er
 
 func (agent *FTPTransferAgent) readFilepaths(ctx context.Context, dir string) ([]string, error) {
 	_, span := telemetry.StartSpan(ctx, "agent-ftp-list", trace.WithAttributes(
+		attribute.String("hostname", agent.Hostname()),
 		attribute.String("path", dir),
 	))
 	defer span.End()
