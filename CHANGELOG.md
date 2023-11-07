@@ -1,3 +1,11 @@
+## v0.26.1 (Released 2023-11-07)
+
+IMPROVEMENTS
+
+- all: prefix span attributes with "achgateway."
+- pipeline: rework tracing to use spans over events
+- upload: add hostname to agent spans
+
 ## v0.26.0 (Released 2023-11-03)
 
 ADDITIONS
