@@ -1,3 +1,15 @@
+## v0.26.2 (Released 2023-11-08)
+
+IMPROVEMENTS
+
+- pipeline: add span for notifyAfterUpload
+- test: specify MergeInGroupsOf
+
+BUILD
+
+- fix(deps): update github.com/moov-io/go-ftp to v0.3.2
+- fix(deps): update github.com/moov-io/go-sftp to v0.13.1
+
 ## v0.26.1 (Released 2023-11-07)
 
 IMPROVEMENTS
