@@ -17,8 +17,8 @@ require (
 	github.com/moov-io/ach v1.33.1
 	github.com/moov-io/base v0.48.0
 	github.com/moov-io/cryptfs v0.7.0
-	github.com/moov-io/go-ftp v0.3.1
-	github.com/moov-io/go-sftp v0.13.0
+	github.com/moov-io/go-ftp v0.3.2
+	github.com/moov-io/go-sftp v0.13.1
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/ory/mail/v3 v3.0.0
 	github.com/pkg/errors v0.9.1
@@ -189,7 +189,7 @@ require (
 	golang.org/x/mod v0.13.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/oauth2 v0.13.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/sys v0.14.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.14.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
