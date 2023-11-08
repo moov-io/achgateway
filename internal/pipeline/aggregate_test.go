@@ -113,7 +113,7 @@ func TestAggregate_notifyAfterUpload(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NotPanics(t, func() {
-		err := xfagg.notifyAfterUpload("filename.txt", nil, mockAgent, nil)
+		err := xfagg.notifyAfterUpload(context.Background(), "filename.txt", nil, mockAgent, nil)
 		require.NoError(t, err)
 	})
 }
@@ -147,7 +147,7 @@ func TestAggregate_notifyAfterUploadErr(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NotPanics(t, func() {
-		err := xfagg.notifyAfterUpload("filename.txt", nil, mockAgent, errors.New("upload failed"))
+		err := xfagg.notifyAfterUpload(context.Background(), "filename.txt", nil, mockAgent, errors.New("upload failed"))
 		require.NoError(t, err)
 	})
 }

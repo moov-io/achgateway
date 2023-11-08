@@ -302,7 +302,7 @@ func (xfagg *aggregator) uploadFile(ctx context.Context, index int, agent upload
 	})
 
 	// Send Slack/PD or whatever notifications after the file is uploaded
-	if err := xfagg.notifyAfterUpload(filename, res.File, agent, err); err != nil {
+	if err := xfagg.notifyAfterUpload(ctx, filename, res.File, agent, err); err != nil {
 		xfagg.alertOnError(xfagg.logger.LogError(err).Err())
 	}
 
@@ -320,7 +320,13 @@ func prepareShardName(shardName string) string {
 	return strings.ToUpper(strings.ReplaceAll(shardName, " ", "-"))
 }
 
-func (xfagg *aggregator) notifyAfterUpload(filename string, file *ach.File, agent upload.Agent, uploadErr error) error {
+func (xfagg *aggregator) notifyAfterUpload(ctx context.Context, filename string, file *ach.File, agent upload.Agent, uploadErr error) error {
+	ctx, span := telemetry.StartSpan(ctx, "notify-after-upload", trace.WithAttributes(
+		attribute.String("achgateway.filename", filename),
+		attribute.String("achgateway.shard", xfagg.shard.Name),
+	))
+	defer span.End()
+
 	msg := &notify.Message{
 		Direction: notify.Upload,
 		Filename:  filename,
