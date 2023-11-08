@@ -321,7 +321,7 @@ func prepareShardName(shardName string) string {
 }
 
 func (xfagg *aggregator) notifyAfterUpload(ctx context.Context, filename string, file *ach.File, agent upload.Agent, uploadErr error) error {
-	ctx, span := telemetry.StartSpan(ctx, "notify-after-upload", trace.WithAttributes(
+	_, span := telemetry.StartSpan(ctx, "notify-after-upload", trace.WithAttributes(
 		attribute.String("achgateway.filename", filename),
 		attribute.String("achgateway.shard", xfagg.shard.Name),
 	))
