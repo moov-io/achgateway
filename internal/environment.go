@@ -28,6 +28,7 @@ import (
 
 	"github.com/moov-io/achgateway"
 	"github.com/moov-io/achgateway/internal/events"
+	"github.com/moov-io/achgateway/internal/files"
 	"github.com/moov-io/achgateway/internal/incoming/odfi"
 	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/incoming/web"
@@ -160,8 +161,10 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		return env, fmt.Errorf("unable to create http files subscription: %v", err)
 	}
 
+	fileRepository := files.NewRepository(env.DB)
 	shardRepository := shards.NewRepository(env.DB, env.Config.Sharding.Mappings)
-	fileReceiver, err := pipeline.Start(ctx, env.Logger, env.Config, shardRepository, httpSub)
+
+	fileReceiver, err := pipeline.Start(ctx, env.Logger, env.Config, shardRepository, fileRepository, httpSub)
 	if err != nil {
 		return env, fmt.Errorf("unable to create file pipeline: %v", err)
 	}
