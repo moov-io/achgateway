@@ -1,3 +1,9 @@
+## v0.27.1 (Released 2023-11-09)
+
+IMPROVEMENTS
+
+- pipeline: ensure message exists before processing
+
 ## v0.27.0 (Released 2023-11-09)
 
 ADDITIONS
