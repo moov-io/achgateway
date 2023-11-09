@@ -18,11 +18,12 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/Shopify/sarama"
 	"github.com/moov-io/achgateway/internal/kafka"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
+	"github.com/moov-io/base/telemetry"
 
+	"github.com/Shopify/sarama"
 	"gocloud.dev/pubsub"
 	_ "gocloud.dev/pubsub/mempubsub"
 )
@@ -58,6 +59,9 @@ type kafkaProducer struct {
 }
 
 func (kp *kafkaProducer) Send(ctx context.Context, m *pubsub.Message) error {
+	_, span := telemetry.StartSpan(ctx, "producer-kafka-send")
+	defer span.End()
+
 	err := kp.topic.Send(ctx, m)
 	if err != nil {
 		var producerError sarama.ProducerError
