@@ -243,7 +243,7 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub stream.Subscripti
 
 		select {
 		case m := <-receiver:
-			if m != nil {
+			if m != nil && m.msg != nil {
 				out <- fr.processMessage(m.ctx, m.msg)
 				return
 			} else {
