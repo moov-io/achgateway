@@ -6,6 +6,7 @@ package notify
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,6 +15,10 @@ import (
 
 	"github.com/moov-io/achgateway"
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/base/telemetry"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Slack struct {
@@ -40,14 +45,14 @@ const (
 	failed  = uploadStatus("FAILED")
 )
 
-func (s *Slack) Info(msg *Message) error {
+func (s *Slack) Info(ctx context.Context, msg *Message) error {
 	slackMsg := marshalSlackMessage(success, msg)
-	return s.send(slackMsg)
+	return s.send(ctx, slackMsg)
 }
 
-func (s *Slack) Critical(msg *Message) error {
+func (s *Slack) Critical(ctx context.Context, msg *Message) error {
 	slackMsg := marshalSlackMessage(failed, msg)
-	return s.send(slackMsg)
+	return s.send(ctx, slackMsg)
 }
 
 func marshalSlackMessage(status uploadStatus, msg *Message) string {
@@ -77,7 +82,12 @@ type webhook struct {
 	Text string `json:"text"`
 }
 
-func (s *Slack) send(msg string) error {
+func (s *Slack) send(ctx context.Context, msg string) error {
+	_, span := telemetry.StartSpan(ctx, "notify-send-slack", trace.WithAttributes(
+		attribute.String("achgateway.message", msg),
+	))
+	defer span.End()
+
 	var body bytes.Buffer
 	err := json.NewEncoder(&body).Encode(&webhook{
 		Text: msg,
@@ -86,7 +96,7 @@ func (s *Slack) send(msg string) error {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", s.webhookURL, &body)
+	req, err := http.NewRequestWithContext(ctx, "POST", s.webhookURL, &body)
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,7 @@ package notify
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -14,9 +15,8 @@ import (
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/service"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSlack(t *testing.T) {
@@ -44,12 +44,13 @@ func TestSlack(t *testing.T) {
 		Filename:  "20200529-152259.ach",
 		File:      ach.NewFile(),
 	}
+	ctx := context.Background()
 
-	if err := slack.Info(msg); err != nil {
+	if err := slack.Info(ctx, msg); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := slack.Critical(msg); err != nil {
+	if err := slack.Critical(ctx, msg); err != nil {
 		t.Fatal(err)
 	}
 }

@@ -41,14 +41,14 @@ type event struct {
 	UploadStatus uploadStatus `json:"uploadStatus"`
 }
 
-func (s *Kafka) Info(msg *Message) error {
+func (s *Kafka) Info(ctx context.Context, msg *Message) error {
 	event := marshalKafkaMessage(success, msg)
-	return s.send(event)
+	return s.send(ctx, event)
 }
 
-func (s *Kafka) Critical(msg *Message) error {
+func (s *Kafka) Critical(ctx context.Context, msg *Message) error {
 	event := marshalKafkaMessage(failed, msg)
-	return s.send(event)
+	return s.send(ctx, event)
 }
 
 func marshalKafkaMessage(status uploadStatus, msg *Message) event {
@@ -67,7 +67,7 @@ func marshalKafkaMessage(status uploadStatus, msg *Message) event {
 	}
 }
 
-func (s *Kafka) send(evt event) error {
+func (s *Kafka) send(ctx context.Context, evt event) error {
 	bs, err := compliance.Protect(s.cfg.Transform, models.Event{
 		Type:  "",
 		Event: evt,
@@ -76,7 +76,7 @@ func (s *Kafka) send(evt event) error {
 		return fmt.Errorf("unable to protect notifer kafka event: %v", err)
 	}
 
-	return s.publisher.Send(context.Background(), &pubsub.Message{
+	return s.publisher.Send(ctx, &pubsub.Message{
 		Body: bs,
 	})
 }

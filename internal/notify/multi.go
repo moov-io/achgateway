@@ -80,11 +80,11 @@ func (ms *MultiSender) senderTypes() string {
 	return strings.Join(out, ", ")
 }
 
-func (ms *MultiSender) Info(msg *Message) error {
+func (ms *MultiSender) Info(ctx context.Context, msg *Message) error {
 	var firstError error
 	for i := range ms.senders {
-		err := ms.retry(func() error {
-			return ms.senders[i].Info(msg)
+		err := ms.retry(ctx, func() error {
+			return ms.senders[i].Info(ctx, msg)
 		})
 		if err != nil {
 			ms.logger.Logf("multi-sender: Info %T: %v", ms.senders[i], err)
@@ -99,11 +99,11 @@ func (ms *MultiSender) Info(msg *Message) error {
 	return firstError
 }
 
-func (ms *MultiSender) Critical(msg *Message) error {
+func (ms *MultiSender) Critical(ctx context.Context, msg *Message) error {
 	var firstError error
 	for i := range ms.senders {
-		err := ms.retry(func() error {
-			return ms.senders[i].Critical(msg)
+		err := ms.retry(ctx, func() error {
+			return ms.senders[i].Critical(ctx, msg)
 		})
 		if err != nil {
 			ms.logger.Logf("multi-sender: Critical %T: %v", ms.senders[i], err)
@@ -118,13 +118,12 @@ func (ms *MultiSender) Critical(msg *Message) error {
 	return firstError
 }
 
-func (ms *MultiSender) retry(f func() error) error {
+func (ms *MultiSender) retry(ctx context.Context, f func() error) error {
 	if ms.retryConfig != nil {
 		backoff, err := setupBackoff(ms.retryConfig)
 		if err != nil {
 			return fmt.Errorf("retry: %v", err)
 		}
-		ctx := context.Background()
 		return retry.Do(ctx, backoff, func(ctx context.Context) error {
 			return isRetryableError(f())
 		})

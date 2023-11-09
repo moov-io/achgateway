@@ -1,5 +1,7 @@
 package notify
 
+import "context"
+
 type MockSender struct {
 	infoCalled     bool
 	criticalCalled bool
@@ -7,13 +9,13 @@ type MockSender struct {
 	msg            *Message
 }
 
-func (s *MockSender) Info(msg *Message) error {
+func (s *MockSender) Info(_ context.Context, msg *Message) error {
 	s.infoCalled = true
 	s.msg = msg
 	return s.Err
 }
 
-func (s *MockSender) Critical(msg *Message) error {
+func (s *MockSender) Critical(_ context.Context, msg *Message) error {
 	s.criticalCalled = true
 	s.msg = msg
 	return s.Err

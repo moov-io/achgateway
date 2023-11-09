@@ -18,8 +18,11 @@ import (
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/base/telemetry"
 
 	gomail "github.com/ory/mail/v3"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Email struct {
@@ -94,20 +97,20 @@ func setupGoMailClient(cfg *service.Email) (*gomail.Dialer, error) {
 	}, nil
 }
 
-func (mailer *Email) Info(msg *Message) error {
+func (mailer *Email) Info(ctx context.Context, msg *Message) error {
 	contents, err := marshalEmail(mailer.cfg, msg)
 	if err != nil {
 		return err
 	}
-	return sendEmail(mailer.cfg, mailer.dialer, msg.Filename, contents)
+	return sendEmail(ctx, mailer.cfg, mailer.dialer, msg.Filename, contents)
 }
 
-func (mailer *Email) Critical(msg *Message) error {
+func (mailer *Email) Critical(ctx context.Context, msg *Message) error {
 	contents, err := marshalEmail(mailer.cfg, msg)
 	if err != nil {
 		return err
 	}
-	return sendEmail(mailer.cfg, mailer.dialer, msg.Filename, contents)
+	return sendEmail(ctx, mailer.cfg, mailer.dialer, msg.Filename, contents)
 }
 
 func marshalEmail(cfg *service.Email, msg *Message) (string, error) {
@@ -136,7 +139,12 @@ func marshalEmail(cfg *service.Email, msg *Message) (string, error) {
 	return buf.String(), nil
 }
 
-func sendEmail(cfg *service.Email, dialer *gomail.Dialer, filename, body string) error {
+func sendEmail(ctx context.Context, cfg *service.Email, dialer *gomail.Dialer, filename, body string) error {
+	_, span := telemetry.StartSpan(ctx, "notify-send-email", trace.WithAttributes(
+		attribute.String("achgateway.filename", filename),
+	))
+	defer span.End()
+
 	m := gomail.NewMessage()
 	m.SetHeader("From", cfg.From)
 	m.SetHeader("To", cfg.To...)
@@ -150,6 +158,8 @@ func sendEmail(cfg *service.Email, dialer *gomail.Dialer, filename, body string)
 
 	var outErr error
 	for tries := 1; tries <= maxRetries; tries++ {
+		span.AddEvent(fmt.Sprintf("attempt-%d", tries))
+
 		outErr = dialer.DialAndSend(context.Background(), m)
 		if outErr != nil {
 			if strings.Contains(outErr.Error(), "i/o timeout") {

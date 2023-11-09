@@ -10,8 +10,11 @@ import (
 	"fmt"
 
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/base/telemetry"
 
 	"github.com/PagerDuty/go-pagerduty"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type PagerDuty struct {
@@ -50,12 +53,12 @@ func (pd *PagerDuty) Ping() error {
 	return nil
 }
 
-func (pd *PagerDuty) Info(msg *Message) error {
+func (pd *PagerDuty) Info(_ context.Context, msg *Message) error {
 	// Skip sending Info notifications, PagerDuty is setup for critical alerts
 	return nil
 }
 
-func (pd *PagerDuty) Critical(msg *Message) error {
+func (pd *PagerDuty) Critical(ctx context.Context, msg *Message) error {
 	opts := &pagerduty.CreateIncidentOptions{
 		Type:  "incident",
 		Title: fmt.Sprintf("ERROR during file %s", msg.Direction),
@@ -72,11 +75,15 @@ func (pd *PagerDuty) Critical(msg *Message) error {
 		// Downloads don't have to such a high priority
 		opts.Urgency = "low"
 	}
-	return pd.createIncident(opts)
+	return pd.createIncident(ctx, opts)
 }
 
-func (pd *PagerDuty) createIncident(opts *pagerduty.CreateIncidentOptions) error {
-	ctx := context.Background()
+func (pd *PagerDuty) createIncident(ctx context.Context, opts *pagerduty.CreateIncidentOptions) error {
+	_, span := telemetry.StartSpan(ctx, "notify-trigger-pagerduty", trace.WithAttributes(
+		attribute.String("achgateway.error", opts.Title),
+	))
+	defer span.End()
+
 	_, err := pd.client.CreateIncidentWithContext(ctx, pd.from, opts)
 	return err
 }

@@ -5,6 +5,7 @@
 package notify
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -25,13 +26,14 @@ func TestMultiSender(t *testing.T) {
 
 	msg := &Message{Direction: Upload}
 
-	require.NoError(t, sender.Info(msg))
-	require.NoError(t, sender.Critical(msg))
+	ctx := context.Background()
+	require.NoError(t, sender.Info(ctx, msg))
+	require.NoError(t, sender.Critical(ctx, msg))
 
 	sender.senders = append(sender.senders, &MockSender{})
 
-	require.NoError(t, sender.Info(msg))
-	require.NoError(t, sender.Critical(msg))
+	require.NoError(t, sender.Info(ctx, msg))
+	require.NoError(t, sender.Critical(ctx, msg))
 }
 
 func TestMultiSenderErr(t *testing.T) {
@@ -44,10 +46,11 @@ func TestMultiSenderErr(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
 	msg := &Message{Direction: Upload}
 
-	require.Equal(t, sender.Info(msg), sendErr)
-	require.Equal(t, sender.Critical(msg), sendErr)
+	require.Equal(t, sender.Info(ctx, msg), sendErr)
+	require.Equal(t, sender.Critical(ctx, msg), sendErr)
 }
 
 func TestMulti__Retry(t *testing.T) {
