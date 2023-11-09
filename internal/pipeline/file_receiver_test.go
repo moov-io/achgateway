@@ -27,6 +27,7 @@ import (
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/events"
+	"github.com/moov-io/achgateway/internal/files"
 	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
 	"github.com/moov-io/achgateway/internal/service"
@@ -114,8 +115,10 @@ func testFileReceiver(t *testing.T) *TestFileReceiver {
 	shardRepo := shards.NewInMemoryRepository()
 	shardRepo.Add(service.ShardMapping{ShardKey: "testing", ShardName: "testing"}, database.NopInTx)
 
+	fileRepo := &files.MockRepository{}
+
 	filesTopic, _ := streamtest.InmemStream(t)
-	fileReceiver, err := Start(ctx, logger, conf, shardRepo, nil)
+	fileReceiver, err := Start(ctx, logger, conf, shardRepo, fileRepo, nil)
 	require.NoError(t, err)
 	t.Cleanup(func() { fileReceiver.Shutdown() })
 

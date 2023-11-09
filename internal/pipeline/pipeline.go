@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"github.com/moov-io/achgateway/internal/events"
+	"github.com/moov-io/achgateway/internal/files"
 	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/shards"
@@ -34,6 +35,7 @@ func Start(
 	logger log.Logger,
 	cfg *service.Config,
 	shardRepository shards.Repository,
+	fileRepository files.Repository,
 	httpFiles stream.Subscription,
 ) (*FileReceiver, error) {
 
@@ -62,7 +64,7 @@ func Start(
 	if cfg.Inbound.Kafka != nil && cfg.Inbound.Kafka.Transform != nil {
 		transformConfig = cfg.Inbound.Kafka.Transform
 	}
-	receiver, err := newFileReceiver(logger, cfg, eventEmitter, shardRepository, shardAggregators, httpFiles, transformConfig)
+	receiver, err := newFileReceiver(logger, cfg, eventEmitter, shardRepository, shardAggregators, fileRepository, httpFiles, transformConfig)
 	if err != nil {
 		return nil, err
 	}

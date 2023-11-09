@@ -40,6 +40,7 @@ import (
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/admintest"
+	"github.com/moov-io/achgateway/internal/files"
 	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
 	"github.com/moov-io/achgateway/internal/incoming/web"
@@ -170,7 +171,9 @@ func TestUploads(t *testing.T) {
 	fileController.AppendRoutes(r)
 
 	outboundPath := setupTestDirectory(t, uploadConf)
-	fileReceiver, err := pipeline.Start(ctx, logger, uploadConf, shardRepo, httpSub)
+	fileRepo := &files.MockRepository{}
+
+	fileReceiver, err := pipeline.Start(ctx, logger, uploadConf, shardRepo, fileRepo, httpSub)
 	require.NoError(t, err)
 	t.Cleanup(func() { fileReceiver.Shutdown() })
 

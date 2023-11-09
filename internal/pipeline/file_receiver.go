@@ -21,10 +21,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/moov-io/achgateway/internal/events"
+	"github.com/moov-io/achgateway/internal/files"
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/service"
@@ -53,6 +56,8 @@ type FileReceiver struct {
 	shardRepository  shards.Repository
 	shardAggregators map[string]*aggregator
 
+	fileRepository files.Repository
+
 	httpFiles   stream.Subscription
 	streamFiles stream.Subscription
 
@@ -65,6 +70,7 @@ func newFileReceiver(
 	eventEmitter events.Emitter,
 	shardRepository shards.Repository,
 	shardAggregators map[string]*aggregator,
+	fileRepository files.Repository,
 	httpFiles stream.Subscription,
 	transformConfig *models.TransformConfig,
 ) (*FileReceiver, error) {
@@ -76,6 +82,7 @@ func newFileReceiver(
 		defaultShardName: cfg.Sharding.Default,
 		shardRepository:  shardRepository,
 		shardAggregators: shardAggregators,
+		fileRepository:   fileRepository,
 		httpFiles:        httpFiles,
 		transformConfig:  transformConfig,
 	}
@@ -429,6 +436,7 @@ func (fr *FileReceiver) processACHFile(ctx context.Context, file incoming.ACHFil
 		return nil
 	}
 
+	// Pull Aggregator from the config
 	agg := fr.getAggregator(ctx, file.ShardKey)
 	if agg == nil {
 		return fmt.Errorf("no aggregator for shard key %s found", file.ShardKey)
@@ -439,6 +447,19 @@ func (fr *FileReceiver) processACHFile(ctx context.Context, file incoming.ACHFil
 		"shardName": log.String(agg.shard.Name),
 		"shardKey":  log.String(file.ShardKey),
 	})
+
+	// We only want to handle files once, so become the winner by saving the record.
+	hostname, _ := os.Hostname()
+	err = fr.fileRepository.Record(ctx, files.AcceptedFile{
+		FileID:     file.FileID,
+		ShardKey:   file.ShardKey,
+		Hostname:   hostname,
+		AcceptedAt: time.Now().In(time.UTC),
+	})
+	if err != nil {
+		logger.Warn().LogErrorf("not handling received ACH file: %v", err)
+		return nil
+	}
 	logger.Log("begin handling of received ACH file")
 
 	err = agg.acceptFile(ctx, file)
@@ -458,6 +479,7 @@ func (fr *FileReceiver) cancelACHFile(ctx context.Context, cancel *models.Cancel
 		return errors.New("missing fileID or shardKey")
 	}
 
+	// Get the Aggregator from the config
 	agg := fr.getAggregator(ctx, cancel.ShardKey)
 	if agg == nil {
 		return nil
@@ -468,11 +490,16 @@ func (fr *FileReceiver) cancelACHFile(ctx context.Context, cancel *models.Cancel
 		"shardName": log.String(agg.shard.Name),
 		"shardKey":  log.String(cancel.ShardKey),
 	})
+
+	// Record the cancellation
+	err := fr.fileRepository.Cancel(ctx, cancel.FileID)
+	if err != nil {
+		return logger.Error().LogErrorf("problem recording cancellation: %v", err).Err()
+	}
 	logger.Log("begin canceling ACH file")
 
 	evt := incoming.CancelACHFile(*cancel)
-
-	err := agg.cancelFile(ctx, evt)
+	err = agg.cancelFile(ctx, evt)
 	if err != nil {
 		return logger.Error().LogErrorf("problem canceling file: %v", err).Err()
 	}
