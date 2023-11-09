@@ -5,6 +5,8 @@
 package notify
 
 import (
+	"context"
+
 	"github.com/moov-io/ach"
 )
 
@@ -26,6 +28,6 @@ type Message struct {
 }
 
 type Sender interface {
-	Info(msg *Message) error
-	Critical(msg *Message) error
+	Info(ctx context.Context, msg *Message) error
+	Critical(ctx context.Context, msg *Message) error
 }

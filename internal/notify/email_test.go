@@ -5,6 +5,7 @@
 package notify
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -45,7 +46,8 @@ func TestEmailSend(t *testing.T) {
 	body, err := marshalEmail(cfg, msg)
 	require.NoError(t, err)
 
-	if err := sendEmail(cfg, dialer, msg.Filename, body); err != nil {
+	ctx := context.Background()
+	if err := sendEmail(ctx, cfg, dialer, msg.Filename, body); err != nil {
 		t.Fatal(err)
 	}
 

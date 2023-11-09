@@ -5,11 +5,13 @@
 package notify
 
 import (
+	"context"
 	"os"
 	"testing"
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/service"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -40,8 +42,9 @@ func TestPagerDuty(t *testing.T) {
 	}
 
 	file := ach.NewFile()
+	ctx := context.Background()
 
-	if err := pd.Info(&Message{
+	if err := pd.Info(ctx, &Message{
 		Direction: Download,
 		Filename:  "20200529-140002-1.ach",
 		File:      file,
@@ -49,7 +52,7 @@ func TestPagerDuty(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := pd.Critical(&Message{
+	if err := pd.Critical(ctx, &Message{
 		Direction: Upload,
 		Filename:  "20200529-140002-2.ach",
 		File:      file,

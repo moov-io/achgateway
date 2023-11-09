@@ -350,11 +350,11 @@ func (xfagg *aggregator) notifyAfterUpload(ctx context.Context, filename string,
 	}
 
 	if uploadErr != nil {
-		if err := notifier.Critical(msg); err != nil {
+		if err := notifier.Critical(ctx, msg); err != nil {
 			return fmt.Errorf("problem sending critical notification for file=%s: %v", filename, err)
 		}
 	} else {
-		if err := notifier.Info(msg); err != nil {
+		if err := notifier.Info(ctx, msg); err != nil {
 			return fmt.Errorf("problem sending info notification for file=%s: %v", filename, err)
 		}
 	}
@@ -378,6 +378,11 @@ func (xfagg *aggregator) notifyAboutHoliday(day *schedule.Day) {
 		return
 	}
 
+	ctx, span := telemetry.StartSpan(context.Background(), "notify-about-holiday", trace.WithAttributes(
+		attribute.String("achgateway.holiday", day.Holiday.Name),
+	))
+	defer span.End()
+
 	if uploadAgent.Notifications != nil {
 		slackConfigs := xfagg.shard.Notifications.FindSlacks(uploadAgent.Notifications.Slack)
 		for i := range slackConfigs {
@@ -387,7 +392,7 @@ func (xfagg *aggregator) notifyAboutHoliday(day *schedule.Day) {
 				continue
 			}
 
-			err = ss.Info(&notify.Message{
+			err = ss.Info(ctx, &notify.Message{
 				Contents: formatHolidayMessage(day),
 			})
 			if err != nil {
