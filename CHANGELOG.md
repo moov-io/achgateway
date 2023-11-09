@@ -1,3 +1,14 @@
+## v0.27.0 (Released 2023-11-09)
+
+ADDITIONS
+
+- pipeline: record accepted files in database table
+
+IMPROVEMENTS
+
+- notify: create telemetry spans when sending emails, pd, slack
+- stream: create telemetry span in kafka produce
+
 ## v0.26.2 (Released 2023-11-08)
 
 IMPROVEMENTS
