@@ -1,3 +1,9 @@
+## v0.27.2 (Released 2023-11-10)
+
+IMPROVEMENTS
+
+- fix: Veteran's day is not observed on Friday
+
 ## v0.27.1 (Released 2023-11-09)
 
 IMPROVEMENTS
