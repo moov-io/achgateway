@@ -15,7 +15,7 @@ require (
 	github.com/jlaffaye/ftp v0.2.0
 	github.com/markbates/pkger v0.17.1
 	github.com/moov-io/ach v1.33.1
-	github.com/moov-io/base v0.48.1-0.20231110144253-1f596b284990
+	github.com/moov-io/base v0.48.1
 	github.com/moov-io/cryptfs v0.7.0
 	github.com/moov-io/go-ftp v0.3.2
 	github.com/moov-io/go-sftp v0.13.1
