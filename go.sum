@@ -450,10 +450,6 @@ github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9G
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
 github.com/moov-io/ach v1.33.1 h1:Hu3n33CJyZlOhqfEgM7wXpkE+/59D/OWZp1xWzRsVjw=
 github.com/moov-io/ach v1.33.1/go.mod h1:AtXz6Jm5W1mkYRHE8QvSI2e/o8j3ncCRpvqUWy5uEW4=
-github.com/moov-io/base v0.48.0 h1:HgCiwR3JoRGjoT2RA9Qh2QDXBnVjcZN9a2tGc/FxXyc=
-github.com/moov-io/base v0.48.0/go.mod h1:cFHUtEDjzxjc4SBjkntYNF4LB166iLN5eGR2BBSJenI=
-github.com/moov-io/base v0.48.1-0.20231110144253-1f596b284990 h1:7kngkbdYpToDEWIi3EOgpXYmMNOyHxlxo/5ovKT+iqU=
-github.com/moov-io/base v0.48.1-0.20231110144253-1f596b284990/go.mod h1:cFHUtEDjzxjc4SBjkntYNF4LB166iLN5eGR2BBSJenI=
 github.com/moov-io/base v0.48.1 h1:BVKjtEdR79ZjBeTF8Dl56ko43w3HaAnsUDhUoSVV9g4=
 github.com/moov-io/base v0.48.1/go.mod h1:cFHUtEDjzxjc4SBjkntYNF4LB166iLN5eGR2BBSJenI=
 github.com/moov-io/cryptfs v0.7.0 h1:BTWK/PI1P8zhCGhLdD+Ha8DxkGG073P9GgR1FrjFerU=

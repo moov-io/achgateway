@@ -21,11 +21,9 @@ all: install update build
 .PHONY: install
 install:
 	go mod tidy
-	go install github.com/markbates/pkger/cmd/pkger
 	go mod vendor
 
 update:
-	pkger -include /migrations -include /configs/config.default.yml
 	go mod vendor
 
 build:

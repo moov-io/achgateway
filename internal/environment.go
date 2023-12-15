@@ -22,6 +22,7 @@ package internal
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"fmt"
 	"net/http"
 	"time"
@@ -66,6 +67,12 @@ type Environment struct {
 
 	FileReceiver *pipeline.FileReceiver
 }
+
+//go:embed migrations/*.sql
+var migrationFS embed.FS
+
+//go:embed configs/config.default.yml
+var configFS embed.FS
 
 // NewEnvironment - Generates a new default environment. Overrides can be specified via configs.
 func NewEnvironment(env *Environment) (*Environment, error) {
@@ -226,7 +233,7 @@ func LoadConfig(logger log.Logger) (*service.Config, error) {
 	configService := config.NewService(logger)
 
 	global := &service.GlobalConfig{}
-	if err := configService.Load(global); err != nil {
+	if err := configService.LoadFromFS(global, configFS); err != nil {
 		return nil, err
 	}
 
@@ -258,7 +265,7 @@ func initializeDatabase(logger log.Logger, config database.DatabaseConfig) (*sql
 	}
 
 	// Run the migrations
-	if err := database.RunMigrations(logger, config); err != nil {
+	if err := database.RunMigrations(logger, config, database.WithEmbeddedMigrations(migrationFS)); err != nil {
 		return nil, shutdown, logger.Fatal().LogErrorf("Error running migrations: %w", err).Err()
 	}
 

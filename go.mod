@@ -13,7 +13,6 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-retryablehttp v0.7.4
 	github.com/jlaffaye/ftp v0.2.0
-	github.com/markbates/pkger v0.17.1
 	github.com/moov-io/ach v1.33.1
 	github.com/moov-io/base v0.48.1
 	github.com/moov-io/cryptfs v0.7.0
@@ -143,6 +142,7 @@ require (
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
+	github.com/markbates/pkger v0.17.1 // indirect
 	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/minio-go/v6 v6.0.57 // indirect
