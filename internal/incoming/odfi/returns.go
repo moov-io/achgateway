@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/models"
@@ -104,6 +105,10 @@ func (pc *returnEmitter) Handle(ctx context.Context, logger log.Logger, file Fil
 			}
 
 			returnCode := entries[j].Addenda99.ReturnCodeField()
+			if returnCode == nil {
+				returnCode = &ach.ReturnCode{}
+			}
+
 			returnEntriesProcessed.With(
 				"origin", file.ACHFile.Header.ImmediateOrigin,
 				"destination", file.ACHFile.Header.ImmediateDestination,

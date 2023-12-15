@@ -178,6 +178,10 @@ func processFile(ctx context.Context, logger log.Logger, path string, alerters a
 }
 
 func populateHashes(file *ach.File) {
+	if file == nil {
+		return
+	}
+
 	for i := range file.Batches {
 		entries := file.Batches[i].GetEntries()
 		for j := range entries {

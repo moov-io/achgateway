@@ -244,7 +244,9 @@ func (m *filesystemMerging) readFiles(paths []string) ([]*ach.File, error) {
 		if err != nil {
 			return nil, fmt.Errorf("reading %s failed: %w", paths[i], err)
 		}
-		out[i] = file
+		if file != nil {
+			out[i] = file
+		}
 	}
 	return out, nil
 }

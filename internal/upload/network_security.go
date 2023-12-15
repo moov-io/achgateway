@@ -40,7 +40,8 @@ func rejectOutboundIPRange(allowedIPs []string, hostname string) error {
 			}
 		} else {
 			for j := range addrs {
-				if net.ParseIP(allowedIPs[i]).Equal(addrs[j]) {
+				ip := net.ParseIP(allowedIPs[i])
+				if ip != nil && ip.Equal(addrs[j]) {
 					return nil // whitelisted
 				}
 			}
