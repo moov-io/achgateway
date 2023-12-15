@@ -121,7 +121,7 @@ func deleteEmptyFiles(ctx context.Context, logger log.Logger, agent upload.Agent
 
 		info, err := entries[i].Info()
 		if err != nil {
-			logger.LogError(err)
+			logger.Error().LogError(err)
 			continue
 		}
 

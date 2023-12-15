@@ -189,12 +189,12 @@ func (xfagg *aggregator) withEachFile(when time.Time) error {
 
 	processed, err := xfagg.merger.WithEachMerged(ctx, xfagg.runTransformers)
 	if err != nil {
-		logger.LogErrorf("ERROR inside WithEachMerged: %v", err)
+		logger.Error().LogErrorf("ERROR inside WithEachMerged: %v", err)
 		return fmt.Errorf("merging ACH files: %v", err)
 	}
 
 	if err := xfagg.emitFilesUploaded(ctx, processed); err != nil {
-		logger.LogErrorf("ERROR sending files uploaded event: %v", err)
+		logger.Error().LogErrorf("ERROR sending files uploaded event: %v", err)
 	}
 
 	return nil
@@ -212,12 +212,12 @@ func (xfagg *aggregator) manualCutoff(waiter manuallyTriggeredCutoff) {
 	defer span.End()
 
 	if processed, err := xfagg.merger.WithEachMerged(ctx, xfagg.runTransformers); err != nil {
-		logger.LogErrorf("ERROR inside manual WithEachMerged: %v", err)
+		logger.Error().LogErrorf("ERROR inside manual WithEachMerged: %v", err)
 		waiter.C <- err
 	} else {
 		// Publish event of File uploads
 		if err := xfagg.emitFilesUploaded(ctx, processed); err != nil {
-			logger.LogErrorf("ERROR sending manual files uploaded event: %v", err)
+			logger.Error().LogErrorf("ERROR sending manual files uploaded event: %v", err)
 		}
 		waiter.C <- err
 	}
@@ -303,7 +303,7 @@ func (xfagg *aggregator) uploadFile(ctx context.Context, index int, agent upload
 
 	// Send Slack/PD or whatever notifications after the file is uploaded
 	if err := xfagg.notifyAfterUpload(ctx, filename, res.File, agent, err); err != nil {
-		xfagg.alertOnError(xfagg.logger.LogError(err).Err())
+		xfagg.alertOnError(xfagg.logger.Error().LogError(err).Err())
 	}
 
 	// record our upload metrics
@@ -424,6 +424,6 @@ func (xfagg *aggregator) alertOnError(err error) {
 	}
 
 	if err := xfagg.alerters.AlertError(err); err != nil {
-		xfagg.logger.LogErrorf("ERROR sending alert: %v", err)
+		xfagg.logger.Error().LogErrorf("ERROR sending alert: %v", err)
 	}
 }
