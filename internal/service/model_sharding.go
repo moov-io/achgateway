@@ -35,7 +35,7 @@ var (
 	//  - 20191010-0830-LiveODFI.ach      (.ShardName of "LiveODFI")
 	//  - 20191010-0830-987654320.ach
 	//  - 20191010-0830-987654320.ach.gpg (GPG encrypted)
-	DefaultFilenameTemplate = `{{ date "20060102" }}-{{ date "150405" }}-{{ .RoutingNumber }}.ach{{ if .GPG }}.gpg{{ end }}`
+	DefaultFilenameTemplate = `{{ date "20060102" }}-{{ date "150405" }}-{{ .RoutingNumber }}-{{ .Index }}.ach{{ if .GPG }}.gpg{{ end }}`
 )
 
 type Sharding struct {
