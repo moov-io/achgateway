@@ -202,6 +202,6 @@ func (s *PeriodicScheduler) alertOnError(err error) {
 	}
 
 	if err := s.alerters.AlertError(err); err != nil {
-		s.logger.LogErrorf("ERROR sending alert: %v", err)
+		s.logger.Error().LogErrorf("ERROR sending alert: %v", err)
 	}
 }

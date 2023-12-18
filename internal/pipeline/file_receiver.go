@@ -292,12 +292,16 @@ func (fr *FileReceiver) processMessage(ctx context.Context, msg *pubsub.Message)
 	// Optionally decode and decrypt message
 	data, err = compliance.Reveal(fr.transformConfig, data)
 	if err != nil {
-		return logger.LogErrorf("unable to reveal event: %v", err).Err()
+		return logger.Error().LogErrorf("unable to reveal event: %v", err).Err()
 	}
 
 	event, readErr := models.Read(data)
+	if event == nil {
+		logger.Error().Log("no event read from data")
+		return nil
+	}
 	if readErr != nil {
-		logger.LogErrorf("unable to read %s event: %v", event.Type, readErr)
+		logger.Error().LogErrorf("unable to read %s event: %v", event.Type, readErr)
 	}
 
 	var file *incoming.ACHFile
@@ -352,7 +356,7 @@ func (fr *FileReceiver) processMessage(ctx context.Context, msg *pubsub.Message)
 	}
 
 	// Unhandled Message
-	return logger.LogError(errors.New("unhandled message")).Err()
+	return logger.Error().LogError(errors.New("unhandled message")).Err()
 }
 
 func (fr *FileReceiver) shouldAutocommit() bool {

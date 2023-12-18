@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/models"
@@ -104,6 +105,10 @@ func (pc *correctionProcessor) Handle(ctx context.Context, logger log.Logger, fi
 				continue
 			}
 			changeCode := entries[j].Addenda98.ChangeCodeField()
+			if changeCode == nil {
+				changeCode = &ach.ChangeCode{}
+			}
+
 			correctionCodesProcessed.With(
 				"origin", file.ACHFile.Header.ImmediateOrigin,
 				"destination", file.ACHFile.Header.ImmediateDestination,

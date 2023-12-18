@@ -67,7 +67,7 @@ func (fr *FileReceiver) manuallyProduceFileUploaded() http.HandlerFunc {
 
 		matches, err := m.getNonCanceledMatches(ctx, dir)
 		if err != nil {
-			logger.LogErrorf("problem listing matches: %v", err)
+			logger.Error().LogErrorf("problem listing matches: %v", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -81,7 +81,7 @@ func (fr *FileReceiver) manuallyProduceFileUploaded() http.HandlerFunc {
 
 		err = agg.emitFilesUploaded(ctx, processed)
 		if err != nil {
-			logger.LogErrorf("problem emitting FileUploaded: %v", err)
+			logger.Error().LogErrorf("problem emitting FileUploaded: %v", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}

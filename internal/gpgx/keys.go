@@ -28,6 +28,10 @@ func ReadPrivateKeyFile(path string, password []byte) (openpgp.EntityList, error
 	if err != nil {
 		return nil, err
 	}
+	if len(entityList) == 0 {
+		return nil, errors.New("gpg: no entities found")
+	}
+
 	entity := entityList[0]
 
 	// Get the passphrase and read the private key.
