@@ -1,3 +1,21 @@
+## v0.28.0 (Unreleased)
+
+This release of achgateway introduces Spanner as a database. Using Spanner instead of MySQL can be enabled by setting `` in the config file.
+
+This release also changes the default outbound filename template to include the post-merge array index. This prevents files from overwriting themselves on the remote server when merging creates multiple files.
+
+IMPROVEMENTS
+
+- fix: default template should not overwrite files
+- fix: check some edge cases to avoid panics
+- pipeline: set level=error on error logs
+- Remove deprecated pkger in favor of native embed
+
+BUILD
+
+- build: update golang.org/x/crypto v0.17.0
+- build: update IBM/sarama, redpanda image, and other deps
+
 ## v0.27.2 (Released 2023-11-10)
 
 IMPROVEMENTS
