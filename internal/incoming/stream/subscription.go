@@ -21,11 +21,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Shopify/sarama"
 	"github.com/moov-io/achgateway/internal/kafka"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
 
+	"github.com/IBM/sarama"
 	"gocloud.dev/pubsub"
 )
 
