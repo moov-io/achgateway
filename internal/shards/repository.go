@@ -18,9 +18,11 @@
 package shards
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
+	"cloud.google.com/go/spanner"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/database"
 
@@ -38,6 +40,13 @@ func NewRepository(db *sql.DB, static []service.ShardMapping) Repository {
 		return &InMemoryRepository{Shards: static}
 	}
 	return &sqlRepository{db: db}
+}
+
+func NewSpannerRepository(client *spanner.Client, static []service.ShardMapping) Repository {
+	if client == nil {
+		return &InMemoryRepository{Shards: static}
+	}
+	return &spannerRepository{client: client}
 }
 
 type sqlRepository struct {
@@ -167,4 +176,36 @@ func (r *sqlRepository) write(shardKey, shardName string) error {
 		return fmt.Errorf("db failed to write shard mapping for shard %s-%s", shardKey, shardName)
 	}
 	return err
+}
+
+type spannerRepository struct {
+	client *spanner.Client
+}
+
+func (r *spannerRepository) Lookup(shardKey string) (string, error) {
+	row, err := r.client.Single().ReadRow(context.Background(), "shard_mappings", spanner.Key{shardKey}, []string{"shard_name"})
+	if err != nil {
+		return "", err
+	}
+
+	return row.String(), nil
+}
+
+func (r *spannerRepository) List() ([]service.ShardMapping, error) {
+	return nil, errors.Errorf("spannerRepository.List not implemented")
+}
+
+func (r *spannerRepository) Add(create service.ShardMapping, run database.RunInTx) error {
+	ctx := context.Background()
+
+	m := spanner.Insert("shard_mappings",
+		[]string{"shard_key", "shard_name"},
+		[]interface{}{create.ShardKey, create.ShardName},
+	)
+
+	_, err := r.client.Apply(ctx, []*spanner.Mutation{m})
+	if err != nil {
+		return fmt.Errorf("recording file failed: %w", err)
+	}
+	return nil
 }
