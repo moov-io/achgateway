@@ -164,8 +164,8 @@ func TestHolidayMessage(t *testing.T) {
 	}
 
 	hostname, _ := os.Hostname()
-	expected := fmt.Sprintf("Dec 25 (Christmas Day) is a holiday so %s will skip processing", hostname)
+	expected := fmt.Sprintf("Dec 25 (Christmas Day) is a holiday so %s will skip processing for sd-live", hostname)
 
-	message := formatHolidayMessage(day)
+	message := formatHolidayMessage(day, "sd-live")
 	require.Equal(t, expected, message)
 }

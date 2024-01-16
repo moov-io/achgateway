@@ -393,7 +393,7 @@ func (xfagg *aggregator) notifyAboutHoliday(day *schedule.Day) {
 			}
 
 			err = ss.Info(ctx, &notify.Message{
-				Contents: formatHolidayMessage(day),
+				Contents: formatHolidayMessage(day, xfagg.shard.Name),
 			})
 			if err != nil {
 				logger.Error().LogErrorf("ERROR sending holiday notification: %v", err)
@@ -404,7 +404,7 @@ func (xfagg *aggregator) notifyAboutHoliday(day *schedule.Day) {
 	}
 }
 
-func formatHolidayMessage(day *schedule.Day) string {
+func formatHolidayMessage(day *schedule.Day, shardName string) string {
 	name := "is a holiday"
 	if day != nil && day.Holiday != nil {
 		name = fmt.Sprintf("(%s) is a holiday", day.Holiday.Name)
@@ -412,7 +412,11 @@ func formatHolidayMessage(day *schedule.Day) string {
 
 	hostname, _ := os.Hostname()
 
-	return fmt.Sprintf("%s %s so %s will skip processing", day.Time.Format("Jan 02"), name, hostname)
+	if shardName != "" {
+		shardName = fmt.Sprintf("for %s", shardName)
+	}
+
+	return strings.TrimSpace(fmt.Sprintf("%s %s so %s will skip processing %s", day.Time.Format("Jan 02"), name, hostname, shardName))
 }
 
 func (xfagg *aggregator) alertOnError(err error) {
