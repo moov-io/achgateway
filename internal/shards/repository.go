@@ -25,6 +25,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/database"
+	"google.golang.org/api/iterator"
 
 	"github.com/pkg/errors"
 )
@@ -192,7 +193,30 @@ func (r *spannerRepository) Lookup(shardKey string) (string, error) {
 }
 
 func (r *spannerRepository) List() ([]service.ShardMapping, error) {
-	return nil, errors.Errorf("spannerRepository.List not implemented")
+	ctx := context.Background()
+
+	iter := r.client.Single().Read(ctx, "shard_mappings", spanner.AllKeys(), []string{"shard_key", "shard_name"})
+	defer iter.Stop()
+
+	var items []service.ShardMapping
+	for {
+		row, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, errors.Wrap(err, "querying")
+		}
+
+		item := service.ShardMapping{}
+		if err := row.ToStruct(&item); err != nil {
+			return nil, err
+		}
+
+		items = append(items, item)
+	}
+
+	return items, nil
 }
 
 func (r *spannerRepository) Add(create service.ShardMapping, run database.RunInTx) error {
