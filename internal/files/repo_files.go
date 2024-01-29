@@ -39,6 +39,7 @@ type sqlRepository struct {
 func (r *sqlRepository) Record(ctx context.Context, file AcceptedFile) error {
 	ctx, span := telemetry.StartSpan(ctx, "files-record", trace.WithAttributes(
 		attribute.String("achgateway.file_id", file.FileID),
+		attribute.String("achgateway.database", "mysql"),
 	))
 	defer span.End()
 
@@ -58,6 +59,7 @@ func (r *sqlRepository) Record(ctx context.Context, file AcceptedFile) error {
 func (r *sqlRepository) Cancel(ctx context.Context, fileID string) error {
 	ctx, span := telemetry.StartSpan(ctx, "files-cancel", trace.WithAttributes(
 		attribute.String("achgateway.file_id", fileID),
+		attribute.String("achgateway.database", "mysql"),
 	))
 	defer span.End()
 
@@ -81,6 +83,7 @@ type spannerRepository struct {
 func (r *spannerRepository) Record(ctx context.Context, file AcceptedFile) error {
 	ctx, span := telemetry.StartSpan(ctx, "files-record", trace.WithAttributes(
 		attribute.String("achgateway.file_id", file.FileID),
+		attribute.String("achgateway.database", "spanner"),
 	))
 	defer span.End()
 
@@ -98,6 +101,7 @@ func (r *spannerRepository) Record(ctx context.Context, file AcceptedFile) error
 func (r *spannerRepository) Cancel(ctx context.Context, fileID string) error {
 	ctx, span := telemetry.StartSpan(ctx, "files-cancel", trace.WithAttributes(
 		attribute.String("achgateway.file_id", fileID),
+		attribute.String("achgateway.database", "spanner"),
 	))
 	defer span.End()
 
