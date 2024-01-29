@@ -2,10 +2,10 @@ package achgateway
 
 import "embed"
 
-//go:embed migrations/*mysql*.sql
+//go:embed migrations/*.up.mysql.sql
 var MySqlMigrationFS embed.FS
 
-//go:embed migrations/*spanner*.sql
+//go:embed migrations/*.up.spanner.sql
 var SpannerMigrationFS embed.FS
 
 //go:embed configs/config.default.yml
