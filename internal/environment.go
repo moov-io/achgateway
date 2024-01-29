@@ -42,6 +42,7 @@ import (
 	"github.com/moov-io/base/stime"
 	"github.com/moov-io/base/telemetry"
 
+	"cloud.google.com/go/spanner"
 	"github.com/gorilla/mux"
 	"gocloud.dev/pubsub"
 )
@@ -52,6 +53,7 @@ type Environment struct {
 	Config         *service.Config
 	TimeService    stime.TimeService
 	DB             *sql.DB
+	SpannerClient  *spanner.Client
 	InternalClient *http.Client
 	Events         events.Emitter
 	Telemetry      telemetry.Config
@@ -125,6 +127,25 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		}
 	}
 
+	// spanner setup
+	if env.DB == nil && env.SpannerClient == nil && env.Config.Database.Spanner != nil {
+		env.Logger.Info().Log("connecting to spanner database")
+		client, close, err := initializeSpannerDatabase(env.Logger, env.Config.Database)
+		if err != nil {
+			close()
+			return env, fmt.Errorf("setting up spanner database failed: %w", err)
+		}
+		env.SpannerClient = client
+
+		// Add DB closing to the Shutdown call for the Environment
+		prev := env.Shutdown
+		env.Shutdown = func() {
+			prev()
+			cancelFunc()
+			close()
+		}
+	}
+
 	if env.InternalClient == nil {
 		env.InternalClient = service.NewInternalClient(env.Logger, env.Config.Clients, "internal-client")
 	}
@@ -161,8 +182,18 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		return env, fmt.Errorf("unable to create http files subscription: %v", err)
 	}
 
-	fileRepository := files.NewRepository(env.DB)
-	shardRepository := shards.NewRepository(env.DB, env.Config.Sharding.Mappings)
+	var fileRepository files.Repository
+	var shardRepository shards.Repository
+
+	if env.DB != nil {
+		fileRepository = files.NewRepository(env.DB)
+		shardRepository = shards.NewRepository(env.DB, env.Config.Sharding.Mappings)
+	}
+
+	if env.SpannerClient != nil {
+		fileRepository = files.NewSpannerRepository(env.SpannerClient)
+		shardRepository = shards.NewSpannerRepository(env.SpannerClient, env.Config.Sharding.Mappings)
+	}
 
 	fileReceiver, err := pipeline.Start(ctx, env.Logger, env.Config, shardRepository, fileRepository, httpSub)
 	if err != nil {
@@ -235,6 +266,33 @@ func LoadConfig(logger log.Logger) (*service.Config, error) {
 	return cfg, nil
 }
 
+func initializeSpannerDatabase(logger log.Logger, config database.DatabaseConfig) (*spanner.Client, func(), error) {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+
+	logger.Info().Log("connecting to spanner database")
+
+	// Create the spanner client
+	dbString := "projects/" + config.Spanner.Project + "/instances/" + config.Spanner.Instance + "/databases/" + config.DatabaseName
+	client, err := spanner.NewClient(ctx, dbString)
+	if err != nil {
+		return nil, cancelFunc, logger.Fatal().LogErrorf("Error creating spanner client: %w", err).Err()
+	}
+
+	shutdown := func() {
+		logger.Info().Log("Shutting down the spanner client")
+		cancelFunc()
+		client.Close()
+	}
+
+	if err := database.RunMigrations(logger, config, database.WithEmbeddedMigrations(achgateway.SpannerMigrationFS)); err != nil {
+		return nil, shutdown, logger.Fatal().LogErrorf("Error running migrations: %w", err).Err()
+	}
+
+	logger.Info().Log("Finished initializing spanner client")
+
+	return client, shutdown, err
+}
+
 func initializeDatabase(logger log.Logger, config database.DatabaseConfig) (*sql.DB, func(), error) {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 
@@ -258,7 +316,7 @@ func initializeDatabase(logger log.Logger, config database.DatabaseConfig) (*sql
 	}
 
 	// Run the migrations
-	if err := database.RunMigrations(logger, config, database.WithEmbeddedMigrations(achgateway.MigrationFS)); err != nil {
+	if err := database.RunMigrations(logger, config, database.WithEmbeddedMigrations(achgateway.MySqlMigrationFS)); err != nil {
 		return nil, shutdown, logger.Fatal().LogErrorf("Error running migrations: %w", err).Err()
 	}
 

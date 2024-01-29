@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	"github.com/moov-io/base/telemetry"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -24,6 +25,13 @@ func NewRepository(db *sql.DB) Repository {
 	return &sqlRepository{db: db}
 }
 
+func NewSpannerRepository(client *spanner.Client) Repository {
+	if client == nil {
+		return &MockRepository{}
+	}
+	return &spannerRepository{client: client}
+}
+
 type sqlRepository struct {
 	db *sql.DB
 }
@@ -31,6 +39,7 @@ type sqlRepository struct {
 func (r *sqlRepository) Record(ctx context.Context, file AcceptedFile) error {
 	ctx, span := telemetry.StartSpan(ctx, "files-record", trace.WithAttributes(
 		attribute.String("achgateway.file_id", file.FileID),
+		attribute.String("achgateway.database", "mysql"),
 	))
 	defer span.End()
 
@@ -50,6 +59,7 @@ func (r *sqlRepository) Record(ctx context.Context, file AcceptedFile) error {
 func (r *sqlRepository) Cancel(ctx context.Context, fileID string) error {
 	ctx, span := telemetry.StartSpan(ctx, "files-cancel", trace.WithAttributes(
 		attribute.String("achgateway.file_id", fileID),
+		attribute.String("achgateway.database", "mysql"),
 	))
 	defer span.End()
 
@@ -60,6 +70,46 @@ func (r *sqlRepository) Cancel(ctx context.Context, fileID string) error {
 		// WHERE
 		fileID,
 	)
+	if err != nil {
+		return fmt.Errorf("saving file cancellation failed: %w", err)
+	}
+	return nil
+}
+
+type spannerRepository struct {
+	client *spanner.Client
+}
+
+func (r *spannerRepository) Record(ctx context.Context, file AcceptedFile) error {
+	ctx, span := telemetry.StartSpan(ctx, "files-record", trace.WithAttributes(
+		attribute.String("achgateway.file_id", file.FileID),
+		attribute.String("achgateway.database", "spanner"),
+	))
+	defer span.End()
+
+	m := spanner.Insert("files",
+		[]string{"file_id", "shard_key", "hostname", "accepted_at"},
+		[]interface{}{file.FileID, file.ShardKey, file.Hostname, file.AcceptedAt},
+	)
+	_, err := r.client.Apply(ctx, []*spanner.Mutation{m})
+	if err != nil {
+		return fmt.Errorf("recording file failed: %w", err)
+	}
+	return nil
+}
+
+func (r *spannerRepository) Cancel(ctx context.Context, fileID string) error {
+	ctx, span := telemetry.StartSpan(ctx, "files-cancel", trace.WithAttributes(
+		attribute.String("achgateway.file_id", fileID),
+		attribute.String("achgateway.database", "spanner"),
+	))
+	defer span.End()
+
+	m := spanner.Update("files",
+		[]string{"file_id", "canceled_at"},
+		[]interface{}{fileID, time.Now().In(time.UTC)},
+	)
+	_, err := r.client.Apply(ctx, []*spanner.Mutation{m})
 	if err != nil {
 		return fmt.Errorf("saving file cancellation failed: %w", err)
 	}
