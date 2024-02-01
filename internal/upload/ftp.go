@@ -122,7 +122,11 @@ func (agent *FTPTransferAgent) Delete(ctx context.Context, path string) error {
 	))
 	defer span.End()
 
-	return agent.client.Delete(path)
+	err := agent.client.Delete(path)
+	if err != nil {
+		span.RecordError(err)
+	}
+	return err
 }
 
 // uploadFile saves the content of File at the given filename in the OutboundPath directory
@@ -141,7 +145,11 @@ func (agent *FTPTransferAgent) UploadFile(ctx context.Context, f File) error {
 	))
 	defer span.End()
 
-	return agent.client.UploadFile(pathToWrite, f.Contents)
+	err := agent.client.UploadFile(pathToWrite, f.Contents)
+	if err != nil {
+		span.RecordError(err)
+	}
+	return err
 }
 
 func (agent *FTPTransferAgent) ReadFile(ctx context.Context, path string) (*File, error) {
@@ -153,6 +161,7 @@ func (agent *FTPTransferAgent) ReadFile(ctx context.Context, path string) (*File
 
 	file, err := agent.client.Open(path)
 	if err != nil {
+		span.RecordError(err)
 		return nil, fmt.Errorf("ftp open %s failed: %w", path, err)
 	}
 	return &File{
@@ -182,6 +191,7 @@ func (agent *FTPTransferAgent) readFilepaths(ctx context.Context, dir string) ([
 
 	filepaths, err := agent.client.ListFiles(dir)
 	if err != nil {
+		span.RecordError(err)
 		return nil, err
 	}
 
