@@ -8,13 +8,16 @@ IMPROVEMENTS
 
 - fix: default template should not overwrite files
 - fix: check some edge cases to avoid panics
+- pipeline: include shard name in holiday message
 - pipeline: set level=error on error logs
 - Remove deprecated pkger in favor of native embed
+- upload: record errors on spans
 
 BUILD
 
-- build: update golang.org/x/crypto v0.17.0
 - build: update IBM/sarama, redpanda image, and other deps
+- build: update golang.org/x/crypto v0.17.0
+- build: upgrade moov-io/go-sftp to v0.13.3
 
 ## v0.27.2 (Released 2023-11-10)
 
