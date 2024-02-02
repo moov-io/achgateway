@@ -1,6 +1,7 @@
 package alerting
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"errors"
@@ -39,38 +40,52 @@ func (pd *PagerDuty) AlertError(e error) error {
 		return nil
 	}
 
+	if pd.client == nil {
+		return errors.New("nil PD client")
+	}
+
 	hostName, err := os.Hostname()
 	if err != nil {
 		return fmt.Errorf("getting host name: %v", err)
 	}
 
+	// Build up a stacktrace for the dedup key, but include
+	// the last error as part of the stack.
+	var stacktrace bytes.Buffer
+	errors := strings.SplitN(e.Error(), ":", 2)
+	if len(errors) > 0 {
+		stacktrace.WriteString(errors[0])
+	}
+
+	// Accumulate the call points which got us here
 	details := make(map[string]string)
 	for i := 1; i < 5; i++ {
 		if _, file, line, ok := runtime.Caller(i); ok {
 			caller := fmt.Sprintf("%s:%d", file, line)
+
+			stacktrace.WriteString(caller)
 			details[fmt.Sprintf("trace_%d", i)] = caller
 		}
 	}
 
-	dedupKey := e.Error()
-	details["dedupKey"] = dedupKey
-	errorHash := fmt.Sprintf("%x", sha256.Sum256([]byte(dedupKey)))
+	dedupKey := fmt.Sprintf("%x", sha256.Sum256(stacktrace.Bytes()))
+
+	summary := e.Error()
+	if len(summary) > 1024 {
+		summary = summary[:1024]
+	}
 
 	event := &pagerduty.V2Event{
 		RoutingKey: pd.routingKey,
 		Action:     "trigger",
-		DedupKey:   errorHash,
+		DedupKey:   dedupKey,
 		Payload: &pagerduty.V2Payload{
-			Summary:   e.Error(),
+			Summary:   summary,
 			Source:    hostName,
 			Severity:  "critical",
 			Timestamp: time.Now().Format(time.RFC3339),
 			Details:   details,
 		},
-	}
-
-	if pd.client == nil {
-		return errors.New("nil PD client")
 	}
 
 	ctx := context.Background()
