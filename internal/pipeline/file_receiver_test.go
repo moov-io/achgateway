@@ -39,6 +39,7 @@ import (
 	"github.com/moov-io/base/database"
 	"github.com/moov-io/base/log"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"gocloud.dev/pubsub"
 )
@@ -49,6 +50,8 @@ type TestFileReceiver struct {
 	MergingDir string
 	Publisher  stream.Publisher
 	Events     *events.MockEmitter
+
+	shardRepo shards.Repository
 }
 
 func (fr *TestFileReceiver) TriggerCutoff(t *testing.T) {
@@ -88,6 +91,15 @@ func testFileReceiver(t *testing.T) *TestFileReceiver {
 					Cutoffs: service.Cutoffs{
 						Timezone: "America/New_York",
 						Windows:  []string{"12:00"},
+					},
+					OutboundFilenameTemplate: `{{ .ShardName }}-{{ date "150405.00000" }}.ach`,
+					UploadAgent:              "mock",
+				},
+				{
+					Name: "SD-live-odfi",
+					Cutoffs: service.Cutoffs{
+						Timezone: "America/Chicago",
+						Windows:  []string{"5:00"},
 					},
 					OutboundFilenameTemplate: `{{ .ShardName }}-{{ date "150405.00000" }}.ach`,
 					UploadAgent:              "mock",
@@ -132,6 +144,7 @@ func testFileReceiver(t *testing.T) *TestFileReceiver {
 		MergingDir:   dir,
 		Publisher:    filesTopic,
 		Events:       eventEmitter,
+		shardRepo:    shardRepo,
 	}
 }
 
@@ -166,6 +179,27 @@ func TestFileReceiver__InvalidQueueFile(t *testing.T) {
 	iqf, ok := event.Event.(*models.InvalidQueueFile)
 	require.True(t, ok)
 	require.Contains(t, iqf.Error, "reading QueueACHFile failed: ImmediateDestination")
+}
+
+func TestFileReceiver__getAggregator(t *testing.T) {
+	fr := testFileReceiver(t)
+
+	ctx := context.Background()
+	agg := fr.getAggregator(ctx, "testing")
+	require.NotNil(t, agg)
+
+	mapping := service.ShardMapping{
+		ShardKey:  "SD-" + uuid.NewString(),
+		ShardName: "SD-live-odfi",
+	}
+	err := fr.shardRepo.Add(mapping, database.NopInTx)
+	require.NoError(t, err)
+
+	foundKey := fr.getAggregator(ctx, mapping.ShardKey)
+	require.Equal(t, "SD-live-odfi", foundKey.shard.Name)
+
+	foundName := fr.getAggregator(ctx, mapping.ShardName)
+	require.Equal(t, foundKey, foundName)
 }
 
 func TestFileReceiver__shouldAutocommit(t *testing.T) {
