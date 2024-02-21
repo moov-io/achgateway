@@ -57,22 +57,19 @@ func (r *sqlRepository) Lookup(shardKey string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if rows.Err() != nil {
-		return "", rows.Err()
-	}
 	defer rows.Close()
 
 	var shardName string
 	for rows.Next() {
 		err := rows.Scan(&shardName)
 		if err != nil {
-			if err == sql.ErrNoRows {
+			if errors.Is(err, sql.ErrNoRows) {
 				return "", nil
 			}
 			return "", err
 		}
 	}
-	return shardName, nil
+	return shardName, rows.Err()
 }
 
 func (r *sqlRepository) List() ([]service.ShardMapping, error) {

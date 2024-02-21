@@ -19,6 +19,7 @@ package pipeline
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"os"
@@ -401,8 +402,15 @@ func (fr *FileReceiver) produceInvalidQueueFile(ctx context.Context, logger log.
 func (fr *FileReceiver) getAggregator(ctx context.Context, shardKey string) *aggregator {
 	shardName, err := fr.shardRepository.Lookup(shardKey)
 	if err != nil {
-		fr.logger.Error().LogErrorf("problem looking up shardKey=%s: %v", shardKey, err)
-		return nil
+		if !errors.Is(err, sql.ErrNoRows) {
+			fr.logger.Error().LogErrorf("problem looking up shardKey=%s: %v", shardKey, err)
+			return nil
+		}
+	}
+	if shardName == "" {
+		// Often we have deployments with "SD-live-odfi" that have shard keys of "SD-$uuid".
+		// We want "SD-live-odfi" (as a shard key) to represent "SD-live-odfi" (as a shard name).
+		shardName = shardKey
 	}
 
 	agg, exists := fr.shardAggregators[shardName]

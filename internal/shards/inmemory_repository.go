@@ -18,6 +18,7 @@
 package shards
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/moov-io/achgateway/internal/service"
@@ -40,7 +41,7 @@ func (r *InMemoryRepository) Lookup(shardKey string) (string, error) {
 			return r.Shards[i].ShardName, nil
 		}
 	}
-	return "", fmt.Errorf("unknown shardKey=%s", shardKey)
+	return "", fmt.Errorf("unknown shardKey %s: %w", shardKey, sql.ErrNoRows)
 }
 
 func (r *InMemoryRepository) List() ([]service.ShardMapping, error) {
