@@ -12,7 +12,7 @@ ACH is a fixed-width file format used to debit or credit bank accounts. Often bu
 
 ACHGateway does not cover the business rules or Nacha requirements of creating ACH files. ACHGateway does allow files to be submitted and queued for their eventual delivery to the Federal Reserve. There are "cutoff windows" throughout a banking day to flush files from ODFI's to RDFI's (receiving financial institutions).
 
-TODO(adam): diagram
+![](./images/OSS_File_Submission.png)
 
 ## Implementation
 
@@ -54,7 +54,7 @@ Submit `QueueACHFile` events:
 
 #### Notes
 
-Kafka topics need to be created outside of ACHGateway. Consider your needs around partitions, retention, and checkpointing when creating topics. 
+Kafka topics need to be created outside of ACHGateway. Consider your needs around partitions, retention, and checkpointing when creating topics.
 
 Make sure to understand the implications of enabling/disabling consumer groups with your kafka subscription and multiple instances of ACHGateway.
 
