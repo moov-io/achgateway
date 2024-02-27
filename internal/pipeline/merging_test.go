@@ -177,6 +177,28 @@ func TestMerging_determineMergeDestinations(t *testing.T) {
 			require.Equal(t, *expected[i].ACHFile, *output[i].ACHFile)
 		}
 	})
+
+	growFile := func(file *ach.File, iterations int) {
+		entry := file.Batches[0].GetEntries()[0]
+		for i := 0; i < iterations; i++ {
+			ed := *entry
+			ed.SetTraceNumber(file.Batches[0].GetHeader().ODFIIdentification, iterations+i)
+			file.Batches[0].AddEntry(&ed)
+		}
+		require.Len(t, file.Batches[0].GetEntries(), iterations+1)
+	}
+
+	t.Run("more entries", func(t *testing.T) {
+		growFile(ppd2, 1000)
+		growFile(ppd4, 1000)
+
+		output := determineMergeDestinations(input, mergedFiles)
+		require.Len(t, output, 2)
+		for i := range output {
+			require.ElementsMatch(t, expected[i].Names, output[i].Names)
+			require.Equal(t, *expected[i].ACHFile, *output[i].ACHFile)
+		}
+	})
 }
 
 func TestMerging__writeACHFile(t *testing.T) {
