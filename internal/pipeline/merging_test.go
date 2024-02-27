@@ -24,6 +24,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/moov-io/ach"
@@ -127,10 +128,55 @@ func TestMerging_chunkFilesTogether(t *testing.T) {
 	require.Len(t, merged[0].ACHFile.Batches[0].GetEntries(), 2)
 }
 
-// TODO(adam): Somewhere check FileUploaded.Filename
+func read(t *testing.T, where string) *ach.File {
+	t.Helper()
+
+	file, err := ach.ReadFile(where)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return file
+}
 
 func TestMerging_determineMergeDestinations(t *testing.T) {
-	// TODO(adam):
+	dup := read(t, filepath.Join("testdata", "duplicate-trace.ach"))
+	ppd1 := read(t, filepath.Join("testdata", "ppd-debit.ach"))
+	ppd2 := read(t, filepath.Join("testdata", "ppd-debit2.ach"))
+	ppd3 := read(t, filepath.Join("testdata", "ppd-debit3.ach"))
+	ppd4 := read(t, filepath.Join("testdata", "ppd-debit4.ach"))
+
+	filenames := []string{
+		"duplicate-trace.ach",
+		"ppd-debit.ach", "ppd-debit2.ach", "ppd-debit3.ach", "ppd-debit4.ach",
+	}
+
+	input := namedFiles{
+		Names:    filenames,
+		ACHFiles: []*ach.File{dup, ppd1, ppd2, ppd3, ppd4},
+	}
+
+	mergedFiles, err := ach.MergeFiles(input.ACHFiles)
+	require.NoError(t, err)
+	require.Len(t, mergedFiles, 2)
+
+	expected := []mergedFile{
+		{
+			Names:   slices.Concat(filenames[0:1], filenames[2:]),
+			ACHFile: mergedFiles[0],
+		},
+		{
+			Names:   filenames[1:2],
+			ACHFile: mergedFiles[1],
+		},
+	}
+
+	t.Run("basic", func(t *testing.T) {
+		output := determineMergeDestinations(input, mergedFiles)
+		for i := range output {
+			require.ElementsMatch(t, expected[i].Names, output[i].Names)
+			require.Equal(t, *expected[i].ACHFile, *output[i].ACHFile)
+		}
+	})
 }
 
 func TestMerging__writeACHFile(t *testing.T) {

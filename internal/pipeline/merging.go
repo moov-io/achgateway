@@ -25,6 +25,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -483,6 +484,12 @@ func determineMergeDestinations(input namedFiles, merged []*ach.File) mergedFile
 				}
 			}
 		}
+	}
+
+	// Remove duplicates
+	for i := range out {
+		slices.Sort(out[i].Names)
+		out[i].Names = slices.Compact(out[i].Names)
 	}
 
 	return out
