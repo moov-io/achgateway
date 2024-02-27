@@ -2,7 +2,7 @@
 
 module github.com/moov-io/achgateway
 
-go 1.20
+go 1.22
 
 require (
 	github.com/IBM/sarama v1.42.1
