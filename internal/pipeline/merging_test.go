@@ -120,7 +120,17 @@ func TestMerging_chunkFilesTogether(t *testing.T) {
 	merged, err := m.chunkFilesTogether(context.Background(), indices, matches, conditions)
 	require.NoError(t, err)
 	require.Len(t, merged, 1)
-	require.Len(t, merged[0].Batches[0].GetEntries(), 2)
+
+	require.ElementsMatch(t, matches, merged[0].Names)
+
+	require.NotNil(t, merged[0].ACHFile)
+	require.Len(t, merged[0].ACHFile.Batches[0].GetEntries(), 2)
+}
+
+// TODO(adam): Somewhere check FileUploaded.Filename
+
+func TestMerging_determineMergeDestinations(t *testing.T) {
+	// TODO(adam):
 }
 
 func TestMerging__writeACHFile(t *testing.T) {

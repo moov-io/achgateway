@@ -229,16 +229,22 @@ func (xfagg *aggregator) manualCutoff(waiter manuallyTriggeredCutoff) {
 
 func (xfagg *aggregator) emitFilesUploaded(ctx context.Context, proc *processedFiles) error {
 	var el base.ErrorList
-	for i := range proc.fileIDs {
-		err := xfagg.eventEmitter.Send(ctx, models.Event{
-			Event: models.FileUploaded{
-				FileID:     proc.fileIDs[i],
-				ShardKey:   proc.shardKey,
-				UploadedAt: time.Now(),
-			},
-		})
-		if err != nil {
-			el.Add(err)
+	for i := range proc.files {
+		mergedFile := proc.files[i]
+
+		for k := range mergedFile.Names {
+			evt := models.Event{
+				Event: models.FileUploaded{
+					FileID:     mergedFile.Names[k],
+					ShardKey:   proc.shardKey,
+					Filename:   mergedFile.Filename,
+					UploadedAt: time.Now(),
+				},
+			}
+			err := xfagg.eventEmitter.Send(ctx, evt)
+			if err != nil {
+				el.Add(err)
+			}
 		}
 	}
 	if el.Empty() {
@@ -247,17 +253,17 @@ func (xfagg *aggregator) emitFilesUploaded(ctx context.Context, proc *processedF
 	return el
 }
 
-func (xfagg *aggregator) runTransformers(ctx context.Context, index int, agent upload.Agent, outgoing *ach.File) error {
+func (xfagg *aggregator) runTransformers(ctx context.Context, index int, agent upload.Agent, outgoing *ach.File) (string, error) {
 	result, err := transform.ForUpload(outgoing, xfagg.preuploadTransformers)
 	if err != nil {
-		return err
+		return "", err
 	}
 	return xfagg.uploadFile(ctx, index, agent, result)
 }
 
-func (xfagg *aggregator) uploadFile(ctx context.Context, index int, agent upload.Agent, res *transform.Result) error {
+func (xfagg *aggregator) uploadFile(ctx context.Context, index int, agent upload.Agent, res *transform.Result) (string, error) {
 	if res == nil || res.File == nil {
-		return errors.New("uploadFile: nil Result / File")
+		return "", errors.New("uploadFile: nil Result / File")
 	}
 
 	data := upload.FilenameData{
@@ -269,7 +275,7 @@ func (xfagg *aggregator) uploadFile(ctx context.Context, index int, agent upload
 	filename, err := upload.RenderACHFilename(xfagg.shard.FilenameTemplate(), data)
 	if err != nil {
 		recordFileUploadError(ctx, xfagg.shard.Name, err)
-		return fmt.Errorf("problem rendering filename template: %v", err)
+		return "", fmt.Errorf("problem rendering filename template: %v", err)
 	}
 
 	ctx, span := telemetry.StartSpan(ctx, "upload-file", trace.WithAttributes(
@@ -281,7 +287,7 @@ func (xfagg *aggregator) uploadFile(ctx context.Context, index int, agent upload
 	var buf bytes.Buffer
 	if err := xfagg.outputFormatter.Format(&buf, res); err != nil {
 		recordFileUploadError(ctx, xfagg.shard.Name, err)
-		return fmt.Errorf("problem formatting output: %v", err)
+		return "", fmt.Errorf("problem formatting output: %v", err)
 	}
 
 	// Record the file in our audit trail
@@ -292,7 +298,7 @@ func (xfagg *aggregator) uploadFile(ctx context.Context, index int, agent upload
 	path := fmt.Sprintf("%s/%s/%s/%s", basePath, agent.Hostname(), time.Now().Format("2006-01-02"), filename)
 	if err := xfagg.auditStorage.SaveFile(ctx, path, buf.Bytes()); err != nil {
 		recordFileUploadError(ctx, xfagg.shard.Name, err)
-		return fmt.Errorf("problem saving file in audit record: %v", err)
+		return "", fmt.Errorf("problem saving file in audit record: %v", err)
 	}
 
 	// Upload our file
@@ -313,7 +319,7 @@ func (xfagg *aggregator) uploadFile(ctx context.Context, index int, agent upload
 		uploadedFilesCounter.With("shard", xfagg.shard.Name).Add(1)
 	}
 
-	return err
+	return filename, err
 }
 
 func prepareShardName(shardName string) string {

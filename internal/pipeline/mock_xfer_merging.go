@@ -43,7 +43,7 @@ func (merge *MockXferMerging) HandleCancel(_ context.Context, cancel incoming.Ca
 	return merge.Err
 }
 
-func (merge *MockXferMerging) WithEachMerged(_ context.Context, f func(context.Context, int, upload.Agent, *ach.File) error) (*processedFiles, error) {
+func (merge *MockXferMerging) WithEachMerged(_ context.Context, f func(context.Context, int, upload.Agent, *ach.File) (string, error)) (*processedFiles, error) {
 	if merge.Err != nil {
 		return nil, merge.Err
 	}

@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -95,7 +96,7 @@ func TestEventsAPI_FileUploaded(t *testing.T) {
 	require.NotEmpty(t, uploadDir)
 
 	// Reproduce FileUploaded event
-	address := fmt.Sprintf("http://%s/shards/testing/pipeline/%s/file-uploaded", adminServer.BindAddr(), uploadDir)
+	address := fmt.Sprintf("http://%s/shards/testing/pipeline/%s/file-uploaded?filename=foo.ach", adminServer.BindAddr(), uploadDir)
 	req, err := http.NewRequest("PUT", address, nil)
 	require.NoError(t, err)
 	resp, err := http.DefaultClient.Do(req)
@@ -112,10 +113,23 @@ func TestEventsAPI_FileUploaded(t *testing.T) {
 
 	// Check fields of the FileUploaded events
 	sentEvents := emitter.Sent()
+	require.Len(t, sentEvents, 2)
+
 	for i := range sentEvents {
 		switch v := sentEvents[i].Event.(type) {
 		case *models.FileUploaded:
 			require.Equal(t, fileID, v.FileID)
+
+			// The first event has the actual filename,
+			// but the second event reads the query param
+			switch i {
+			case 0:
+				// Example: TESTING-143425.52750.ach
+				require.True(t, strings.HasPrefix(v.Filename, "TESTING-"))
+				require.True(t, strings.HasSuffix(v.Filename, ".ach"))
+			case 1:
+				require.Equal(t, "foo.ach", v.Filename)
+			}
 		default:
 			t.Errorf("unexpected %#v", v)
 		}

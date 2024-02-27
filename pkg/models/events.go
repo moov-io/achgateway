@@ -293,5 +293,6 @@ type CancelACHFile incoming.CancelACHFile
 type FileUploaded struct {
 	FileID     string    `json:"fileID"`
 	ShardKey   string    `json:"shardKey"`
+	Filename   string    `json:"filename"`
 	UploadedAt time.Time `json:"uploadedAt"`
 }

@@ -32,8 +32,11 @@ import (
 
 func (fr *FileReceiver) manuallyProduceFileUploaded() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		filename := r.URL.Query().Get("filename")
+
 		logger := fr.logger.With(log.Fields{
-			"route": log.String("manual-file-upload-produce"),
+			"filename": log.String(filename),
+			"route":    log.String("manual-file-upload-produce"),
 		})
 
 		agg := fr.lookupAggregator(logger, r)
@@ -62,6 +65,7 @@ func (fr *FileReceiver) manuallyProduceFileUploaded() http.HandlerFunc {
 
 		ctx, span := telemetry.StartSpan(r.Context(), "pipeline-manual-file-uploaded", trace.WithAttributes(
 			attribute.String("achgateway.dir", dir),
+			attribute.String("achgateway.filename", filename),
 		))
 		defer span.End()
 
@@ -72,8 +76,11 @@ func (fr *FileReceiver) manuallyProduceFileUploaded() http.HandlerFunc {
 			return
 		}
 
-		processed := newProcessedFiles(agg.shard.Name, matches)
-		if len(matches) == 0 || len(processed.fileIDs) == 0 {
+		merged := []mergedFile{
+			{Names: matches, Filename: filename},
+		}
+		processed := newProcessedFiles(agg.shard.Name, merged)
+		if len(matches) == 0 {
 			logger.Logf("%s not found", dir)
 			w.WriteHeader(http.StatusNotFound)
 			return
