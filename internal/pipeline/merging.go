@@ -25,6 +25,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -54,7 +55,7 @@ type XferMerging interface {
 	HandleXfer(ctx context.Context, xfer incoming.ACHFile) error
 	HandleCancel(ctx context.Context, cancel incoming.CancelACHFile) error
 
-	WithEachMerged(ctx context.Context, f func(context.Context, int, upload.Agent, *ach.File) error) (*processedFiles, error)
+	WithEachMerged(ctx context.Context, f func(context.Context, int, upload.Agent, *ach.File) (string, error)) (*processedFiles, error)
 }
 
 func NewMerging(logger log.Logger, shard service.Shard, cfg service.UploadAgents) (XferMerging, error) {
@@ -191,19 +192,21 @@ func (m *filesystemMerging) getNonCanceledMatches(ctx context.Context, dir strin
 
 type processedFiles struct {
 	shardKey string
-	fileIDs  []string
+	files    mergedFiles
 }
 
-func newProcessedFiles(shardKey string, matches []string) *processedFiles {
-	processed := &processedFiles{shardKey: shardKey}
-
-	for i := range matches {
-		// each match follows $path/$fileID.ach
-		fileID := strings.TrimSuffix(filepath.Base(matches[i]), ".ach")
-		processed.fileIDs = append(processed.fileIDs, fileID)
+func newProcessedFiles(shardKey string, merged mergedFiles) *processedFiles {
+	out := &processedFiles{
+		shardKey: shardKey,
+		files:    merged,
 	}
-
-	return processed
+	for i := range out.files {
+		for j := range out.files[i].Names {
+			// each match follows $path/$fileID.ach
+			out.files[i].Names[j] = strings.TrimSuffix(filepath.Base(out.files[i].Names[j]), ".ach")
+		}
+	}
+	return out
 }
 
 func (m *filesystemMerging) readFile(path string) (*ach.File, error) {
@@ -233,25 +236,34 @@ func (m *filesystemMerging) readFile(path string) (*ach.File, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return &f, nil
 }
 
-func (m *filesystemMerging) readFiles(paths []string) ([]*ach.File, error) {
-	out := make([]*ach.File, len(paths))
+// namedFiles is a set of two arrays containing filenames and ACH files.
+//
+// Both arrays are the same length and each index corresponds to the other array.
+type namedFiles struct {
+	Names    []string
+	ACHFiles []*ach.File
+}
+
+func (m *filesystemMerging) readFiles(paths []string) (namedFiles, error) {
+	out := namedFiles{
+		Names:    make([]string, len(paths)),
+		ACHFiles: make([]*ach.File, len(paths)),
+	}
 	for i := range paths {
 		file, err := m.readFile(paths[i])
 		if err != nil {
-			return nil, fmt.Errorf("reading %s failed: %w", paths[i], err)
+			return namedFiles{}, fmt.Errorf("reading %s failed: %w", paths[i], err)
 		}
-		if file != nil {
-			out[i] = file
-		}
+		_, out.Names[i] = filepath.Split(paths[i])
+		out.ACHFiles[i] = file
 	}
 	return out, nil
 }
 
-func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.Context, int, upload.Agent, *ach.File) error) (*processedFiles, error) {
+func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.Context, int, upload.Agent, *ach.File) (string, error)) (*processedFiles, error) {
 	processed := &processedFiles{}
 
 	// move the current directory so it's isolated and easier to debug later on
@@ -319,28 +331,31 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 	// Write each file to our remote agent
 	successfulRemoteWrites := 0
 	for i := range files {
+		prepared := files[i].ACHFile
+
 		// Optionally Flatten Batches
 		if m.shard.Mergable.FlattenBatches != nil {
-			if file, err := files[i].FlattenBatches(); err != nil {
+			if file, err := prepared.FlattenBatches(); err != nil {
 				el.Add(err)
 			} else {
-				files[i] = file
+				prepared = file
 			}
 		}
 
 		// Write our file to the mergable directory
-		if err := m.saveMergedFile(dir, files[i]); err != nil {
+		if err := m.saveMergedFile(dir, prepared); err != nil {
 			el.Add(fmt.Errorf("problem writing merged file: %v", err))
-			logger.Error().Logf("skipping upload of %s after cache failure", files[i])
+			logger.Error().Logf("skipping upload of %s after cache failure", prepared)
 			continue // skip upload if we can't cache what to upload
 		}
 
 		// Upload the file
-		if err := f(ctx, i, agent, files[i]); err != nil {
+		if filename, err := f(ctx, i, agent, prepared); err != nil {
 			telemetry.RecordError(ctx, err)
 
 			el.Add(fmt.Errorf("problem from callback: %v", err))
 		} else {
+			files[i].Filename = filename
 			successfulRemoteWrites++
 
 			if i > 1 && i%10 == 0 {
@@ -359,7 +374,7 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 		return nil, el
 	}
 
-	return newProcessedFiles(m.shard.Name, matches), nil
+	return newProcessedFiles(m.shard.Name, files), nil
 }
 
 func makeIndices(total, groups int) []int {
@@ -380,7 +395,15 @@ func makeIndices(total, groups int) []int {
 	return append(xs, total)
 }
 
-func (m *filesystemMerging) chunkFilesTogether(ctx context.Context, indices []int, matches []string, conditions ach.Conditions) ([]*ach.File, error) {
+type mergedFile struct {
+	Names    []string
+	Filename string
+	ACHFile  *ach.File
+}
+
+type mergedFiles []mergedFile
+
+func (m *filesystemMerging) chunkFilesTogether(ctx context.Context, indices []int, matches []string, conditions ach.Conditions) (mergedFiles, error) {
 	_, span := telemetry.StartSpan(ctx, "chunk-files-together", trace.WithAttributes(
 		attribute.String("achgateway.shard", m.shard.Name),
 		attribute.Int("achgateway.indices_num", len(indices)),
@@ -393,23 +416,95 @@ func (m *filesystemMerging) chunkFilesTogether(ctx context.Context, indices []in
 		if err != nil {
 			return nil, err
 		}
-		return ach.MergeFilesWith(files, conditions)
-	}
-
-	out := make([]*ach.File, 0, len(indices))
-	for i := 0; i < len(indices)-1; i += 0 {
-		files, err := m.readFiles(matches[indices[i]:indices[i+1]])
+		merged, err := ach.MergeFilesWith(files.ACHFiles, conditions)
 		if err != nil {
 			return nil, err
 		}
-		fs, err := ach.MergeFilesWith(files, conditions)
+		return determineMergeDestinations(files, merged), nil
+	}
+
+	var input namedFiles
+	out := make([]*ach.File, 0, len(indices))
+	for i := 0; i < len(indices)-1; i += 0 {
+		files, err := m.readFiles(matches[indices[i]:indices[i+1]]) // need to keep filename around
+		if err != nil {
+			return nil, err
+		}
+		input.Names = append(input.Names, files.Names...)
+		input.ACHFiles = append(input.ACHFiles, files.ACHFiles...)
+
+		fs, err := ach.MergeFilesWith(files.ACHFiles, conditions)
 		if err != nil {
 			return nil, err
 		}
 		i += 1
 		out = append(out, fs...)
 	}
-	return ach.MergeFilesWith(out, conditions)
+
+	merged, err := ach.MergeFilesWith(out, conditions)
+	if err != nil {
+		return nil, err
+	}
+	return determineMergeDestinations(input, merged), nil
+}
+
+// determineMergeDestinations will compare the input ACH files against the merged files to determine
+// where the input files ended up. This allows us to report where an input file was uploaded.
+//
+// Given we have a list of merged files, for each incoming file we can find it in the merged results.
+// This allows us to report which file (and filename) the original file was sent out in.
+func determineMergeDestinations(input namedFiles, merged []*ach.File) mergedFiles {
+	// Build our result type with merged files
+	out := make([]mergedFile, len(merged))
+	for i := range merged {
+		out[i].ACHFile = merged[i]
+	}
+
+	// For each input file find where the EntryDetail landed in the list of merged files
+	for i := range input.ACHFiles {
+		inputFile := input.ACHFiles[i]
+
+		for j := range out {
+			// Find the matching entry
+			outFile := out[j].ACHFile
+
+			for ib := range inputFile.Batches {
+				ientries := inputFile.Batches[ib].GetEntries()
+
+				for ob := range outFile.Batches {
+					oentries := outFile.Batches[ob].GetEntries()
+
+					for ie := range ientries {
+						for oe := range oentries {
+							if matchingEntry(ientries[ie], oentries[oe]) {
+								out[j].Names = append(out[j].Names, input.Names[i])
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Remove duplicates
+	for i := range out {
+		slices.Sort(out[i].Names)
+		out[i].Names = slices.Compact(out[i].Names)
+	}
+
+	return out
+}
+
+func matchingEntry(e1, e2 *ach.EntryDetail) bool {
+	return e1.TransactionCode == e2.TransactionCode &&
+		e1.RDFIIdentification == e2.RDFIIdentification &&
+		e1.CheckDigit == e2.CheckDigit &&
+		e1.DFIAccountNumber == e2.DFIAccountNumber &&
+		e1.Amount == e2.Amount &&
+		e1.IdentificationNumber == e2.IdentificationNumber &&
+		e1.IndividualName == e2.IndividualName &&
+		e1.DiscretionaryData == e2.DiscretionaryData &&
+		e1.TraceNumber == e2.TraceNumber
 }
 
 func directoryNames(matches []string) []string {

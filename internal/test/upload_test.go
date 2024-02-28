@@ -56,6 +56,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -191,13 +192,21 @@ func TestUploads(t *testing.T) {
 	erroredSubscriptions := 0
 	var createdFileIDs, canceledFileIDs []string
 
-	for i := 0; i < 500; i++ {
+	iterations := 500
+	var g errgroup.Group
+	g.SetLimit(iterations / 100)
+
+	for i := 0; i < iterations; i++ {
 		shardKey := shardKeys[i%10]
 		fileID := uuid.NewString()
 		file := randomACHFile(t)
 		createdEntries += countEntries(file)
-		w := submitFile(t, r, shardKey, fileID, file)
-		require.Equal(t, http.StatusOK, w.Code)
+
+		g.Go(func() error {
+			w := submitFile(t, r, shardKey, fileID, file)
+			require.Equal(t, http.StatusOK, w.Code)
+			return nil
+		})
 
 		canceled := maybeCancelFile(t, r, shardKey, fileID, file)
 		if canceled > 0 {
@@ -214,12 +223,18 @@ func TestUploads(t *testing.T) {
 			erroredSubscriptions += 1
 		}
 	}
+	require.NoError(t, g.Wait())
 
 	t.Logf("created %d entries (in %d files) and canceled %d entries (in %d files)", createdEntries, len(createdFileIDs), canceledEntries, len(canceledFileIDs))
 	require.Greater(t, createdEntries, 0, "created entries")
 	require.Greater(t, canceledEntries, 0, "canceled entries")
 
 	// Pause for long enough that all files get accepted
+	wait := time.Duration(5*iterations) * time.Millisecond // 50k iterations is 4m10s
+	if wait < 2*time.Minute {
+		wait = 2 * time.Minute
+	}
+	tick := wait / 10
 	require.Eventually(t, func() bool {
 		// Count how many files are in mergable/beta and mergable/prod, which should be the created + canceled files.
 		betaFDs, _ := os.ReadDir(filepath.Join("storage", "mergable", "beta"))
@@ -227,7 +242,7 @@ func TestUploads(t *testing.T) {
 		t.Logf("found %d beta and %d prod mergable files, expected %d + %d", len(betaFDs), len(prodFDs), len(createdFileIDs), len(canceledFileIDs))
 
 		return (len(betaFDs) + len(prodFDs)) >= (len(createdFileIDs) + len(canceledFileIDs))
-	}, 60*time.Second, 10*time.Second)
+	}, wait, tick)
 
 	// Manual upload of all files
 	var buf bytes.Buffer
@@ -409,7 +424,7 @@ func maybeCancelFile(t *testing.T, r *mux.Router, shardKey, fileID string, file 
 	t.Helper()
 
 	if shouldCancelFile(t) {
-		cancelFile(t, r, shardKey, fileID)
+		go cancelFile(t, r, shardKey, fileID)
 		return countEntries(file)
 	}
 
@@ -419,7 +434,7 @@ func maybeCancelFile(t *testing.T, r *mux.Router, shardKey, fileID string, file 
 func shouldCancelFile(t *testing.T) bool {
 	t.Helper()
 
-	return randomInt(t, 100)%10 == 0
+	return randomInt(t, 100) <= 5 // 5%
 }
 
 func cancelFile(t *testing.T, r *mux.Router, shardKey, fileID string) {
@@ -449,7 +464,7 @@ func causeSubscriptionFailure(t *testing.T) error {
 	t.Helper()
 
 	n := randomInt(t, 100)
-	if n%25 == 0 {
+	if n <= 5 { // 5%
 		idx := (len(subscriptionFailures) - 1) % (int(n) + 1)
 		return subscriptionFailures[idx]
 	}
