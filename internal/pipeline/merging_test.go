@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"testing"
 
 	"github.com/moov-io/ach"
@@ -128,7 +129,70 @@ func TestMerging_chunkFilesTogether(t *testing.T) {
 	require.Len(t, merged[0].ACHFile.Batches[0].GetEntries(), 2)
 }
 
-func read(t *testing.T, where string) *ach.File {
+func Benchmark_chunkFilesTogether(b *testing.B) {
+	// Advice: Run this with "-benchtime 100x" to specify a fixed number of iterations
+	b.StopTimer()
+
+	example := read(b, filepath.Join("testdata", "ppd-debit.ach"))
+	initialTraceNumber, err := strconv.ParseInt(example.Batches[0].GetEntries()[0].TraceNumber, 10, 64)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	// Setup pending directory
+	dir := b.TempDir()
+	iterations := b.N * 10_000
+	groupSize := 250
+	indices := makeIndices(iterations, iterations/groupSize)
+	var matches []string
+	for i := 0; i < iterations; i++ {
+		file := ach.NewFile()
+		file.Header = example.Header
+
+		exampleBatch := example.Batches[0]
+		batch, err := ach.NewBatch(exampleBatch.GetHeader())
+		require.NoError(b, err)
+		entry := *exampleBatch.GetEntries()[0]
+		entry.SetTraceNumber(exampleBatch.GetHeader().ODFIIdentification, int(initialTraceNumber)+i)
+		batch.AddEntry(&entry)
+		require.NoError(b, batch.Create())
+
+		file.AddBatch(batch)
+		require.NoError(b, file.Create())
+
+		var buf bytes.Buffer
+		err = ach.NewWriter(&buf).Write(file)
+		require.NoError(b, err)
+
+		filename := fmt.Sprintf("%d.ach", i)
+		matches = append(matches, filename)
+		err = os.WriteFile(filepath.Join(dir, filename), buf.Bytes(), 0600)
+		require.NoError(b, err)
+	}
+	b.Logf("merged %d files", iterations)
+
+	fs, err := storage.NewFilesystem(dir)
+	require.NoError(b, err)
+
+	m := &filesystemMerging{
+		logger:  log.NewTestLogger(),
+		storage: fs,
+	}
+
+	b.Run("run", func(b *testing.B) {
+		b.StartTimer()
+
+		conditions := ach.Conditions{
+			MaxLines:        100_000,
+			MaxDollarAmount: 50_000_000,
+		}
+		merged, err := m.chunkFilesTogether(context.Background(), indices, matches, conditions)
+		require.NoError(b, err)
+		b.Logf("%d files after merge", len(merged))
+	})
+}
+
+func read(t testing.TB, where string) *ach.File {
 	t.Helper()
 
 	file, err := ach.ReadFile(where)

@@ -416,20 +416,30 @@ func (m *filesystemMerging) chunkFilesTogether(ctx context.Context, indices []in
 		if err != nil {
 			return nil, err
 		}
+		span.AddEvent("files-read")
+
 		merged, err := ach.MergeFilesWith(files.ACHFiles, conditions)
 		if err != nil {
 			return nil, err
 		}
-		return determineMergeDestinations(files, merged), nil
+		span.AddEvent("merged-files")
+
+		out, err := determineMergeDestinations(files, merged), nil
+		if err != nil {
+			return nil, err
+		}
+		return out, nil
 	}
 
 	var input namedFiles
-	out := make([]*ach.File, 0, len(indices))
+	mergeParts := make([]*ach.File, 0, len(indices))
 	for i := 0; i < len(indices)-1; i += 0 {
 		files, err := m.readFiles(matches[indices[i]:indices[i+1]]) // need to keep filename around
 		if err != nil {
 			return nil, err
 		}
+		span.AddEvent(fmt.Sprintf("files-read-idx-%d", i))
+
 		input.Names = append(input.Names, files.Names...)
 		input.ACHFiles = append(input.ACHFiles, files.ACHFiles...)
 
@@ -437,15 +447,23 @@ func (m *filesystemMerging) chunkFilesTogether(ctx context.Context, indices []in
 		if err != nil {
 			return nil, err
 		}
+		span.AddEvent(fmt.Sprintf("merged-files-idx-%d", i))
+
 		i += 1
-		out = append(out, fs...)
+		mergeParts = append(mergeParts, fs...)
 	}
 
-	merged, err := ach.MergeFilesWith(out, conditions)
+	merged, err := ach.MergeFilesWith(mergeParts, conditions)
 	if err != nil {
 		return nil, err
 	}
-	return determineMergeDestinations(input, merged), nil
+	span.AddEvent("final-merge-files")
+
+	out, err := determineMergeDestinations(input, merged), nil
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 // determineMergeDestinations will compare the input ACH files against the merged files to determine
