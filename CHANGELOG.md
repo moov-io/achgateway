@@ -1,23 +1,32 @@
-## v0.28.0 (Unreleased)
-
-This release of achgateway introduces Spanner as a database. Using Spanner instead of MySQL can be enabled by setting `` in the config file.
+## v0.28.0 (Released 2024-02-29)
 
 This release also changes the default outbound filename template to include the post-merge array index. This prevents files from overwriting themselves on the remote server when merging creates multiple files.
 
+ADDITIONS
+
+- The `FileUploaded` event now contains the `Filename` of the uploaded file
+
 IMPROVEMENTS
 
-- fix: default template should not overwrite files
+- docs: add diagram for file submission
+- feat: track where pending files are merged into and report Filename on FileUploaded
 - fix: check some edge cases to avoid panics
+- fix: dedup PagerDuty alerts off call stack, not errors
+- fix: default template should not overwrite files
+- pipeline: fallback to shard name during lookup
 - pipeline: include shard name in holiday message
 - pipeline: set level=error on error logs
-- Remove deprecated pkger in favor of native embed
+- test: allow for dynamic TestUploads iterations, decrease cancel/failure rate
 - upload: record errors on spans
 
 BUILD
 
+- build: Remove deprecated pkger in favor of native embed
 - build: update IBM/sarama, redpanda image, and other deps
 - build: update golang.org/x/crypto v0.17.0
 - build: upgrade moov-io/go-sftp to v0.13.3
+- build: upgrade to Go 1.22 in Dockerfile
+- chore: update github.com/moov-io/ach to v1.35.0
 
 ## v0.27.2 (Released 2023-11-10)
 
