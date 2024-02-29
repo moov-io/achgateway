@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -39,7 +40,10 @@ import (
 
 func TestProcessor(t *testing.T) {
 	dir := t.TempDir()
-	err := os.WriteFile(filepath.Join(dir, "invalid.ach"), []byte("invalid-ach-file"), 0600)
+
+	data, err := os.ReadFile(filepath.Join("testdata", "return-no-batch-controls.ach"))
+	require.NoError(t, err)
+	err = os.WriteFile(filepath.Join(dir, "invalid.ach"), data, 0600)
 	require.NoError(t, err)
 
 	proc := &MockProcessor{}
@@ -60,7 +64,11 @@ func TestProcessor(t *testing.T) {
 
 	require.NotNil(t, proc.HandledFile)
 	require.NotNil(t, proc.HandledFile.ACHFile)
-	require.Equal(t, "7ffdca32898fc89e5e680d0a01e9e1c2a1cd2717", proc.HandledFile.ACHFile.ID)
+	if runtime.GOOS == "windows" {
+		require.Equal(t, "41bcece862c7cb3e74ca96b828fe57458db85199", proc.HandledFile.ACHFile.ID)
+	} else {
+		require.Equal(t, "36b5cb975ef810e23f82d976219c176b70d785b2", proc.HandledFile.ACHFile.ID)
+	}
 
 	// Real world file
 	path := filepath.Join("..", "..", "..", "testdata", "HMBRAD_ACHEXPORT_1001_08_19_2022_09_10")
