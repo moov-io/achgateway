@@ -39,7 +39,7 @@ import (
 	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/telemetry"
 
-	"github.com/IBM/sarama"
+	"github.com/Shopify/sarama"
 	"gocloud.dev/pubsub"
 )
 
