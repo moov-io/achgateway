@@ -1,3 +1,9 @@
+## v0.28.1 (Released 2024-03-01)
+
+BUILD
+
+- Revert dependney upgrade to github.com/IBM/sarama
+
 ## v0.28.0 (Released 2024-02-29)
 
 This release also changes the default outbound filename template to include the post-merge array index. This prevents files from overwriting themselves on the remote server when merging creates multiple files.
