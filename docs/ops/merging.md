@@ -20,6 +20,8 @@ ACHGateway supports encrypting pending and merged files in the filesystem used f
 
 ## Merging
 
+![](../images/merging_process.png)
+
 When a shard is triggered ACHGateway will perform a series of steps to merge and upload the pending files.
 
 1. Rename the existing directory of pending files from `storage/merging/{shardKey}/` to a timestamp version (e.g. `storage/merging/{shardKey}-$timestamp/`).
