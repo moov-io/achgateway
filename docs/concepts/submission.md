@@ -12,7 +12,7 @@ ACH is a fixed-width file format used to debit or credit bank accounts. Often bu
 
 ACHGateway does not cover the business rules or Nacha requirements of creating ACH files. ACHGateway does allow files to be submitted and queued for their eventual delivery to the Federal Reserve. There are "cutoff windows" throughout a banking day to flush files from ODFI's to RDFI's (receiving financial institutions).
 
-<a href="./images/OSS_File_Submission.png"><img src="./images/OSS_File_Submission.png" /></a>
+<a href="../../images/OSS_File_Submission.png"><img src="../../images/OSS_File_Submission.png" /></a>
 
 ## Implementation
 

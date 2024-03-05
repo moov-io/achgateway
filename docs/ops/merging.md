@@ -20,7 +20,7 @@ ACHGateway supports encrypting pending and merged files in the filesystem used f
 
 ## Merging
 
-<a href="../images/merging_process.png"><img src="../images/merging_process.png" /></a>
+<a href="../../images/merging_process.png"><img src="../../images/merging_process.png" /></a>
 
 When a shard is triggered ACHGateway will perform a series of steps to merge and upload the pending files.
 
