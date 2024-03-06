@@ -8,7 +8,7 @@ menubar: docs-menu
 
 # Upload Agents
 
-ACHGateway facilitates the secure and efficient uploading of ACH files to financial institutions (FIs) using protocols such as FTP(s) ([File Transport Protocol](https://en.wikipedia.org/wiki/File_Transfer_Protocol) with TLS) or SFTP ([SSH File Transfer Protocol](https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol)). The system adheres to specific filename conventions, like `FOO_YYYYMMDD_ABA.ach`, for example, `BANKNAME_20181222_301234567.ach`. These operations are fully configurable within the ACHGateway's settings.
+ACHGateway facilitates the secure and efficient uploading of ACH files to financial institutions (FIs) using protocols such as FTP(s) ([File Transport Protocol](https://en.wikipedia.org/wiki/File_Transfer_Protocol) with TLS) or SFTP ([SSH File Transfer Protocol](https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol)). The system adheres to specific filename conventions, for example `BANKNAME_20181222_301234567.ach`. These operations are fully configurable within the ACHGateway's settings.
 
 **Further Reading**: See how to configure the [`Upload` object](../../config/#upload-agents) for detailed upload instructions.
 

@@ -36,8 +36,6 @@ Deploying ACHGateway in a production environment demands careful consideration o
 
 - **Data Backup:** Maintain regular backups of the storage directory used for merged files. Alternatively, ensure the system is capable of real-time recovery to prevent data loss and support continuity in the event of system failure.
 
-Implementing these best practices will significantly enhance the security and operational efficacy of ACHGateway in a production setting, safeguarding against common vulnerabilities and ensuring the system's resilience.
-
 ### Monitoring and Alerting
 
 - **System Monitoring:** Implement comprehensive monitoring solutions to track the health and performance of ACHGateway. This includes monitoring system resources, transaction volumes, and error rates.

@@ -20,7 +20,7 @@ Events can be dispatched via HTTP webhooks or through a supported streaming prov
 
 This event signifies the successful upload of an ACH file to the server:
 
-[`FileUploaded`](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/models#FileUploaded):
+[Specification](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/models#FileUploaded):
 
 ```
 {
@@ -35,7 +35,7 @@ This event signifies the successful upload of an ACH file to the server:
 
 This event alerts to a problem with a file in the queue, such as a structural or validation error:
 
-[`InvalidQueueFile`](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/models#InvalidQueueFile):
+[Specification](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/models#InvalidQueueFile):
 
 ```
 {
