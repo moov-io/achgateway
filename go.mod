@@ -2,7 +2,7 @@
 
 module github.com/moov-io/achgateway
 
-go 1.22
+go 1.22.0
 
 require (
 	github.com/PagerDuty/go-pagerduty v1.7.0

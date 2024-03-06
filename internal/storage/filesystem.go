@@ -51,7 +51,7 @@ func (fs *filesystem) Glob(pattern string) ([]FileStat, error) {
 	if err != nil {
 		return nil, err
 	}
-	var out []FileStat
+	out := make([]FileStat, 0, len(matches))
 	for i := range matches {
 		stat, _ := os.Stat(matches[i])
 		if stat == nil {

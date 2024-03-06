@@ -73,9 +73,9 @@ func setupBackoff(cfg *service.NotificationRetries) (retry.Backoff, error) {
 }
 
 func (ms *MultiSender) senderTypes() string {
-	var out []string
+	out := make([]string, len(ms.senders))
 	for i := range ms.senders {
-		out = append(out, fmt.Sprintf("%T", ms.senders[i]))
+		out[i] = fmt.Sprintf("%T", ms.senders[i])
 	}
 	return strings.Join(out, ", ")
 }
