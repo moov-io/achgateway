@@ -116,6 +116,10 @@ func ReadWithOpts(data []byte, opts *ach.ValidateOpts) (*Event, error) {
 		var file CancelACHFile
 		event.Event = &file
 
+	case "FileCancellationResponse":
+		var response FileCancellationResponse
+		event.Event = &response
+
 	case "FileUploaded":
 		var file FileUploaded
 		event.Event = &file
@@ -286,6 +290,9 @@ func (evt *InvalidQueueFile) SetValidation(opts *ach.ValidateOpts) {
 //
 // See the Event struct for wrapping steps.
 type CancelACHFile incoming.CancelACHFile
+
+// FileCancellationResponse is a response to the CancelACHFile event signaling if the cancellation was successful.
+type FileCancellationResponse incoming.FileCancellationResponse
 
 // FileUploaded is an event sent after a queued file has been uploaded to the ODFI.
 // The entries and batches may have been merged into a larger file to optimize on cost,

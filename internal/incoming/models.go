@@ -46,3 +46,9 @@ type CancelACHFile struct {
 	FileID   string `json:"id"`
 	ShardKey string `json:"shardKey"`
 }
+
+type FileCancellationResponse struct {
+	FileID     string `json:"id"`
+	ShardKey   string `json:"shardKey"`
+	Successful bool   `json:"successful"`
+}

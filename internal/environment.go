@@ -176,7 +176,7 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		env.PublicRouter.Path("/ping").Methods("GET").HandlerFunc(addPingRoute)
 
 		// append HTTP routes
-		web.NewFilesController(env.Config.Logger, env.Config.Inbound.HTTP, httpFiles).AppendRoutes(env.PublicRouter)
+		web.NewFilesController(env.Config.Logger, env.Config.Inbound.HTTP, httpFiles, inmemEvents, fileReceiver.CancellationResponses).AppendRoutes(env.PublicRouter)
 
 		// shard mapping HTTP routes
 		shardMappingService, err := shards.NewShardMappingService(stime.NewStaticTimeService(), env.Config.Logger, shardRepository)

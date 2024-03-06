@@ -53,7 +53,7 @@ import (
 // each merged file for an upload.
 type XferMerging interface {
 	HandleXfer(ctx context.Context, xfer incoming.ACHFile) error
-	HandleCancel(ctx context.Context, cancel incoming.CancelACHFile) error
+	HandleCancel(ctx context.Context, cancel incoming.CancelACHFile) (incoming.FileCancellationResponse, error)
 
 	WithEachMerged(ctx context.Context, f func(context.Context, int, upload.Agent, *ach.File) (string, error)) (*processedFiles, error)
 }
@@ -127,15 +127,30 @@ func (m *filesystemMerging) writeACHFile(ctx context.Context, xfer incoming.ACHF
 	return nil
 }
 
-func (m *filesystemMerging) HandleCancel(ctx context.Context, cancel incoming.CancelACHFile) error {
+func (m *filesystemMerging) HandleCancel(ctx context.Context, cancel incoming.CancelACHFile) (incoming.FileCancellationResponse, error) {
 	path := filepath.Join("mergable", m.shard.Name, fmt.Sprintf("%s.ach", cancel.FileID))
+
+	// Check if the file exists already
+	file, _ := m.storage.Open(path)
+	if file != nil {
+		defer file.Close()
+	}
 
 	// Write the canceled File
 	err := m.storage.ReplaceFile(path, path+".canceled")
 	if err != nil {
 		telemetry.RecordError(ctx, err)
 	}
-	return err
+
+	// File was found and we didn't error during the rename
+	var successful bool = file != nil && err == nil
+
+	out := incoming.FileCancellationResponse{
+		FileID:     cancel.FileID,
+		ShardKey:   cancel.ShardKey,
+		Successful: successful,
+	}
+	return out, err
 }
 
 func (m *filesystemMerging) isolateMergableDir(ctx context.Context) (string, error) {
