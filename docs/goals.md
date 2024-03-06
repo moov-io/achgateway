@@ -8,22 +8,28 @@ menubar: docs-menu
 
 # Project Goals
 
-achgateway is an automated service for uploading and downloading Nacha formatted ACH files to FTP/SFTP servers. This service accepts valid Nacha files across multiple interfaces and will optimize them to upload to an ODFI.
+ACHGateway streamlines the process of handling Automated Clearing House (ACH) transactions by automating the upload and download of ACH files formatted according to Nacha standards. Designed to facilitate secure and efficient transactions, this service supports FTP/SFTP server interactions and is engineered to accept and optimize valid Nacha files for seamless integration with an Originating Depository Financial Institution (ODFI).
 
-Several other features of achgateway include:
+## Key Features
 
-- Extensible submission of ACH files (and partial requests) for upload at cutoff times
-- Merging pending files together for optimized network usage and pricing by required times during the day
-- Custom filename templating on uploaded files and non-compliant Nacha validation
-- Audit storage of uploaded and downloaded files and [retrieval or viewing](https://github.com/moov-io/ach-web-viewer)
-- Notifications on successful file upload or errors
-   - Slack, PagerDuty, Emails, etc
+ACHGateway is built with a focus on flexibility, efficiency, and security, offering a range of features designed to enhance the ACH file handling process:
 
-# Non-Goals
+- **Extensible Submissions:** Supports the submission of ACH files, including partial requests, for timely uploads according to cutoff schedules.
+- **File Merging:** Combines pending files to minimize network bandwidth and optimize costs, aligning with specific time requirements throughout the day.
+- **Custom Filename Templating:** Offers the ability to customize filenames for uploads, including support for handling non-compliant Nacha files.
+- **Comprehensive Audit Trail:** Maintains a secure storage of all uploaded and downloaded files, with options for [retrieval or viewing](https://github.com/moov-io/ach-web-viewer), ensuring transparency and ease of access for auditing purposes.
+- **Notifications:** Provides real-time alerts for successful uploads or error detections through various channels including Slack, PagerDuty, and email, ensuring stakeholders are promptly informed.
 
-- Nacha compliant limit analysis
-- Balance verification
-- Transaction authorization
-- Settlement availability
-- Risk calculations
-   - For OFAC, sanction, and watchlist scanning see [Watchman](https://github.com/moov-io/watchman)
+## Non-Goals
+
+While ACHGateway excels in facilitating ACH file transactions, it is important to note the project's defined scope. The following are outside of ACHGateway's direct functionality but are essential considerations for a comprehensive ACH processing ecosystem:
+
+- **Nacha Compliant Limit Analysis:** Assessing transaction limits as per Nacha guidelines.
+- **Balance Verification:** Confirming account balances prior to transaction processing.
+- **Transaction Authorization:** Securing approvals for transaction execution.
+- **Settlement Availability:** Ensuring funds are available for settlement.
+- **Risk Calculations:** Performing risk assessments for transactions. For related services, such as OFAC, sanction, and watchlist scanning, refer to [Watchman](https://github.com/moov-io/watchman).
+
+## Conclusion
+
+ACHGateway aims to enhance the efficiency and security of ACH file processing through automation, customization, and robust auditing capabilities. While addressing core needs in ACH file management, it also delineates its scope to focus on delivering optimized solutions within its designated functionalities.

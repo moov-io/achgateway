@@ -8,31 +8,44 @@ menubar: docs-menu
 
 ## Audit Trail
 
-A requirement of Nacha regulations and many ODFIs is to retain submitted files for a period of time. This is also a benefit to implementations because it allows for debugging and reproduction of files and entries. ACHGateway can encrypt and persist these files into an S3-compatiable storage layer. Moov also publishes an [ach-web-viewer project](https://github.com/moov-io/ach-web-viewer) to list and display individual files.
+Complying with Nacha regulations and ODFI requirements, ACHGateway ensures the retention of submitted files for a mandated duration. This feature is not just about regulatory compliance; it's a valuable tool for debugging and recreating specific files and entries, enhancing the reliability and traceability of transactions. ACHGateway achieves this through encryption and storage of these files in an S3-compatible storage layer. Additionally, Moov introduces the [ach-web-viewer project](https://github.com/moov-io/ach-web-viewer), a utility for browsing and displaying individual files, further simplifying audit and review processes.
 
 ### Pending Files
 
-ACHGateway offers endpoints for listing and retrieving the contents of a pending file.
+
+ACHGateway facilitates the easy management of pending files through specific endpoints. These allow for the listing and retrieval of pending file contents, streamlining the process of handling ACH transactions before final submission.
 
 ```
 GET /shards/{shardName}/files
 GET /shards/{shardName}/files/{filepath}
 ```
 
-Refer to the [pending file endpoints](https://moov-io.github.io/achgateway/api/#tag--Operations) for viewing pending files.
+For more details on working with pending files, please visit the [pending file endpoints documentation](https://moov-io.github.io/achgateway/api/#tag--Operations).
 
-### Storage Layout
 
-Inside of an S3-compatiable bucket files will be stored according to the following layout:
+### Organized Storage Layout
 
-Files retrieved from the ODFI
+To ensure efficient file management and retrieval, ACHGateway adopts a systematic approach to storing files within an S3-compatible bucket. The layout is designed to differentiate easily between files received from the ODFI and those prepared for upload, as detailed below.
+
+#### Received from the ODFI
+
+Files retrieved from the ODFI are stored as follows:
+
 ```
 /odfi/$hostname/$yyyy-mm-dd/$filename
 ```
+
 Example: `/odfi/sftp.bank.com/inbound/2022-01-17/BANK_ACH_DOWNLOAD_20220601_123051.ach`
 
-Files uploaded to the ODFI
+
+#### Uploaded to the ODFI
+
+Files intended for upload to the ODFI follow this layout:
+
 ```
 /outbound/$hostname/$dir/$yyyy-mm-dd/$filename
 ```
+
 Example: `/outbound/sftp.bank.com/2022-01-17/BANK_ACH_UPLOAD_20220601_123051.ach`
+
+This structured approach not only complies with regulatory requirements but also aids in the efficient management and retrieval of ACH files, supporting a more streamlined and secure transaction process.

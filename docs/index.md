@@ -10,15 +10,15 @@ menubar: docs-menu
 
 Moov’s mission is to give developers an easy way to create and integrate bank processing into their own software products. Our open source projects are each focused on solving a single responsibility in financial services and designed around performance, scalability, and ease of use.
 
-ACHGateway is an extensible, highly-available, distributed, and fault-tolerant Nacha ACH uploader and downloader. ACHGateway creates events for outside services and transforms files prior to upload to fit real-world requirements of production systems. For an introduction to ACH [refer to our guide](https://moov-io.github.io/ach/intro/).
+ACHGateway is an extensible, highly-available, distributed, and fault-tolerant Nacha ACH uploader and downloader. ACHGateway facilitates the uploading and downloading of ACH files, generating events for external services and modifying files to meet the practical demands of production environments. For an introduction to ACH [refer to our guide](https://moov-io.github.io/ach/intro/).
 
 Payment systems need to be adaptable for all kinds of uses and this is the primary goal of ACHGateway. Typically businesses submit ACH files (in their Nacha format) to initiate debits/credits against bank accounts. An Originating Depository Financial Institution (ODFI) can be your legal and financial partner. ACHGateway can optimize and streamline the integration to your ODFI.
 
-Next: [Project Goals](./goals/)
+Next: [Project Goals](./goals/) or [Submit a File](./concepts/submission/)
 
 ## Project status
 
-This project is used in production at multiple companies and has reached a stable status. We are looking to improve the configuration of ACHGateway and looking for feedback from real-world usage. Please reach out and share your story.
+ACHGateway is trusted and utilized in production environments across various companies, achieving a stable milestone. Our current focus is on refining ACHGateway's configuration based on user feedback. We invite you to contribute your experiences and suggestions to help us enhance the project.
 
 ## Getting help
 

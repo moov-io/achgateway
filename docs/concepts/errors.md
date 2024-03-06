@@ -8,14 +8,14 @@ menubar: docs-menu
 
 # Errors
 
-When ACHGateway encounters an error during processing it will attempt to notify an external system. This is advised to alert a human to help resolve or monitor the situtation. ACHGateway attempts basic retry strategies in most cases, but often cannot successfully complete processing.
+When ACHGateway encounters processing errors, it proactively notifies designated external systems. This mechanism is crucial for engaging human intervention for resolution or monitoring. While ACHGateway implements fundamental retry strategies for most errors, some issues may persist beyond automated recovery efforts.
 
-**See Also**: Configure the [`Errors` object](../../config/#error-alerting)
+**Related Configuration**: Explore setting up [`Errors` notifications](../../config/#error-alerting) for detailed alert management.
 
 ## PagerDuty
 
-Critical events are triggered with some basic details of the error. Often this is an error with file uploading (network failures, invalid credentials, etc) which require human intervention.
+For critical incidents, PagerDuty alerts are generated, providing essential error details. Common triggers include issues related to file uploads, such as network failures or incorrect credentials, which typically necessitate manual intervention.
 
 ## Slack
 
-Messages are posted to a slack channel to alert humans of network or credential issues.
+Slack channels receive notifications about problems like network disruptions or credential verification failures. These alerts aim to promptly inform team members, allowing for swift action to address the underlying issues.

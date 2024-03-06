@@ -8,23 +8,29 @@ menubar: docs-menu
 
 # Upload Agents
 
-ACH files which are uploaded to another FI primarily use FTP(s) ([File Transport Protocol](https://en.wikipedia.org/wiki/File_Transfer_Protocol) with TLS) or SFTP ([SSH File Transfer Protocol](https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol)) and follow a filename pattern like: `FOO_YYYYMMDD_ABA.ach` (example: `BANKNAME_20181222_301234567.ach`). The configuration file determines how ACHGateway uploads and transforms the files.
+ACHGateway facilitates the secure and efficient uploading of ACH files to financial institutions (FIs) using protocols such as FTP(s) ([File Transport Protocol](https://en.wikipedia.org/wiki/File_Transfer_Protocol) with TLS) or SFTP ([SSH File Transfer Protocol](https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol)). The system adheres to specific filename conventions, like `FOO_YYYYMMDD_ABA.ach`, for example, `BANKNAME_20181222_301234567.ach`. These operations are fully configurable within the ACHGateway's settings.
 
-**See Also**: Configure the [`Upload` object](../../config/#upload-agents)
+**Further Reading**: See how to configure the [`Upload` object](../../config/#upload-agents) for detailed upload instructions.
 
-### IP Whitelisting
+## IP Whitelisting for Enhanced Security
 
-When ACHGateway uploads an ACH file to the ODFI server it can verify the remote server's hostname resolves to a whitelisted IP or CIDR range.
-This supports certain network controls to prevent DNS poisoning or misconfigured routing.
+To bolster security during the upload process to the ODFI server, ACHGateway supports IP whitelisting. This feature ensures the server's hostname resolves only to pre-approved IP addresses or CIDR ranges, offering a safeguard against DNS poisoning or routing errors.
 
-Setting an `UploadAgent`'s `AllowedIPs` property can be done with values like: `35.211.43.9` (specific IP address), `10.4.0.0/16` (CIDR range), `10.1.0.12,10.3.0.0/16` (Multiple values)
+### Configuring `UploadAgent`'s `AllowedIPs`:
 
-### SFTP Host and Client Key Verification
+- Specific IP Address: `35.211.43.9`
+- CIDR Range: `10.4.0.0/16`
+- Multiple Values: `10.1.0.12,10.3.0.0/16`
 
-ACHGateway can verify the remote SFTP server's host key prior to uploading files and it can have a client key provided. Both methods assist in
-authenticating ACHGateway and the remote server prior to any file uploads.
+This configuration helps enforce strict network controls, providing an additional layer of security.
 
-**Public Key** (SSH Authorized key format)
+## SFTP Host and Client Key Verification
+
+For secure SFTP file uploads, ACHGateway can verify the host key of the remote server and utilize a client key for mutual authentication. This double-layered approach ensures a trusted connection between ACHGateway and the remote server before any file transfer occurs.
+
+### Remote Server's Host Key Configuration:
+
+**Public Key** (in SSH Authorized Key Format):
 
 ```
 SFTP Config: HostPublicKey
@@ -44,4 +50,4 @@ Format:
 -----END RSA PRIVATE KEY-----
 ```
 
-Note: Public and Private keys can be encoded with base64 from the following formats or kept as-is. ACHGateway expects Go's `base64.StdEncoding` encoding (not base64 URL encoding).
+Note: Public and private keys can either be directly used in their original formats or encoded in base64, adhering to Go's `base64.StdEncoding` (not URL encoding). This flexibility allows for secure and adaptable key management in line with your security protocols.
