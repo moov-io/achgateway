@@ -1,6 +1,6 @@
-docs/concepts/events.md:generic-api-key:24
-docs/concepts/events.md:generic-api-key:35
-docs/concepts/upload.md:private-key:40
+docs/concepts/events.md:generic-api-key:28
+docs/concepts/events.md:generic-api-key:44
+docs/concepts/upload.md:private-key:46
 internal/gpgx/testdata/key.priv:private-key:1
 internal/transform/testdata/moov.key:private-key:1
 internal/upload/sftp_test.go:private-key:306
