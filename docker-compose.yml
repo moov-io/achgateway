@@ -42,7 +42,7 @@ services:
       - "demo:password:::inbound,outbound,reconciliation,returned"
 
   kafka1:
-    image: docker.redpanda.com/vectorized/redpanda:v22.3.21
+    image: docker.redpanda.com/vectorized/redpanda:v22.3.25
     container_name: kafka1
     healthcheck:
       {
