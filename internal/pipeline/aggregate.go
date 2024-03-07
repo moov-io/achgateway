@@ -166,7 +166,7 @@ func (xfagg *aggregator) acceptFile(ctx context.Context, msg incoming.ACHFile) e
 func (xfagg *aggregator) cancelFile(ctx context.Context, msg incoming.CancelACHFile) (models.FileCancellationResponse, error) {
 	response, err := xfagg.merger.HandleCancel(ctx, msg)
 	if err != nil {
-		return err
+		return models.FileCancellationResponse{}, err
 	}
 
 	// Send the response back

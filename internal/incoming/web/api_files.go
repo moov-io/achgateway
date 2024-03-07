@@ -67,8 +67,10 @@ type FilesController struct {
 
 func (c *FilesController) listenForCancellations() {
 	go func() {
-		select {
-		case cancel := <-c.cancellationResponses:
+		for {
+			// Wait for a message
+			cancel := <-c.cancellationResponses
+
 			c.cancellationLock.Lock()
 			out, exists := c.activeCancellations[cancel.FileID]
 			if exists {
