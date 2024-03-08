@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/incoming"
@@ -60,22 +61,26 @@ type FilesController struct {
 	cfg       service.HTTPConfig
 	publisher stream.Publisher
 
-	cancellationLock      sync.RWMutex
+	cancellationLock      sync.Mutex
 	activeCancellations   map[string]chan models.FileCancellationResponse
 	cancellationResponses chan models.FileCancellationResponse
 }
 
 func (c *FilesController) listenForCancellations() {
+	c.logger.Info().Log("listening for cancellation responses")
 	go func() {
 		for {
 			// Wait for a message
 			cancel := <-c.cancellationResponses
+			c.logger.Info().Logf("received cancellation response: %#v", cancel)
+
+			fileID := strings.TrimSuffix(cancel.FileID, ".ach")
 
 			c.cancellationLock.Lock()
-			out, exists := c.activeCancellations[cancel.FileID]
+			out, exists := c.activeCancellations[fileID]
 			if exists {
-				delete(c.activeCancellations, cancel.FileID)
 				out <- cancel
+				delete(c.activeCancellations, fileID)
 			}
 			c.cancellationLock.Unlock()
 		}
@@ -195,9 +200,7 @@ func (c *FilesController) CancelFileHandler(w http.ResponseWriter, r *http.Reque
 	defer span.End()
 
 	waiter := make(chan models.FileCancellationResponse, 1)
-	defer func() {
-		close(waiter)
-	}()
+	defer func() { close(waiter) }()
 
 	err := c.cancelFile(ctx, shardKey, fileID, waiter)
 	if err != nil {
@@ -210,7 +213,18 @@ func (c *FilesController) CancelFileHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	response := <-waiter
+	var response models.FileCancellationResponse
+	select {
+	case resp := <-waiter:
+		response = resp
+
+	case <-time.After(10 * time.Second):
+		response = models.FileCancellationResponse{
+			FileID:     fileID,
+			ShardKey:   shardKey,
+			Successful: false,
+		}
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -221,9 +235,9 @@ func (c *FilesController) cancelFile(ctx context.Context, shardKey, fileID strin
 	// Remove .ach suffix if the request added it
 	fileID = strings.TrimSuffix(fileID, ".ach")
 
-	c.cancellationLock.RLock()
-	c.activeCancellations[fmt.Sprintf("%s.ach", fileID)] = waiter
-	c.cancellationLock.RUnlock()
+	c.cancellationLock.Lock()
+	c.activeCancellations[fileID] = waiter
+	c.cancellationLock.Unlock()
 
 	bs, err := compliance.Protect(c.cfg.Transform, models.Event{
 		Event: incoming.CancelACHFile{
