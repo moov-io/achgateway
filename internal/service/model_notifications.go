@@ -26,7 +26,11 @@ import (
 
 var (
 	DefaultEmailTemplate = template.Must(template.New("email").Parse(`
+{{- if .Successful }}
 A file has been {{ .Verb }}ed{{ if .Hostname }}{{ if eq .Verb "upload" }} to{{ else }} from{{end}} {{ .Hostname }}{{end}} - {{ .Filename }}
+{{ else }}
+File upload of {{ .Filename }} FAILED to {{ .Verb }}{{ if .Hostname }}{{ if eq .Verb "upload" }} to{{ else }} from{{end}} {{ .Hostname }}{{end}}
+{{- end }}
 Name: {{ .CompanyName }}
 Debits:  ${{ .DebitTotal }}
 Credits: ${{ .CreditTotal }}
