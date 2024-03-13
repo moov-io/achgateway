@@ -20,12 +20,14 @@ package web
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
@@ -40,7 +42,8 @@ import (
 func TestCreateFileHandler(t *testing.T) {
 	topic, sub := streamtest.InmemStream(t)
 
-	controller := NewFilesController(log.NewTestLogger(), service.HTTPConfig{}, topic)
+	cancellationResponses := make(chan models.FileCancellationResponse)
+	controller := NewFilesController(log.NewTestLogger(), service.HTTPConfig{}, topic, cancellationResponses)
 	r := mux.NewRouter()
 	controller.AppendRoutes(r)
 
@@ -68,7 +71,8 @@ func TestCreateFileHandler(t *testing.T) {
 func TestCreateFileHandlerErr(t *testing.T) {
 	topic, _ := streamtest.InmemStream(t)
 
-	controller := NewFilesController(log.NewTestLogger(), service.HTTPConfig{}, topic)
+	cancellationResponses := make(chan models.FileCancellationResponse)
+	controller := NewFilesController(log.NewTestLogger(), service.HTTPConfig{}, topic, cancellationResponses)
 	r := mux.NewRouter()
 	controller.AppendRoutes(r)
 
@@ -84,12 +88,23 @@ func TestCreateFileHandlerErr(t *testing.T) {
 func TestCancelFileHandler(t *testing.T) {
 	topic, sub := streamtest.InmemStream(t)
 
-	controller := NewFilesController(log.NewTestLogger(), service.HTTPConfig{}, topic)
+	cancellationResponses := make(chan models.FileCancellationResponse)
+	controller := NewFilesController(log.NewTestLogger(), service.HTTPConfig{}, topic, cancellationResponses)
 	r := mux.NewRouter()
 	controller.AppendRoutes(r)
 
 	// Cancel our file
 	req := httptest.NewRequest("DELETE", "/shards/s2/files/f2.ach", nil)
+
+	// Setup the response
+	go func() {
+		time.Sleep(time.Second)
+		cancellationResponses <- models.FileCancellationResponse{
+			FileID:     "f2.ach",
+			ShardKey:   "s2",
+			Successful: true,
+		}
+	}()
 
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -104,4 +119,11 @@ func TestCancelFileHandler(t *testing.T) {
 
 	require.Equal(t, "f2", file.FileID) // make sure .ach suffix is trimmed
 	require.Equal(t, "s2", file.ShardKey)
+
+	var response incoming.FileCancellationResponse
+	json.NewDecoder(w.Body).Decode(&response)
+
+	require.Equal(t, "f2.ach", response.FileID)
+	require.Equal(t, "s2", response.ShardKey)
+	require.True(t, response.Successful)
 }

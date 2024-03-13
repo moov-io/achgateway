@@ -20,10 +20,13 @@ package web
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/incoming"
@@ -40,18 +43,48 @@ import (
 	"gocloud.dev/pubsub"
 )
 
-func NewFilesController(logger log.Logger, cfg service.HTTPConfig, pub stream.Publisher) *FilesController {
-	return &FilesController{
+func NewFilesController(logger log.Logger, cfg service.HTTPConfig, pub stream.Publisher, cancellationResponses chan models.FileCancellationResponse) *FilesController {
+	controller := &FilesController{
 		logger:    logger,
 		cfg:       cfg,
 		publisher: pub,
+
+		activeCancellations:   make(map[string]chan models.FileCancellationResponse),
+		cancellationResponses: cancellationResponses,
 	}
+	controller.listenForCancellations()
+	return controller
 }
 
 type FilesController struct {
 	logger    log.Logger
 	cfg       service.HTTPConfig
 	publisher stream.Publisher
+
+	cancellationLock      sync.Mutex
+	activeCancellations   map[string]chan models.FileCancellationResponse
+	cancellationResponses chan models.FileCancellationResponse
+}
+
+func (c *FilesController) listenForCancellations() {
+	c.logger.Info().Log("listening for cancellation responses")
+	go func() {
+		for {
+			// Wait for a message
+			cancel := <-c.cancellationResponses
+			c.logger.Info().Logf("received cancellation response: %#v", cancel)
+
+			fileID := strings.TrimSuffix(cancel.FileID, ".ach")
+
+			c.cancellationLock.Lock()
+			out, exists := c.activeCancellations[fileID]
+			if exists {
+				out <- cancel
+				delete(c.activeCancellations, fileID)
+			}
+			c.cancellationLock.Unlock()
+		}
+	}()
 }
 
 func (c *FilesController) AppendRoutes(router *mux.Router) *mux.Router {
@@ -166,7 +199,11 @@ func (c *FilesController) CancelFileHandler(w http.ResponseWriter, r *http.Reque
 	))
 	defer span.End()
 
-	if err := c.cancelFile(ctx, shardKey, fileID); err != nil {
+	waiter := make(chan models.FileCancellationResponse, 1)
+	defer func() { close(waiter) }()
+
+	err := c.cancelFile(ctx, shardKey, fileID, waiter)
+	if err != nil {
 		c.logger.With(log.Fields{
 			"shard_key": log.String(shardKey),
 			"file_id":   log.String(fileID),
@@ -176,12 +213,31 @@ func (c *FilesController) CancelFileHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	var response models.FileCancellationResponse
+	select {
+	case resp := <-waiter:
+		response = resp
+
+	case <-time.After(10 * time.Second):
+		response = models.FileCancellationResponse{
+			FileID:     fileID,
+			ShardKey:   shardKey,
+			Successful: false,
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }
 
-func (c *FilesController) cancelFile(ctx context.Context, shardKey, fileID string) error {
+func (c *FilesController) cancelFile(ctx context.Context, shardKey, fileID string, waiter chan models.FileCancellationResponse) error {
 	// Remove .ach suffix if the request added it
 	fileID = strings.TrimSuffix(fileID, ".ach")
+
+	c.cancellationLock.Lock()
+	c.activeCancellations[fileID] = waiter
+	c.cancellationLock.Unlock()
 
 	bs, err := compliance.Protect(c.cfg.Transform, models.Event{
 		Event: incoming.CancelACHFile{
@@ -201,5 +257,4 @@ func (c *FilesController) cancelFile(ctx context.Context, shardKey, fileID strin
 		Body:     bs,
 		Metadata: meta,
 	})
-
 }

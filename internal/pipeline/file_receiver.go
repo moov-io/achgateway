@@ -62,6 +62,8 @@ type FileReceiver struct {
 	httpFiles   stream.Subscription
 	streamFiles stream.Subscription
 
+	CancellationResponses chan models.FileCancellationResponse
+
 	transformConfig *models.TransformConfig
 }
 
@@ -77,15 +79,16 @@ func newFileReceiver(
 ) (*FileReceiver, error) {
 	// Create FileReceiver and connect streamFiles
 	fr := &FileReceiver{
-		logger:           logger,
-		cfg:              cfg,
-		eventEmitter:     eventEmitter,
-		defaultShardName: cfg.Sharding.Default,
-		shardRepository:  shardRepository,
-		shardAggregators: shardAggregators,
-		fileRepository:   fileRepository,
-		httpFiles:        httpFiles,
-		transformConfig:  transformConfig,
+		logger:                logger,
+		cfg:                   cfg,
+		eventEmitter:          eventEmitter,
+		defaultShardName:      cfg.Sharding.Default,
+		shardRepository:       shardRepository,
+		shardAggregators:      shardAggregators,
+		fileRepository:        fileRepository,
+		httpFiles:             httpFiles,
+		CancellationResponses: make(chan models.FileCancellationResponse, 1000),
+		transformConfig:       transformConfig,
 	}
 	err := fr.reconnect()
 	if err != nil {
@@ -511,10 +514,12 @@ func (fr *FileReceiver) cancelACHFile(ctx context.Context, cancel *models.Cancel
 	logger.Log("begin canceling ACH file")
 
 	evt := incoming.CancelACHFile(*cancel)
-	err = agg.cancelFile(ctx, evt)
+	response, err := agg.cancelFile(ctx, evt)
 	if err != nil {
 		return logger.Error().LogErrorf("problem canceling file: %v", err).Err()
 	}
+
+	fr.CancellationResponses <- response
 
 	logger.Log("finished cancel of file")
 	return nil

@@ -167,16 +167,16 @@ func TestUploads(t *testing.T) {
 	require.NoError(t, err)
 	defer streamTopic.Shutdown(context.Background())
 
-	fileController := web.NewFilesController(logger, service.HTTPConfig{}, httpPub)
-	r := mux.NewRouter()
-	fileController.AppendRoutes(r)
-
 	outboundPath := setupTestDirectory(t, uploadConf)
 	fileRepo := &files.MockRepository{}
 
 	fileReceiver, err := pipeline.Start(ctx, logger, uploadConf, shardRepo, fileRepo, httpSub)
 	require.NoError(t, err)
 	t.Cleanup(func() { fileReceiver.Shutdown() })
+
+	fileController := web.NewFilesController(logger, service.HTTPConfig{}, httpPub, fileReceiver.CancellationResponses)
+	r := mux.NewRouter()
+	fileController.AppendRoutes(r)
 
 	adminServer := admintest.Server(t)
 	fileReceiver.RegisterAdminRoutes(adminServer)

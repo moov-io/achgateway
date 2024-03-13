@@ -163,8 +163,21 @@ func (xfagg *aggregator) acceptFile(ctx context.Context, msg incoming.ACHFile) e
 	return xfagg.merger.HandleXfer(ctx, msg)
 }
 
-func (xfagg *aggregator) cancelFile(ctx context.Context, msg incoming.CancelACHFile) error {
-	return xfagg.merger.HandleCancel(ctx, msg)
+func (xfagg *aggregator) cancelFile(ctx context.Context, msg incoming.CancelACHFile) (models.FileCancellationResponse, error) {
+	response, err := xfagg.merger.HandleCancel(ctx, msg)
+	if err != nil {
+		return models.FileCancellationResponse{}, err
+	}
+
+	// Send the response back
+	out := models.FileCancellationResponse(response)
+	err = xfagg.eventEmitter.Send(ctx, models.Event{
+		Event: out,
+	})
+	if err != nil {
+		return out, fmt.Errorf("problem emitting file cancellation response: %w", err)
+	}
+	return out, nil
 }
 
 func (xfagg *aggregator) withEachFile(when time.Time) error {
