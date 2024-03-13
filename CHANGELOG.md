@@ -1,3 +1,18 @@
+## v0.29.0 (Released 2024-03-13)
+
+This release contains an updated moov-io/ach with various improvements to merging files. Refer to the [moov-io/ach changelog](https://github.com/moov-io/ach/blob/master/CHANGELOG.md#v1361-released-2024-03-13) for more details.
+
+IMPROVEMENTS
+
+- feat: respond to CancelACHFile events with FileCancellationResponse
+- incoming/web: better wait timeout for FileCancellationResponse
+
+BUILD
+
+- build: update google.golang.org/protobuf to v1.33.0
+- build: update moov-io/ach to v1.36.1
+- build: update redpanda image to v22.3.25
+
 ## v0.28.1 (Released 2024-03-01)
 
 BUILD
