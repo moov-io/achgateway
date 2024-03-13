@@ -200,7 +200,6 @@ func (c *FilesController) CancelFileHandler(w http.ResponseWriter, r *http.Reque
 	defer span.End()
 
 	waiter := make(chan models.FileCancellationResponse, 1)
-	defer func() { close(waiter) }()
 
 	err := c.cancelFile(ctx, shardKey, fileID, waiter)
 	if err != nil {

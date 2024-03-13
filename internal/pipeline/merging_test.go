@@ -219,7 +219,9 @@ func TestMerging_determineMergeDestinations(t *testing.T) {
 		ACHFiles: []*ach.File{dup, ppd1, ppd2, ppd3, ppd4},
 	}
 
-	mergedFiles, err := ach.MergeFiles(input.ACHFiles)
+	mergedFiles, err := ach.MergeFilesWith(input.ACHFiles, ach.Conditions{
+		MaxLines: 10,
+	})
 	require.NoError(t, err)
 	require.Len(t, mergedFiles, 2)
 
