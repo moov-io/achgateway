@@ -24,14 +24,13 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"slices"
-	"strconv"
 	"testing"
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/internal/storage"
+	"github.com/moov-io/achgateway/internal/upload"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base"
 	"github.com/moov-io/base/log"
@@ -39,26 +38,50 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMerging__getNonCanceledMatches(t *testing.T) {
-	dir := t.TempDir()
-	require.NoError(t, os.Mkdir(filepath.Join(dir, "test-2021"), 0777))
+// TODO(adam): need to test and verify that ValidateOpts are carried through
 
-	write := func(filename string) string {
-		err := os.WriteFile(filepath.Join(dir, "test-2021", filename), nil, 0600)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return filename
+func TestMerging__getCanceledFiles(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "test-2024")
+	require.NoError(t, os.MkdirAll(dir, 0777))
+
+	name1 := fmt.Sprintf("%s.ach", base.ID())
+	xfer1 := write(t, filepath.Join(dir, name1), nil)
+	write(t, filepath.Join(dir, fmt.Sprintf("%s.canceled", xfer1)), nil)
+
+	name2 := fmt.Sprintf("%s.ach", base.ID())
+	write(t, filepath.Join(dir, name2), nil)
+
+	name3 := fmt.Sprintf("%s.ach", base.ID())
+	write(t, filepath.Join(dir, fmt.Sprintf("%s.canceled", name3)), nil)
+
+	fs, err := storage.NewFilesystem(root)
+	require.NoError(t, err)
+
+	m := &filesystemMerging{
+		storage: fs,
 	}
 
-	xfer1 := write(fmt.Sprintf("%s.ach", base.ID()))
+	matches, err := m.getCanceledFiles(context.Background(), "test-2024")
+	require.NoError(t, err)
 
-	cancel1 := write(fmt.Sprintf("%s.ach.canceled", base.ID()))
+	require.Len(t, matches, 2)
+	require.ElementsMatch(t, []string{name1, name3}, matches)
+}
 
-	xfer2 := write(fmt.Sprintf("%s.ach", base.ID()))
-	cancel2 := write(fmt.Sprintf("%s.canceled", xfer2))
+func TestMerging__getNonCanceledMatches(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "test-2021")
+	require.NoError(t, os.Mkdir(dir, 0777))
 
-	fs, err := storage.NewFilesystem(dir)
+	xfer1 := write(t, filepath.Join(dir, fmt.Sprintf("%s.ach", base.ID())), nil)
+
+	cancel1 := write(t, filepath.Join(dir, fmt.Sprintf("%s.ach.canceled", base.ID())), nil)
+
+	xfer2 := write(t, filepath.Join(dir, fmt.Sprintf("%s.ach", base.ID())), nil)
+	cancel2 := write(t, filepath.Join(dir, fmt.Sprintf("%s.canceled", xfer2)), nil)
+
+	fs, err := storage.NewFilesystem(root)
 	require.NoError(t, err)
 
 	m := &filesystemMerging{
@@ -74,16 +97,6 @@ func TestMerging__getNonCanceledMatches(t *testing.T) {
 	require.NotContains(t, matches[0], filepath.Join("test-2021", cancel1))
 	require.NotContains(t, matches[0], filepath.Join("test-2021", xfer2))
 	require.NotContains(t, matches[0], filepath.Join("test-2021", cancel2))
-}
-
-func TestMerging_makeIndices(t *testing.T) {
-	indices := makeIndices(122, 5)
-	expected := []int{0, 24, 48, 72, 96, 120, 122}
-	require.Equal(t, expected, indices)
-
-	indices = makeIndices(500, 1)
-	expected = []int{500}
-	require.Equal(t, expected, indices)
 }
 
 func copyFile(t *testing.T, src, dest string) {
@@ -102,96 +115,6 @@ func copyFile(t *testing.T, src, dest string) {
 	require.Greater(t, n, int64(0))
 }
 
-func TestMerging_chunkFilesTogether(t *testing.T) {
-	dir := t.TempDir()
-
-	copyFile(t, filepath.Join("..", "..", "testdata", "ppd-debit.ach"), filepath.Join(dir, "ppd-debit.ach"))
-	copyFile(t, filepath.Join("..", "..", "testdata", "ppd-debit2.ach"), filepath.Join(dir, "ppd-debit2.ach"))
-
-	fs, err := storage.NewFilesystem(dir)
-	require.NoError(t, err)
-
-	m := &filesystemMerging{
-		logger:  log.NewTestLogger(),
-		storage: fs,
-	}
-
-	indices := makeIndices(2, 1)
-	matches := []string{"ppd-debit.ach", "ppd-debit2.ach"}
-	var conditions ach.Conditions
-	merged, err := m.chunkFilesTogether(context.Background(), indices, matches, conditions)
-	require.NoError(t, err)
-	require.Len(t, merged, 1)
-
-	require.ElementsMatch(t, matches, merged[0].Names)
-
-	require.NotNil(t, merged[0].ACHFile)
-	require.Len(t, merged[0].ACHFile.Batches[0].GetEntries(), 2)
-}
-
-func Benchmark_chunkFilesTogether(b *testing.B) {
-	// Advice: Run this with "-benchtime 100x" to specify a fixed number of iterations
-	b.StopTimer()
-
-	example := read(b, filepath.Join("testdata", "ppd-debit.ach"))
-	initialTraceNumber, err := strconv.ParseInt(example.Batches[0].GetEntries()[0].TraceNumber, 10, 64)
-	if err != nil {
-		b.Fatal(err)
-	}
-
-	// Setup pending directory
-	dir := b.TempDir()
-	iterations := b.N * 10_000
-	groupSize := 250
-	indices := makeIndices(iterations, iterations/groupSize)
-	var matches []string
-	for i := 0; i < iterations; i++ {
-		file := ach.NewFile()
-		file.Header = example.Header
-
-		exampleBatch := example.Batches[0]
-		batch, err := ach.NewBatch(exampleBatch.GetHeader())
-		require.NoError(b, err)
-		entry := *exampleBatch.GetEntries()[0]
-		entry.SetTraceNumber(exampleBatch.GetHeader().ODFIIdentification, int(initialTraceNumber)+i)
-		batch.AddEntry(&entry)
-		require.NoError(b, batch.Create())
-
-		file.AddBatch(batch)
-		require.NoError(b, file.Create())
-
-		var buf bytes.Buffer
-		err = ach.NewWriter(&buf).Write(file)
-		require.NoError(b, err)
-
-		filename := fmt.Sprintf("%d.ach", i)
-		matches = append(matches, filename)
-		err = os.WriteFile(filepath.Join(dir, filename), buf.Bytes(), 0600)
-		require.NoError(b, err)
-	}
-	b.Logf("merged %d files", iterations)
-
-	fs, err := storage.NewFilesystem(dir)
-	require.NoError(b, err)
-
-	m := &filesystemMerging{
-		logger:  log.NewTestLogger(),
-		storage: fs,
-	}
-
-	b.Run("run", func(b *testing.B) {
-		b.StartTimer()
-
-		conditions := ach.Conditions{
-			MaxLines:        100_000,
-			MaxDollarAmount: 50_000_000,
-		}
-		merged, err := m.chunkFilesTogether(context.Background(), indices, matches, conditions)
-		require.NoError(b, err)
-		b.Logf("%d files after merge", len(merged))
-	})
-}
-
 func read(t testing.TB, where string) *ach.File {
 	t.Helper()
 
@@ -202,69 +125,94 @@ func read(t testing.TB, where string) *ach.File {
 	return file
 }
 
-func TestMerging_determineMergeDestinations(t *testing.T) {
-	dup := read(t, filepath.Join("testdata", "duplicate-trace.ach"))
-	ppd1 := read(t, filepath.Join("testdata", "ppd-debit.ach"))
-	ppd2 := read(t, filepath.Join("testdata", "ppd-debit2.ach"))
-	ppd3 := read(t, filepath.Join("testdata", "ppd-debit3.ach"))
-	ppd4 := read(t, filepath.Join("testdata", "ppd-debit4.ach"))
+func write(t *testing.T, where string, contents []byte) string {
+	t.Helper()
+	err := os.WriteFile(where, contents, 0600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, filename := filepath.Split(where)
+	return filename
+}
 
-	filenames := []string{
-		"duplicate-trace.ach",
-		"ppd-debit.ach", "ppd-debit2.ach", "ppd-debit3.ach", "ppd-debit4.ach",
+func TestMerging_fileAcceptor(t *testing.T) {
+	name1 := fmt.Sprintf("%s.ach", base.ID())
+	name2 := fmt.Sprintf("%s.ach", base.ID())
+	json1 := fmt.Sprintf("%s.json", base.ID())
+
+	output := fileAcceptor(nil)(name1)
+	require.Equal(t, ach.AcceptFile, output)
+
+	output = fileAcceptor([]string{name1})(name1)
+	require.Equal(t, ach.SkipFile, output)
+
+	output = fileAcceptor([]string{name1})(name2)
+	require.Equal(t, ach.AcceptFile, output)
+
+	output = fileAcceptor(nil)(json1)
+	require.Equal(t, ach.SkipFile, output)
+
+	output = fileAcceptor([]string{name1})(json1)
+	require.Equal(t, ach.SkipFile, output)
+}
+
+func TestMerging_mappings(t *testing.T) {
+	dir := t.TempDir()
+	os.MkdirAll(filepath.Join(dir, "mergable"), 0777)
+	copyFile(t, filepath.Join("testdata", "ppd-debit.ach"), filepath.Join(dir, "mergable", "ppd-debit.ach"))
+	copyFile(t, filepath.Join("testdata", "ppd-debit2.ach"), filepath.Join(dir, "mergable", "ppd-debit2.ach"))
+	copyFile(t, filepath.Join("testdata", "ppd-debit3.ach"), filepath.Join(dir, "mergable", "ppd-debit3.ach"))
+	copyFile(t, filepath.Join("testdata", "ppd-debit4.ach"), filepath.Join(dir, "mergable", "ppd-debit4.ach"))
+	copyFile(t, filepath.Join("testdata", "duplicate-trace.ach"), filepath.Join(dir, "mergable", "duplicate-trace.ach"))
+
+	fs, err := storage.NewFilesystem(dir)
+	require.NoError(t, err)
+
+	m := &filesystemMerging{
+		logger: log.NewTestLogger(),
+		cfg: service.UploadAgents{
+			Agents: []service.UploadAgent{
+				{
+					ID:   "mock",
+					Mock: &service.MockAgent{},
+				},
+			},
+		},
+		storage: fs,
+		shard: service.Shard{
+			UploadAgent: "mock",
+		},
 	}
 
-	input := namedFiles{
-		Names:    filenames,
-		ACHFiles: []*ach.File{dup, ppd1, ppd2, ppd3, ppd4},
+	mappings, err := m.buildDirMapping(".")
+	require.NoError(t, err)
+
+	for it := mappings.Iterator(); it.Valid(); it.Next() {
+		switch it.Value() {
+		case "ppd-debit.ach", "duplicate-trace.ach":
+			require.Contains(t, it.Key(), "076401255655291")
+		case "ppd-debit2.ach":
+			require.Contains(t, it.Key(), "076401255655292")
+		case "ppd-debit3.ach":
+			require.Contains(t, it.Key(), "076401255655293")
+		case "ppd-debit4.ach":
+			require.Contains(t, it.Key(), "076401255655294")
+		}
 	}
 
-	mergedFiles, err := ach.MergeFilesWith(input.ACHFiles, ach.Conditions{
-		MaxLines: 10,
+	ctx := context.Background()
+	merged, err := m.WithEachMerged(ctx, func(_ context.Context, idx int, _ upload.Agent, _ *ach.File) (string, error) {
+		return fmt.Sprintf("MAPPING-%d.ach", idx), nil
 	})
 	require.NoError(t, err)
-	require.Len(t, mergedFiles, 2)
 
-	expected := []mergedFile{
-		{
-			Names:   slices.Concat(filenames[0:1], filenames[2:]),
-			ACHFile: mergedFiles[0],
-		},
-		{
-			Names:   filenames[1:2],
-			ACHFile: mergedFiles[1],
-		},
-	}
+	mapped := m.findInputFilepaths(mappings, merged)
+	require.Len(t, mapped, 1)
 
-	t.Run("basic", func(t *testing.T) {
-		output := determineMergeDestinations(input, mergedFiles)
-		for i := range output {
-			require.ElementsMatch(t, expected[i].Names, output[i].Names)
-			require.Equal(t, *expected[i].ACHFile, *output[i].ACHFile)
-		}
-	})
-
-	growFile := func(file *ach.File, iterations int) {
-		entry := file.Batches[0].GetEntries()[0]
-		for i := 0; i < iterations; i++ {
-			ed := *entry
-			ed.SetTraceNumber(file.Batches[0].GetHeader().ODFIIdentification, iterations+i)
-			file.Batches[0].AddEntry(&ed)
-		}
-		require.Len(t, file.Batches[0].GetEntries(), iterations+1)
-	}
-
-	t.Run("more entries", func(t *testing.T) {
-		growFile(ppd2, 1000)
-		growFile(ppd4, 1000)
-
-		output := determineMergeDestinations(input, mergedFiles)
-		require.Len(t, output, 2)
-		for i := range output {
-			require.ElementsMatch(t, expected[i].Names, output[i].Names)
-			require.Equal(t, *expected[i].ACHFile, *output[i].ACHFile)
-		}
-	})
+	expected := []string{"duplicate-trace.ach", "ppd-debit.ach", "ppd-debit2.ach", "ppd-debit3.ach", "ppd-debit4.ach"}
+	require.ElementsMatch(t, expected, mapped[0].InputFilepaths)
+	require.Equal(t, "MAPPING-0.ach", mapped[0].UploadedFilename)
+	require.Equal(t, 2, len(mapped[0].ACHFile.Batches))
 }
 
 func TestMerging__writeACHFile(t *testing.T) {
@@ -280,9 +228,7 @@ func TestMerging__writeACHFile(t *testing.T) {
 		storage: fs,
 	}
 
-	file, err := ach.ReadFile(filepath.Join("..", "..", "testdata", "ppd-debit.ach"))
-	require.NoError(t, err)
-
+	file := read(t, filepath.Join("..", "..", "testdata", "ppd-debit.ach"))
 	file.Header.ImmediateOrigin = "ABCDEFGHIJ"
 	file.Header.ImmediateDestination = "123456780"
 
@@ -299,24 +245,27 @@ func TestMerging__writeACHFile(t *testing.T) {
 	err = m.HandleXfer(context.Background(), incoming.ACHFile(xfer))
 	require.NoError(t, err)
 
-	// Read the pending file
-	pendingFile, err := m.readFile(filepath.Join("mergable", "testing", fmt.Sprintf("%s.ach", xfer.FileID)))
+	var mergeConditions ach.Conditions
+	opts := m.createMergeDirOptions(nil)
+	opts.SubDirectories = true
+
+	merged, err := ach.MergeDir("mergable", mergeConditions, opts)
 	require.NoError(t, err)
-	require.NotNil(t, pendingFile.GetValidation())
+	require.Len(t, merged, 1)
+
+	validateOpts := merged[0].GetValidation()
+	require.False(t, validateOpts.SkipAll)
+	require.True(t, validateOpts.BypassOriginValidation)
+	require.True(t, validateOpts.BypassDestinationValidation)
 
 	var buf bytes.Buffer
-	err = ach.NewWriter(&buf).Write(pendingFile)
+	err = ach.NewWriter(&buf).Write(merged[0])
 	require.NoError(t, err)
 
 	// Verify the file pending contents
 	require.True(t, bytes.HasPrefix(buf.Bytes(), []byte("101 123456780ABCDEFGHIJ")))
-	require.Equal(t, "ABCDEFGHIJ", pendingFile.Header.ImmediateOrigin)
-	require.Equal(t, "123456780", pendingFile.Header.ImmediateDestination)
-
-	merged, err := ach.MergeFiles([]*ach.File{pendingFile})
-	require.NoError(t, err)
-	require.Len(t, merged, 1)
-	require.NotNil(t, merged[0].GetValidation())
+	require.Equal(t, "ABCDEFGHIJ", file.Header.ImmediateOrigin)
+	require.Equal(t, "123456780", file.Header.ImmediateDestination)
 
 	buf.Reset() // zero out
 	err = ach.NewWriter(&buf).Write(merged[0])

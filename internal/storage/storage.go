@@ -3,14 +3,16 @@ package storage
 import (
 	"encoding/base64"
 	"fmt"
+	"io/fs"
 	"strings"
 
 	"github.com/moov-io/cryptfs"
 )
 
 type Chest interface {
-	Open(path string) (File, error)
+	Open(path string) (fs.File, error)
 	Glob(pattern string) ([]FileStat, error)
+	ReadDir(name string) ([]fs.DirEntry, error)
 
 	ReplaceFile(oldpath, newpath string) error
 	ReplaceDir(oldpath, newpath string) error

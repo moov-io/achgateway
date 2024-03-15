@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"io/fs"
 	"os"
 	"time"
 )
@@ -9,6 +10,7 @@ type File interface {
 	Filename() string
 	FullPath() string
 
+	Stat() (fs.FileInfo, error)
 	Read([]byte) (int, error)
 	Close() error
 }
@@ -28,7 +30,10 @@ func (f *file) FullPath() string {
 	return f.fullpath
 }
 
-var _ File = (&file{})
+var (
+	_ fs.File = (&file{})
+	_ File    = (&file{})
+)
 
 type FileStat struct {
 	RelativePath string

@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -200,13 +201,13 @@ func (xfagg *aggregator) withEachFile(when time.Time) error {
 	))
 	defer span.End()
 
-	processed, err := xfagg.merger.WithEachMerged(ctx, xfagg.runTransformers)
+	merged, err := xfagg.merger.WithEachMerged(ctx, xfagg.runTransformers)
 	if err != nil {
 		logger.Error().LogErrorf("ERROR inside WithEachMerged: %v", err)
 		return fmt.Errorf("merging ACH files: %v", err)
 	}
 
-	if err := xfagg.emitFilesUploaded(ctx, processed); err != nil {
+	if err := xfagg.emitFilesUploaded(ctx, merged); err != nil {
 		logger.Error().LogErrorf("ERROR sending files uploaded event: %v", err)
 	}
 
@@ -224,12 +225,12 @@ func (xfagg *aggregator) manualCutoff(waiter manuallyTriggeredCutoff) {
 	))
 	defer span.End()
 
-	if processed, err := xfagg.merger.WithEachMerged(ctx, xfagg.runTransformers); err != nil {
+	if merged, err := xfagg.merger.WithEachMerged(ctx, xfagg.runTransformers); err != nil {
 		logger.Error().LogErrorf("ERROR inside manual WithEachMerged: %v", err)
 		waiter.C <- err
 	} else {
 		// Publish event of File uploads
-		if err := xfagg.emitFilesUploaded(ctx, processed); err != nil {
+		if err := xfagg.emitFilesUploaded(ctx, merged); err != nil {
 			logger.Error().LogErrorf("ERROR sending manual files uploaded event: %v", err)
 		}
 		waiter.C <- err
@@ -240,20 +241,23 @@ func (xfagg *aggregator) manualCutoff(waiter manuallyTriggeredCutoff) {
 	}).Log("ended manual cutoff window processing")
 }
 
-func (xfagg *aggregator) emitFilesUploaded(ctx context.Context, proc *processedFiles) error {
+func (xfagg *aggregator) emitFilesUploaded(ctx context.Context, merged mergedFiles) error {
 	var el base.ErrorList
-	for i := range proc.files {
-		mergedFile := proc.files[i]
+	for i := range merged {
+		for k := range merged[i].InputFilepaths {
+			// FileID's don't have .ach suffix
+			_, filename := filepath.Split(merged[i].InputFilepaths[k])
+			filename = strings.TrimSuffix(filename, ".ach")
 
-		for k := range mergedFile.Names {
 			evt := models.Event{
 				Event: models.FileUploaded{
-					FileID:     mergedFile.Names[k],
-					ShardKey:   proc.shardKey,
-					Filename:   mergedFile.Filename,
+					FileID:     filename,
+					ShardKey:   merged[i].Shard,
+					Filename:   merged[i].UploadedFilename,
 					UploadedAt: time.Now(),
 				},
 			}
+
 			err := xfagg.eventEmitter.Send(ctx, evt)
 			if err != nil {
 				el.Add(err)

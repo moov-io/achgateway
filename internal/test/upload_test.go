@@ -239,7 +239,11 @@ func TestUploads(t *testing.T) {
 		// Count how many files are in mergable/beta and mergable/prod, which should be the created + canceled files.
 		betaFDs, _ := os.ReadDir(filepath.Join("storage", "mergable", "beta"))
 		prodFDs, _ := os.ReadDir(filepath.Join("storage", "mergable", "prod"))
-		t.Logf("found %d beta and %d prod mergable files, expected %d + %d", len(betaFDs), len(prodFDs), len(createdFileIDs), len(canceledFileIDs))
+
+		expecting := len(betaFDs) + len(prodFDs)
+		found := len(createdFileIDs) + len(canceledFileIDs)
+		t.Logf("found %d mergable files (beta=%d, prod=%d), expected %d (%d with %d canceled)",
+			expecting, len(betaFDs), len(prodFDs), found, len(createdFileIDs), len(canceledFileIDs))
 
 		return (len(betaFDs) + len(prodFDs)) >= (len(createdFileIDs) + len(canceledFileIDs))
 	}, wait, tick)
@@ -250,8 +254,13 @@ func TestUploads(t *testing.T) {
 	req, _ := http.NewRequest("PUT", "http://"+adminServer.BindAddr()+"/trigger-cutoff", &buf)
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bs, _ := io.ReadAll(resp.Body)
+		t.Log(string(bs))
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+	}
 
 	// Wait before verifying filesystem results
 	time.Sleep(10 * time.Second)
@@ -282,7 +291,7 @@ func setupTestDirectory(t *testing.T, cfg *service.Config) string {
 
 	dir, err := os.MkdirTemp(filepath.Join("..", "..", "testdata", "ftp-server"), "outbound-*")
 	require.NoError(t, err)
-	t.Cleanup(func() { os.RemoveAll(dir) })
+	// t.Cleanup(func() { os.RemoveAll(dir) })
 
 	cfg.Upload.Agents[0].Paths.Outbound = filepath.Base(dir)
 	return dir

@@ -24,6 +24,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -39,9 +40,9 @@ import (
 	"github.com/moov-io/base/strx"
 	"github.com/moov-io/base/telemetry"
 
+	"github.com/igrmk/treemap/v2"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-	"golang.org/x/exp/maps"
 )
 
 // XferMerging represents logic for accepting ACH files to be merged together.
@@ -55,7 +56,7 @@ type XferMerging interface {
 	HandleXfer(ctx context.Context, xfer incoming.ACHFile) error
 	HandleCancel(ctx context.Context, cancel incoming.CancelACHFile) (incoming.FileCancellationResponse, error)
 
-	WithEachMerged(ctx context.Context, f func(context.Context, int, upload.Agent, *ach.File) (string, error)) (*processedFiles, error)
+	WithEachMerged(ctx context.Context, f func(context.Context, int, upload.Agent, *ach.File) (string, error)) (mergedFiles, error)
 }
 
 func NewMerging(logger log.Logger, shard service.Shard, cfg service.UploadAgents) (XferMerging, error) {
@@ -166,6 +167,26 @@ func (m *filesystemMerging) isolateMergableDir(ctx context.Context) (string, err
 	return newdir, m.storage.ReplaceDir(filepath.Join("mergable", m.shard.Name), newdir)
 }
 
+func (m *filesystemMerging) getCanceledFiles(ctx context.Context, dir string) ([]string, error) {
+	_, span := telemetry.StartSpan(ctx, "get-canceled-files", trace.WithAttributes(
+		attribute.String("achgateway.shard", m.shard.Name),
+		attribute.String("achgateway.dir", dir),
+	))
+	defer span.End()
+
+	matches, err := m.storage.Glob(dir + "/*.canceled")
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]string, len(matches))
+	for i := range matches {
+		_, filename := filepath.Split(matches[i].RelativePath)
+		out[i] = strings.TrimSuffix(filename, ".canceled")
+	}
+	return out, nil
+}
+
 func (m *filesystemMerging) getNonCanceledMatches(ctx context.Context, dir string) ([]string, error) {
 	_, span := telemetry.StartSpan(ctx, "get-non-canceled-matches", trace.WithAttributes(
 		attribute.String("achgateway.shard", m.shard.Name),
@@ -205,82 +226,15 @@ func (m *filesystemMerging) getNonCanceledMatches(ctx context.Context, dir strin
 	return out, nil
 }
 
-type processedFiles struct {
-	shardKey string
-	files    mergedFiles
+func (m *filesystemMerging) createMergeDirOptions(canceledFiles []string) *ach.MergeDirOptions {
+	return &ach.MergeDirOptions{
+		AcceptFile:            fileAcceptor(canceledFiles),
+		ValidateOptsExtension: ".json",
+		FS:                    m.storage,
+	}
 }
 
-func newProcessedFiles(shardKey string, merged mergedFiles) *processedFiles {
-	out := &processedFiles{
-		shardKey: shardKey,
-		files:    merged,
-	}
-	for i := range out.files {
-		for j := range out.files[i].Names {
-			// each match follows $path/$fileID.ach
-			out.files[i].Names[j] = strings.TrimSuffix(filepath.Base(out.files[i].Names[j]), ".ach")
-		}
-	}
-	return out
-}
-
-func (m *filesystemMerging) readFile(path string) (*ach.File, error) {
-	file, err := m.storage.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	if file != nil {
-		defer file.Close()
-	}
-
-	r := ach.NewReader(file)
-
-	// Attempt to read ValidateOpts
-	optsFile, _ := m.storage.Open(strings.Replace(path, ".ach", ".json", -1))
-	if optsFile != nil {
-		defer optsFile.Close()
-
-		var opts ach.ValidateOpts
-		json.NewDecoder(optsFile).Decode(&opts)
-
-		r.SetValidation(&opts)
-	}
-
-	// Parse the Nacha formatted file
-	f, err := r.Read()
-	if err != nil {
-		return nil, err
-	}
-	return &f, nil
-}
-
-// namedFiles is a set of two arrays containing filenames and ACH files.
-//
-// Both arrays are the same length and each index corresponds to the other array.
-type namedFiles struct {
-	Names    []string
-	ACHFiles []*ach.File
-}
-
-func (m *filesystemMerging) readFiles(paths []string) (namedFiles, error) {
-	out := namedFiles{
-		Names:    make([]string, len(paths)),
-		ACHFiles: make([]*ach.File, len(paths)),
-	}
-	for i := range paths {
-		file, err := m.readFile(paths[i])
-		if err != nil {
-			return namedFiles{}, fmt.Errorf("reading %s failed: %w", paths[i], err)
-		}
-		_, out.Names[i] = filepath.Split(paths[i])
-		out.ACHFiles[i] = file
-	}
-	return out, nil
-}
-
-func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.Context, int, upload.Agent, *ach.File) (string, error)) (*processedFiles, error) {
-	processed := &processedFiles{}
-
+func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.Context, int, upload.Agent, *ach.File) (string, error)) (mergedFiles, error) {
 	// move the current directory so it's isolated and easier to debug later on
 	dir, err := m.isolateMergableDir(ctx)
 	if err != nil {
@@ -293,36 +247,25 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 	))
 	defer span.End()
 
-	matches, err := m.getNonCanceledMatches(ctx, dir)
-	if err != nil {
-		return nil, fmt.Errorf("problem with %s glob: %v", dir, err)
-	}
-
 	logger := m.logger.Set("shardName", log.String(m.shard.Name))
 
-	dirNames := strings.Join(directoryNames(matches), ", ")
-	logger.Logf("found %d matching ACH files in %v", len(matches), dirNames)
-
-	var el base.ErrorList
-
-	// Merge files together in groups
+	// Merge the files together
 	var mergeConditions ach.Conditions
 	if m.shard.Mergable.Conditions != nil {
 		mergeConditions = *m.shard.Mergable.Conditions
 	}
 
-	groupSize := 100
-	if m.shard.Mergable.MergeInGroupsOf > 0 {
-		groupSize = m.shard.Mergable.MergeInGroupsOf
-	}
-	indices := makeIndices(len(matches), len(matches)/groupSize)
-	files, err := m.chunkFilesTogether(ctx, indices, matches, mergeConditions)
+	canceledFiles, err := m.getCanceledFiles(ctx, dir)
 	if err != nil {
-		el.Add(fmt.Errorf("unable to merge files: %v", err))
+		return nil, fmt.Errorf("problem listing %s for canceled files: %w", dir, err)
 	}
 
-	if len(matches) > 0 {
-		logger.Logf("merged %d files into %d files", len(matches), len(files))
+	var el base.ErrorList
+
+	opts := m.createMergeDirOptions(canceledFiles)
+	files, err := ach.MergeDir(dir, mergeConditions, opts)
+	if err != nil {
+		el.Add(fmt.Errorf("unable to merge files: %v", err))
 	}
 
 	// Remove the directory if there are no files, otherwise setup an inner dir for the uploaded file.
@@ -331,46 +274,49 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 		if err := m.storage.RmdirAll(dir); err != nil {
 			el.Add(err)
 		}
-	} else {
-		dir = filepath.Join(dir, "uploaded")
-		m.storage.MkdirAll(dir)
 	}
+
+	uploadedDir := filepath.Join(dir, "uploaded")
+	m.storage.MkdirAll(uploadedDir)
 
 	// Grab our upload Agent
 	agent, err := upload.New(m.logger, m.cfg, m.shard.UploadAgent)
 	if err != nil {
-		return processed, fmt.Errorf("%s merging agent: %v", m.shard.Name, err)
+		return nil, fmt.Errorf("%s merging agent: %v", m.shard.Name, err)
 	}
 	logger.Logf("found %T agent", agent)
 
 	// Write each file to our remote agent
+	var merged []mergedFile
 	successfulRemoteWrites := 0
 	for i := range files {
-		prepared := files[i].ACHFile
-
 		// Optionally Flatten Batches
 		if m.shard.Mergable.FlattenBatches != nil {
-			if file, err := prepared.FlattenBatches(); err != nil {
+			if file, err := files[i].FlattenBatches(); err != nil {
 				el.Add(err)
 			} else {
-				prepared = file
+				files[i] = file
 			}
 		}
 
 		// Write our file to the mergable directory
-		if err := m.saveMergedFile(dir, prepared); err != nil {
+		if err := m.saveMergedFile(uploadedDir, files[i]); err != nil {
 			el.Add(fmt.Errorf("problem writing merged file: %v", err))
-			logger.Error().Logf("skipping upload of %s after cache failure", prepared)
+			logger.Error().Logf("skipping upload of %s after cache failure", files[i])
 			continue // skip upload if we can't cache what to upload
 		}
 
 		// Upload the file
-		if filename, err := f(ctx, i, agent, prepared); err != nil {
+		if filename, err := f(ctx, i, agent, files[i]); err != nil {
 			telemetry.RecordError(ctx, err)
 
 			el.Add(fmt.Errorf("problem from callback: %v", err))
 		} else {
-			files[i].Filename = filename
+			merged = append(merged, mergedFile{
+				UploadedFilename: filename,
+				ACHFile:          files[i],
+				Shard:            m.shard.Name,
+			})
 			successfulRemoteWrites++
 
 			if i > 1 && i%10 == 0 {
@@ -385,168 +331,128 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 		attribute.Int("achgateway.successful_remote_writes", successfulRemoteWrites),
 	)
 
-	if !el.Empty() {
-		return nil, el
+	// Build a mapping of BatchHeader + EntryDetail from dir
+	mappings, err := m.buildDirMapping(dir)
+	if err != nil {
+		el.Add(err)
 	}
 
-	return newProcessedFiles(m.shard.Name, files), nil
+	// From that mapping match each one against the merged/uploaded files
+	merged = m.findInputFilepaths(mappings, merged)
+
+	if el.Empty() {
+		return merged, nil
+	}
+	return merged, el
 }
 
-func makeIndices(total, groups int) []int {
-	if groups <= 1 || groups >= total {
-		return []int{total}
-	}
-	xs := []int{0}
-	i := 0
-	for {
-		if i > total {
-			break
+func fileAcceptor(canceledFiles []string) func(string) ach.FileAcceptance {
+	return func(path string) ach.FileAcceptance {
+		// Reject canceled files
+		if strings.Contains(path, ".canceled") {
+			return ach.SkipFile
 		}
-		i += total / groups
-		if i < total {
-			xs = append(xs, i)
+		_, filename := filepath.Split(path)
+		if slices.Contains(canceledFiles, filename) {
+			return ach.SkipFile
 		}
+
+		// Only accept .ach files
+		if strings.Contains(path, ".ach") {
+			return ach.AcceptFile
+		}
+		return ach.SkipFile
 	}
-	return append(xs, total)
+}
+
+func (m *filesystemMerging) buildDirMapping(dir string) (*treemap.TreeMap[string, string], error) {
+	tree := treemap.New[string, string]()
+
+	err := fs.WalkDir(m.storage, dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			if strings.Contains(err.Error(), "is a directory") {
+				return nil
+			}
+			return err
+		}
+		if d.IsDir() {
+			return nil // skip directories
+		}
+
+		if strings.Contains(path, "uploaded") {
+			// Skip /uploaded/ as we're only interested in the input files
+			return nil
+		}
+
+		fd, err := m.storage.Open(path)
+		if err != nil {
+			return fmt.Errorf("opening %s failed: %w", path, err)
+		}
+		defer fd.Close()
+
+		// TODO(adam): need ValidateOpts?
+
+		file, err := ach.NewReader(fd).Read()
+		if err != nil {
+			return fmt.Errorf("reading %s failed: %w", path, err)
+		}
+
+		_, filename := filepath.Split(path)
+
+		// Add each BatchHeader and Entry to the map
+		for i := range file.Batches {
+			bh := file.Batches[i].GetHeader().String()
+
+			entries := file.Batches[i].GetEntries()
+			for m := range entries {
+				tree.Set(makeKey(bh, entries[m]), filename)
+			}
+		}
+
+		return nil
+	})
+
+	return tree, err
+}
+
+func makeKey(bh string, entry *ach.EntryDetail) string {
+	// copy off the BatchNumber from our header, it's modified when merging
+	return fmt.Sprintf("%87.87s%s", bh, entry.String())
 }
 
 type mergedFile struct {
-	Names    []string
-	Filename string
-	ACHFile  *ach.File
+	InputFilepaths   []string
+	UploadedFilename string
+	ACHFile          *ach.File
+	Shard            string
 }
 
 type mergedFiles []mergedFile
 
-func (m *filesystemMerging) chunkFilesTogether(ctx context.Context, indices []int, matches []string, conditions ach.Conditions) (mergedFiles, error) {
-	_, span := telemetry.StartSpan(ctx, "chunk-files-together", trace.WithAttributes(
-		attribute.String("achgateway.shard", m.shard.Name),
-		attribute.Int("achgateway.indices_num", len(indices)),
-		attribute.Int("achgateway.matches", len(matches)),
-	))
-	defer span.End()
-
-	if len(indices) <= 1 {
-		files, err := m.readFiles(matches)
-		if err != nil {
-			return nil, err
-		}
-		span.AddEvent("files-read")
-
-		merged, err := ach.MergeFilesWith(files.ACHFiles, conditions)
-		if err != nil {
-			return nil, err
-		}
-		span.AddEvent("merged-files")
-
-		out, err := determineMergeDestinations(files, merged), nil
-		if err != nil {
-			return nil, err
-		}
-		return out, nil
-	}
-
-	var input namedFiles
-	mergeParts := make([]*ach.File, 0, len(indices))
-	for i := 0; i < len(indices)-1; i += 0 {
-		files, err := m.readFiles(matches[indices[i]:indices[i+1]]) // need to keep filename around
-		if err != nil {
-			return nil, err
-		}
-		span.AddEvent(fmt.Sprintf("files-read-idx-%d", i))
-
-		input.Names = append(input.Names, files.Names...)
-		input.ACHFiles = append(input.ACHFiles, files.ACHFiles...)
-
-		fs, err := ach.MergeFilesWith(files.ACHFiles, conditions)
-		if err != nil {
-			return nil, err
-		}
-		span.AddEvent(fmt.Sprintf("merged-files-idx-%d", i))
-
-		i += 1
-		mergeParts = append(mergeParts, fs...)
-	}
-
-	merged, err := ach.MergeFilesWith(mergeParts, conditions)
-	if err != nil {
-		return nil, err
-	}
-	span.AddEvent("final-merge-files")
-
-	out, err := determineMergeDestinations(input, merged), nil
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// determineMergeDestinations will compare the input ACH files against the merged files to determine
-// where the input files ended up. This allows us to report where an input file was uploaded.
-//
-// Given we have a list of merged files, for each incoming file we can find it in the merged results.
-// This allows us to report which file (and filename) the original file was sent out in.
-func determineMergeDestinations(input namedFiles, merged []*ach.File) mergedFiles {
-	// Build our result type with merged files
-	out := make([]mergedFile, len(merged))
+func (m *filesystemMerging) findInputFilepaths(mappings *treemap.TreeMap[string, string], merged mergedFiles) mergedFiles {
+	// Compare each merged file against mappings
 	for i := range merged {
-		out[i].ACHFile = merged[i]
-	}
+		for j := range merged[i].ACHFile.Batches {
+			batch := merged[i].ACHFile.Batches[j]
 
-	// For each input file find where the EntryDetail landed in the list of merged files
-	for i := range input.ACHFiles {
-		inputFile := input.ACHFiles[i]
+			bh := batch.GetHeader().String()
+			entries := batch.GetEntries()
 
-		for j := range out {
-			// Find the matching entry
-			outFile := out[j].ACHFile
+			for m := range entries {
+				key := makeKey(bh, entries[m])
 
-			for ib := range inputFile.Batches {
-				ientries := inputFile.Batches[ib].GetEntries()
-
-				for ob := range outFile.Batches {
-					oentries := outFile.Batches[ob].GetEntries()
-
-					for ie := range ientries {
-						for oe := range oentries {
-							if matchingEntry(ientries[ie], oentries[oe]) {
-								out[j].Names = append(out[j].Names, input.Names[i])
-							}
-						}
-					}
+				filename, found := mappings.Get(key)
+				if found {
+					merged[i].InputFilepaths = append(merged[i].InputFilepaths, filename)
+					mappings.Del(key)
 				}
 			}
 		}
+
+		slices.Sort(merged[i].InputFilepaths)
+		merged[i].InputFilepaths = slices.Compact(merged[i].InputFilepaths)
 	}
-
-	// Remove duplicates
-	for i := range out {
-		slices.Sort(out[i].Names)
-		out[i].Names = slices.Compact(out[i].Names)
-	}
-
-	return out
-}
-
-func matchingEntry(e1, e2 *ach.EntryDetail) bool {
-	return e1.TransactionCode == e2.TransactionCode &&
-		e1.RDFIIdentification == e2.RDFIIdentification &&
-		e1.CheckDigit == e2.CheckDigit &&
-		e1.DFIAccountNumber == e2.DFIAccountNumber &&
-		e1.Amount == e2.Amount &&
-		e1.IdentificationNumber == e2.IdentificationNumber &&
-		e1.IndividualName == e2.IndividualName &&
-		e1.DiscretionaryData == e2.DiscretionaryData &&
-		e1.TraceNumber == e2.TraceNumber
-}
-
-func directoryNames(matches []string) []string {
-	out := make(map[string]int)
-	for i := range matches {
-		dir, _ := filepath.Split(matches[i])
-		out[dir] += 1
-	}
-	return maps.Keys(out)
+	return merged
 }
 
 func (m *filesystemMerging) saveMergedFile(dir string, file *ach.File) error {
