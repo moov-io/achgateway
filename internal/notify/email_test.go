@@ -43,7 +43,7 @@ func TestEmailSend(t *testing.T) {
 		File:      ach.NewFile(),
 	}
 
-	body, err := marshalEmail(cfg, msg)
+	body, err := marshalEmail(cfg, msg, true)
 	require.NoError(t, err)
 
 	ctx := context.Background()
@@ -54,23 +54,73 @@ func TestEmailSend(t *testing.T) {
 	dep.Close() // remove container after successful tests
 }
 
+func TestEmail__marshalSubject(t *testing.T) {
+	cfg := &service.Email{CompanyName: "Moov"}
+	msg := &Message{Direction: Upload}
+	filename := "20200529-131400.ach"
+
+	expected := "20200529-131400.ach uploaded by Moov"
+	output := marshalSubject(cfg, msg, filename, true)
+	require.Equal(t, expected, output)
+
+	expected = "20200529-131400.ach FAILED upload by Moov"
+	output = marshalSubject(cfg, msg, filename, false)
+	require.Equal(t, expected, output)
+}
+
 func TestEmail__marshalDefaultTemplate(t *testing.T) {
 	f, err := ach.ReadFile(filepath.Join("..", "..", "testdata", "ppd-debit.ach"))
 	require.NoError(t, err)
 
 	tests := []struct {
-		desc      string
-		msg       *Message
-		firstLine string
+		desc string
+		msg  *Message
+
+		successLine string
+		failureLine string
 	}{
-		{"upload with hostname", &Message{Direction: Upload, File: f, Filename: "20200529-131400.ach", Hostname: "ftp.bank.com:3294"},
-			"A file has been uploaded to ftp.bank.com:3294 - 20200529-131400.ach"},
-		{"upload with no hostname", &Message{Direction: Upload, File: f, Filename: "20200529-131400.ach"},
-			"A file has been uploaded - 20200529-131400.ach"},
-		{"download with hostname", &Message{Direction: Download, File: f, Filename: "20200529-131400.ach", Hostname: "138.34.204.3"},
-			"A file has been downloaded from 138.34.204.3 - 20200529-131400.ach"},
-		{"download", &Message{Direction: Download, File: f, Filename: "20200529-131400.ach"},
-			"A file has been downloaded - 20200529-131400.ach"},
+		{
+			desc: "upload with hostname",
+			msg: &Message{
+				Direction: Upload,
+				File:      f,
+				Filename:  "20200529-131400.ach",
+				Hostname:  "ftp.bank.com:3294",
+			},
+			successLine: "A file has been uploaded to ftp.bank.com:3294 - 20200529-131400.ach",
+			failureLine: "File upload of 20200529-131400.ach FAILED to upload to ftp.bank.com:3294",
+		},
+		{
+			desc: "upload with no hostname",
+			msg: &Message{
+				Direction: Upload,
+				File:      f,
+				Filename:  "20200529-131400.ach",
+			},
+			successLine: "A file has been uploaded - 20200529-131400.ach",
+			failureLine: "File upload of 20200529-131400.ach FAILED to upload",
+		},
+		{
+			desc: "download with hostname",
+			msg: &Message{
+				Direction: Download,
+				File:      f,
+				Filename:  "20200529-131400.ach",
+				Hostname:  "138.34.204.3",
+			},
+			successLine: "A file has been downloaded from 138.34.204.3 - 20200529-131400.ach",
+			failureLine: "File upload of 20200529-131400.ach FAILED to download from 138.34.204.3",
+		},
+		{
+			desc: "download",
+			msg: &Message{
+				Direction: Download,
+				File:      f,
+				Filename:  "20200529-131400.ach",
+			},
+			successLine: "A file has been downloaded - 20200529-131400.ach",
+			failureLine: "File upload of 20200529-131400.ach FAILED to download",
+		},
 	}
 
 	cfg := &service.Email{
@@ -78,16 +128,34 @@ func TestEmail__marshalDefaultTemplate(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		contents, err := marshalEmail(cfg, test.msg)
+		// Simulate .Info()
+		contents, err := marshalEmail(cfg, test.msg, true)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		if testing.Verbose() {
-			t.Log(contents)
+			t.Logf("Info:\n%s", contents)
 		}
 
-		require.Contains(t, contents, test.firstLine, "Test: "+test.desc)
+		require.Contains(t, contents, test.successLine, "Test: "+test.desc)
+		require.Contains(t, contents, "Moov")
+		require.Contains(t, contents, `Debits:  $105.00`, "Test: "+test.desc)
+		require.Contains(t, contents, `Credits: $0.00`, "Test: "+test.desc)
+		require.Contains(t, contents, `Batches: 1`, "Test: "+test.desc)
+		require.Contains(t, contents, `Total Entries: 1`, "Test: "+test.desc)
+
+		// Simulate .Critical()
+		contents, err = marshalEmail(cfg, test.msg, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if testing.Verbose() {
+			t.Logf("Critical:\n%s", contents)
+		}
+
+		require.Contains(t, contents, test.failureLine, "Test: "+test.desc)
 		require.Contains(t, contents, "Moov")
 		require.Contains(t, contents, `Debits:  $105.00`, "Test: "+test.desc)
 		require.Contains(t, contents, `Credits: $0.00`, "Test: "+test.desc)

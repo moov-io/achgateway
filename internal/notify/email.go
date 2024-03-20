@@ -19,10 +19,10 @@ import (
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/telemetry"
-
-	gomail "github.com/ory/mail/v3"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	gomail "github.com/ory/mail/v3"
 )
 
 type Email struct {
@@ -35,6 +35,8 @@ type EmailTemplateData struct {
 	Verb        string // e.g. upload, download
 	Filename    string // e.g. 20200529-131400.ach
 	Hostname    string
+
+	Successful bool
 
 	DebitTotal  string
 	CreditTotal string
@@ -98,22 +100,45 @@ func setupGoMailClient(cfg *service.Email) (*gomail.Dialer, error) {
 }
 
 func (mailer *Email) Info(ctx context.Context, msg *Message) error {
-	contents, err := marshalEmail(mailer.cfg, msg)
+	ctx, span := telemetry.StartSpan(ctx, "notify-email-info", trace.WithAttributes(
+		attribute.String("achgateway.filename", msg.Filename),
+	))
+	defer span.End()
+
+	successful := true
+	subject := marshalSubject(mailer.cfg, msg, msg.Filename, successful)
+	contents, err := marshalEmail(mailer.cfg, msg, successful)
 	if err != nil {
 		return err
 	}
-	return sendEmail(ctx, mailer.cfg, mailer.dialer, msg.Filename, contents)
+
+	return sendEmail(ctx, mailer.cfg, mailer.dialer, subject, contents)
 }
 
 func (mailer *Email) Critical(ctx context.Context, msg *Message) error {
-	contents, err := marshalEmail(mailer.cfg, msg)
+	ctx, span := telemetry.StartSpan(ctx, "notify-email-critical", trace.WithAttributes(
+		attribute.String("achgateway.filename", msg.Filename),
+	))
+	defer span.End()
+
+	successful := false
+	subject := marshalSubject(mailer.cfg, msg, msg.Filename, successful)
+	contents, err := marshalEmail(mailer.cfg, msg, successful)
 	if err != nil {
 		return err
 	}
-	return sendEmail(ctx, mailer.cfg, mailer.dialer, msg.Filename, contents)
+
+	return sendEmail(ctx, mailer.cfg, mailer.dialer, subject, contents)
 }
 
-func marshalEmail(cfg *service.Email, msg *Message) (string, error) {
+func marshalSubject(cfg *service.Email, msg *Message, filename string, successful bool) string {
+	if successful {
+		return fmt.Sprintf("%s %sed by %s", filename, string(msg.Direction), cfg.CompanyName)
+	}
+	return fmt.Sprintf("%s FAILED %s by %s", filename, string(msg.Direction), cfg.CompanyName)
+}
+
+func marshalEmail(cfg *service.Email, msg *Message, successful bool) (string, error) {
 	if msg.Contents != "" {
 		return msg.Contents, nil
 	}
@@ -123,6 +148,7 @@ func marshalEmail(cfg *service.Email, msg *Message) (string, error) {
 		Verb:        string(msg.Direction),
 		Filename:    msg.Filename,
 		Hostname:    msg.Hostname,
+		Successful:  successful,
 	}
 	if msg.File != nil {
 		data.BatchCount = msg.File.Control.BatchCount
@@ -139,16 +165,13 @@ func marshalEmail(cfg *service.Email, msg *Message) (string, error) {
 	return buf.String(), nil
 }
 
-func sendEmail(ctx context.Context, cfg *service.Email, dialer *gomail.Dialer, filename, body string) error {
-	_, span := telemetry.StartSpan(ctx, "notify-send-email", trace.WithAttributes(
-		attribute.String("achgateway.filename", filename),
-	))
-	defer span.End()
+func sendEmail(ctx context.Context, cfg *service.Email, dialer *gomail.Dialer, subject, body string) error {
+	span := telemetry.SpanFromContext(ctx)
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", cfg.From)
 	m.SetHeader("To", cfg.To...)
-	m.SetHeader("Subject", fmt.Sprintf("%s uploaded by %s", filename, cfg.CompanyName))
+	m.SetHeader("Subject", subject)
 	m.SetBody("text/plain", body)
 
 	maxRetries := 3
@@ -158,7 +181,9 @@ func sendEmail(ctx context.Context, cfg *service.Email, dialer *gomail.Dialer, f
 
 	var outErr error
 	for tries := 1; tries <= maxRetries; tries++ {
-		span.AddEvent(fmt.Sprintf("attempt-%d", tries))
+		if span != nil {
+			span.AddEvent(fmt.Sprintf("attempt-%d", tries))
+		}
 
 		outErr = dialer.DialAndSend(context.Background(), m)
 		if outErr != nil {
