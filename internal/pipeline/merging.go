@@ -381,7 +381,7 @@ func (m *filesystemMerging) buildDirMapping(dir string) (*treemap.TreeMap[string
 
 		if strings.Contains(path, "uploaded") || strings.HasSuffix(path, ".json") {
 			// Skip /uploaded/ as we're only interested in the input files.
-			// Skip .json files as they contian ValidateOpts
+			// Skip .json files as they contain ValidateOpts
 			return nil
 		}
 

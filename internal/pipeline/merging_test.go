@@ -299,9 +299,9 @@ func getFilenames(t *testing.T, fsys fs.FS, dir string) []string {
 	items, err := f.ReadDir(dir)
 	require.NoError(t, err)
 
-	var out []string
+	out := make([]string, len(items))
 	for i := range items {
-		out = append(out, items[i].Name())
+		out[i] = items[i].Name()
 	}
 	return out
 }
