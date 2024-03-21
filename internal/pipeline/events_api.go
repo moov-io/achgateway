@@ -76,17 +76,17 @@ func (fr *FileReceiver) manuallyProduceFileUploaded() http.HandlerFunc {
 			return
 		}
 
-		merged := []mergedFile{
-			{Names: matches, Filename: filename},
-		}
-		processed := newProcessedFiles(agg.shard.Name, merged)
 		if len(matches) == 0 {
 			logger.Logf("%s not found", dir)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		err = agg.emitFilesUploaded(ctx, processed)
+		merged := []mergedFile{
+			{InputFilepaths: matches, UploadedFilename: filename, Shard: agg.shard.Name},
+		}
+
+		err = agg.emitFilesUploaded(ctx, merged)
 		if err != nil {
 			logger.Error().LogErrorf("problem emitting FileUploaded: %v", err)
 			w.WriteHeader(http.StatusBadRequest)

@@ -22,7 +22,7 @@ func (n *NACHA) Format(buf *bytes.Buffer, res *transform.Result) error {
 		w.LineEnding = n.lineEnding
 	}
 	if err := w.Write(res.File); err != nil {
-		return fmt.Errorf("unable to buffer ACH file: %v", err)
+		return fmt.Errorf("unable to write Nacha file: %v", err)
 	}
 	return nil
 }

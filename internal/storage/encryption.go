@@ -2,7 +2,9 @@ package storage
 
 import (
 	"bytes"
+	"fmt"
 	"io"
+	"io/fs"
 
 	"github.com/moov-io/cryptfs"
 )
@@ -19,19 +21,24 @@ func NewEncrypted(underlying Chest, crypt *cryptfs.FS) Chest {
 	}
 }
 
-func (e *encrypted) Open(path string) (File, error) {
-	file, err := e.underlying.Open(path)
+func (e *encrypted) Open(path string) (fs.File, error) {
+	fd, err := e.underlying.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	info, err := fd.Stat()
 	if err != nil {
 		return nil, err
 	}
 
 	defer func() {
-		if file != nil {
-			file.Close()
+		if fd != nil {
+			fd.Close()
 		}
 	}()
 
-	bs, err := io.ReadAll(file)
+	bs, err := io.ReadAll(fd)
 	if err != nil {
 		return nil, err
 	}
@@ -43,12 +50,24 @@ func (e *encrypted) Open(path string) (File, error) {
 		}
 	}
 
+	f, ok := fd.(*file)
+	if !ok {
+		return nil, fmt.Errorf("unexpected file of type %T", fd)
+	}
+
 	return &buffer{
 		b:        bytes.NewBuffer(bs),
-		filename: file.Filename(),
-		fullpath: file.FullPath(),
+		info:     info,
+		filename: f.Filename(),
+		fullpath: f.FullPath(),
 	}, nil
 }
+
+func (e *encrypted) ReadDir(name string) ([]fs.DirEntry, error) {
+	return e.underlying.ReadDir(name)
+}
+
+var _ fs.ReadDirFS = (&encrypted{})
 
 func (e *encrypted) Glob(pattern string) ([]FileStat, error) {
 	return e.underlying.Glob(pattern)
@@ -79,4 +98,8 @@ func (e *encrypted) WriteFile(path string, contents []byte) error {
 		}
 	}
 	return e.underlying.WriteFile(path, contents)
+}
+
+func (e *encrypted) String() string {
+	return fmt.Sprintf("storage.encrypted{%#v}", e.underlying)
 }

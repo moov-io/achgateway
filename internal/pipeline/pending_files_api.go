@@ -22,6 +22,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -160,8 +161,14 @@ func (fr *FileReceiver) getShardFile() http.HandlerFunc {
 		hostname, _ := os.Hostname()
 		contents, err := marshalFile(file)
 
+		var filename string
+		info, _ := file.Stat()
+		if info != nil {
+			filename = info.Name()
+		}
+
 		json.NewEncoder(w).Encode(getFileResponse{
-			Filename:       file.Filename(),
+			Filename:       filename,
 			ContentsBase64: contents,
 			Valid:          err,
 			ModTime:        time.Now(),
@@ -170,7 +177,7 @@ func (fr *FileReceiver) getShardFile() http.HandlerFunc {
 	}
 }
 
-func marshalFile(contents storage.File) (string, error) {
+func marshalFile(contents fs.File) (string, error) {
 	file, err := ach.NewReader(contents).Read()
 
 	var buf bytes.Buffer

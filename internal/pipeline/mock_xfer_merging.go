@@ -29,7 +29,7 @@ type MockXferMerging struct {
 	LatestFile           *incoming.ACHFile
 	LatestCancel         *incoming.CancelACHFile
 	CancellationResponse incoming.FileCancellationResponse
-	processed            *processedFiles
+	merged               mergedFiles
 
 	Err error
 }
@@ -44,9 +44,9 @@ func (merge *MockXferMerging) HandleCancel(_ context.Context, cancel incoming.Ca
 	return merge.CancellationResponse, merge.Err
 }
 
-func (merge *MockXferMerging) WithEachMerged(_ context.Context, f func(context.Context, int, upload.Agent, *ach.File) (string, error)) (*processedFiles, error) {
+func (merge *MockXferMerging) WithEachMerged(ctx context.Context, f func(context.Context, int, upload.Agent, *ach.File) (string, error)) (mergedFiles, error) {
 	if merge.Err != nil {
 		return nil, merge.Err
 	}
-	return merge.processed, nil
+	return merge.merged, nil
 }

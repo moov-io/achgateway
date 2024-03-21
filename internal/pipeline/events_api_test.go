@@ -104,7 +104,9 @@ func TestEventsAPI_FileUploaded(t *testing.T) {
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
-	// Verify that FileUploaded was produced
+	// Verify that FileUploaded was produced twice:
+	//  - once for the manual trigger
+	//  - once for the /file-uploaded endpoint
 	emitter, ok := agg.eventEmitter.(*events.MockEmitter)
 	require.True(t, ok)
 	require.Eventually(t, func() bool {
