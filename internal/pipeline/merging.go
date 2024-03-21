@@ -395,6 +395,10 @@ func (m *filesystemMerging) buildDirMapping(dir string) (*treemap.TreeMap[string
 		validateOptsPath := strings.TrimSuffix(path, filepath.Ext(path)) + ".json"
 		var validateOpts *ach.ValidateOpts
 		if optsFD, err := m.storage.Open(validateOptsPath); err == nil {
+			if optsFD != nil {
+				defer optsFD.Close()
+			}
+
 			err = json.NewDecoder(optsFD).Decode(&validateOpts)
 			if err != nil {
 				return fmt.Errorf("reading %s as validate opts failed: %w", validateOptsPath, err)
