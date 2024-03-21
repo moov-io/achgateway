@@ -22,6 +22,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
@@ -37,8 +38,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 )
-
-// TODO(adam): need to test and verify that ValidateOpts are carried through
 
 func TestMerging__getCanceledFiles(t *testing.T) {
 	root := t.TempDir()
@@ -160,6 +159,7 @@ func TestMerging_mappings(t *testing.T) {
 	dir := t.TempDir()
 	os.MkdirAll(filepath.Join(dir, "mergable"), 0777)
 	copyFile(t, filepath.Join("testdata", "ppd-debit.ach"), filepath.Join(dir, "mergable", "ppd-debit.ach"))
+	copyFile(t, filepath.Join("testdata", "ppd-debit.json"), filepath.Join(dir, "mergable", "ppd-debit.json"))
 	copyFile(t, filepath.Join("testdata", "ppd-debit2.ach"), filepath.Join(dir, "mergable", "ppd-debit2.ach"))
 	copyFile(t, filepath.Join("testdata", "ppd-debit3.ach"), filepath.Join(dir, "mergable", "ppd-debit3.ach"))
 	copyFile(t, filepath.Join("testdata", "ppd-debit4.ach"), filepath.Join(dir, "mergable", "ppd-debit4.ach"))
@@ -205,6 +205,12 @@ func TestMerging_mappings(t *testing.T) {
 		return fmt.Sprintf("MAPPING-%d.ach", idx), nil
 	})
 	require.NoError(t, err)
+	require.Len(t, merged, 1)
+
+	validateOpts := merged[0].ACHFile.GetValidation()
+	require.NotNil(t, validateOpts)
+	require.True(t, validateOpts.RequireABAOrigin)
+	require.False(t, validateOpts.AllowZeroBatches)
 
 	mapped := m.findInputFilepaths(mappings, merged)
 	require.Len(t, mapped, 1)
@@ -217,7 +223,7 @@ func TestMerging_mappings(t *testing.T) {
 
 func TestMerging__writeACHFile(t *testing.T) {
 	dir := t.TempDir()
-	fs, err := storage.NewFilesystem(dir)
+	fsys, err := storage.NewFilesystem(dir)
 	require.NoError(t, err)
 
 	m := &filesystemMerging{
@@ -225,15 +231,16 @@ func TestMerging__writeACHFile(t *testing.T) {
 		shard: service.Shard{
 			Name: "testing",
 		},
-		storage: fs,
+		storage: fsys,
 	}
 
 	file := read(t, filepath.Join("..", "..", "testdata", "ppd-debit.ach"))
 	file.Header.ImmediateOrigin = "ABCDEFGHIJ"
 	file.Header.ImmediateDestination = "123456780"
 
+	fileID := base.ID()
 	xfer := models.QueueACHFile{
-		FileID:   base.ID(),
+		FileID:   fileID,
 		ShardKey: "testing",
 		File:     file,
 	}
@@ -244,6 +251,11 @@ func TestMerging__writeACHFile(t *testing.T) {
 
 	err = m.HandleXfer(context.Background(), incoming.ACHFile(xfer))
 	require.NoError(t, err)
+
+	// Verify the .ach and .json files were written
+	mergableFilenames := getFilenames(t, m.storage, "mergable/testing")
+	expected := []string{fmt.Sprintf("%s.ach", fileID), fmt.Sprintf("%s.json", fileID)}
+	require.ElementsMatch(t, expected, mergableFilenames)
 
 	var mergeConditions ach.Conditions
 	opts := m.createMergeDirOptions(nil)
@@ -274,4 +286,52 @@ func TestMerging__writeACHFile(t *testing.T) {
 	require.True(t, bytes.HasPrefix(buf.Bytes(), []byte("101 123456780ABCDEFGHIJ")))
 	require.Equal(t, "ABCDEFGHIJ", merged[0].Header.ImmediateOrigin)
 	require.Equal(t, "123456780", merged[0].Header.ImmediateDestination)
+}
+
+func getFilenames(t *testing.T, fsys fs.FS, dir string) []string {
+	t.Helper()
+
+	f, ok := fsys.(fs.ReadDirFS)
+	if !ok {
+		t.Fatalf("unexpected %T wanted fs.ReadDirFS", fsys)
+	}
+
+	items, err := f.ReadDir(dir)
+	require.NoError(t, err)
+
+	var out []string
+	for i := range items {
+		out = append(out, items[i].Name())
+	}
+	return out
+}
+
+func TestMerging__saveMergedFile(t *testing.T) {
+	dir := t.TempDir()
+	fsys, err := storage.NewFilesystem(dir)
+	require.NoError(t, err)
+
+	m := &filesystemMerging{
+		logger: log.NewTestLogger(),
+		shard: service.Shard{
+			Name: "testing",
+		},
+		storage: fsys,
+	}
+
+	file := read(t, filepath.Join("..", "..", "testdata", "ppd-debit.ach"))
+	file.SetValidation(&ach.ValidateOpts{
+		RequireABAOrigin: true,
+	})
+
+	require.NoError(t, m.storage.MkdirAll("uploaded"))
+	err = m.saveMergedFile("uploaded", file)
+	require.NoError(t, err)
+
+	mergableFilenames := getFilenames(t, m.storage, "uploaded")
+	expected := []string{
+		"bb844ebc5b7f53a447a8bcff0c5a116b92b978657fddcf0d4f54b7ed991fa8b7.ach", // sha256 hash
+		"bb844ebc5b7f53a447a8bcff0c5a116b92b978657fddcf0d4f54b7ed991fa8b7.json",
+	}
+	require.ElementsMatch(t, expected, mergableFilenames)
 }

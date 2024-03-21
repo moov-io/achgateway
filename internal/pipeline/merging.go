@@ -379,8 +379,9 @@ func (m *filesystemMerging) buildDirMapping(dir string) (*treemap.TreeMap[string
 			return nil // skip directories
 		}
 
-		if strings.Contains(path, "uploaded") {
-			// Skip /uploaded/ as we're only interested in the input files
+		if strings.Contains(path, "uploaded") || strings.HasSuffix(path, ".json") {
+			// Skip /uploaded/ as we're only interested in the input files.
+			// Skip .json files as they contian ValidateOpts
 			return nil
 		}
 
@@ -390,9 +391,22 @@ func (m *filesystemMerging) buildDirMapping(dir string) (*treemap.TreeMap[string
 		}
 		defer fd.Close()
 
-		// TODO(adam): need ValidateOpts?
+		// Check for validate opts
+		validateOptsPath := strings.TrimSuffix(path, filepath.Ext(path)) + ".json"
+		var validateOpts *ach.ValidateOpts
+		if optsFD, err := m.storage.Open(validateOptsPath); err == nil {
+			err = json.NewDecoder(optsFD).Decode(&validateOpts)
+			if err != nil {
+				return fmt.Errorf("reading %s as validate opts failed: %w", validateOptsPath, err)
+			}
+		}
 
-		file, err := ach.NewReader(fd).Read()
+		rdr := ach.NewReader(fd)
+		if validateOpts != nil {
+			rdr.SetValidation(validateOpts)
+		}
+
+		file, err := rdr.Read()
 		if err != nil {
 			return fmt.Errorf("reading %s failed: %w", path, err)
 		}
@@ -457,13 +471,36 @@ func (m *filesystemMerging) findInputFilepaths(mappings *treemap.TreeMap[string,
 
 func (m *filesystemMerging) saveMergedFile(dir string, file *ach.File) error {
 	var buf bytes.Buffer
-	if err := ach.NewWriter(&buf).Write(file); err != nil {
-		return fmt.Errorf("unable to buffer ACH file: %v", err)
+
+	err := ach.NewWriter(&buf).Write(file)
+	if err != nil {
+		return fmt.Errorf("unable to buffer ACH file: %w", err)
 	}
 
-	path := filepath.Join(dir, fmt.Sprintf("%s.ach", hash(buf.Bytes())))
+	name := hash(buf.Bytes())
+	path := filepath.Join(dir, fmt.Sprintf("%s.ach", name))
 
-	return m.storage.WriteFile(path, buf.Bytes())
+	err = m.storage.WriteFile(path, buf.Bytes())
+	if err != nil {
+		return fmt.Errorf("writing merged ACH file: %w", err)
+	}
+
+	validateOpts := file.GetValidation()
+	if validateOpts != nil {
+		buf.Reset()
+		err = json.NewEncoder(&buf).Encode(validateOpts)
+		if err != nil {
+			return fmt.Errorf("marshal of merged ACH file validate opts: %w", err)
+		}
+
+		path = filepath.Join(dir, fmt.Sprintf("%s.json", name))
+		err = m.storage.WriteFile(path, buf.Bytes())
+		if err != nil {
+			return fmt.Errorf("writing merged ACH file validate opts: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func hash(data []byte) string {
