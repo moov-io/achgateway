@@ -178,6 +178,7 @@ func (m *filesystemMerging) getCanceledFiles(ctx context.Context, dir string) ([
 	if err != nil {
 		return nil, err
 	}
+	span.SetAttributes(attribute.Int("achgateway.canceled_files", len(matches)))
 
 	out := make([]string, len(matches))
 	for i := range matches {
@@ -263,7 +264,7 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 	var el base.ErrorList
 
 	opts := m.createMergeDirOptions(canceledFiles)
-	files, err := ach.MergeDir(dir, mergeConditions, opts)
+	files, err := m.mergeDir(ctx, dir, mergeConditions, opts)
 	if err != nil {
 		el.Add(fmt.Errorf("unable to merge files: %v", err))
 	}
@@ -292,7 +293,7 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 	for i := range files {
 		// Optionally Flatten Batches
 		if m.shard.Mergable.FlattenBatches != nil {
-			if file, err := files[i].FlattenBatches(); err != nil {
+			if file, err := m.flattenBatches(ctx, files[i]); err != nil {
 				el.Add(err)
 			} else {
 				files[i] = file
@@ -300,7 +301,7 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 		}
 
 		// Write our file to the mergable directory
-		if err := m.saveMergedFile(uploadedDir, files[i]); err != nil {
+		if err := m.saveMergedFile(ctx, uploadedDir, files[i]); err != nil {
 			el.Add(fmt.Errorf("problem writing merged file: %v", err))
 			logger.Error().Logf("skipping upload of %s after cache failure", files[i])
 			continue // skip upload if we can't cache what to upload
@@ -344,6 +345,32 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 		return merged, nil
 	}
 	return merged, el
+}
+
+func (m *filesystemMerging) mergeDir(ctx context.Context, dir string, mergeConditions ach.Conditions, opts *ach.MergeDirOptions) ([]*ach.File, error) {
+	_, span := telemetry.StartSpan(ctx, "ach-merge-dir", trace.WithAttributes(
+		attribute.String("achgateway.shard", m.shard.Name),
+		attribute.String("achgateway.dir", dir),
+	))
+	defer span.End()
+
+	files, err := ach.MergeDir(dir, mergeConditions, opts)
+	if err != nil {
+		span.RecordError(err)
+	}
+
+	span.SetAttributes(attribute.Int("achgateway.merged_files", len(files)))
+
+	return files, err
+}
+
+func (m *filesystemMerging) flattenBatches(ctx context.Context, file *ach.File) (*ach.File, error) {
+	_, span := telemetry.StartSpan(ctx, "ach-flatten-batches", trace.WithAttributes(
+		attribute.String("achgateway.shard", m.shard.Name),
+	))
+	defer span.End()
+
+	return file.FlattenBatches()
 }
 
 func fileAcceptor(canceledFiles []string) func(string) ach.FileAcceptance {
@@ -473,9 +500,14 @@ func (m *filesystemMerging) findInputFilepaths(mappings *treemap.TreeMap[string,
 	return merged
 }
 
-func (m *filesystemMerging) saveMergedFile(dir string, file *ach.File) error {
-	var buf bytes.Buffer
+func (m *filesystemMerging) saveMergedFile(ctx context.Context, dir string, file *ach.File) error {
+	_, span := telemetry.StartSpan(ctx, "saved-merged-file", trace.WithAttributes(
+		attribute.String("achgateway.shard", m.shard.Name),
+		attribute.String("achgateway.dir", dir),
+	))
+	defer span.End()
 
+	var buf bytes.Buffer
 	err := ach.NewWriter(&buf).Write(file)
 	if err != nil {
 		return fmt.Errorf("unable to buffer ACH file: %w", err)
@@ -483,6 +515,11 @@ func (m *filesystemMerging) saveMergedFile(dir string, file *ach.File) error {
 
 	name := hash(buf.Bytes())
 	path := filepath.Join(dir, fmt.Sprintf("%s.ach", name))
+
+	span.SetAttributes(
+		attribute.String("achgateway.merged_filename", path),
+		attribute.Int("achgateway.merged_filesize_bytes", buf.Len()),
+	)
 
 	err = m.storage.WriteFile(path, buf.Bytes())
 	if err != nil {
@@ -492,6 +529,7 @@ func (m *filesystemMerging) saveMergedFile(dir string, file *ach.File) error {
 	validateOpts := file.GetValidation()
 	if validateOpts != nil {
 		buf.Reset()
+
 		err = json.NewEncoder(&buf).Encode(validateOpts)
 		if err != nil {
 			return fmt.Errorf("marshal of merged ACH file validate opts: %w", err)
