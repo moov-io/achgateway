@@ -58,11 +58,40 @@ func (f *filesystem) ReadDir(name string) ([]fs.DirEntry, error) {
 
 var _ fs.ReadDirFS = (&filesystem{})
 
+const (
+	readdirChunkSize = 512
+)
+
 func (f *filesystem) Glob(pattern string) ([]FileStat, error) {
-	matches, err := filepath.Glob(filepath.Join(f.root, pattern))
+	subdir, suffix := filepath.Split(pattern)
+	where := filepath.Join(f.root, subdir)
+
+	dir, err := os.Open(where)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("opening %s failed: %w", where, err)
 	}
+	defer dir.Close()
+
+	var matches []string
+	for {
+		names, err := dir.Readdirnames(readdirChunkSize)
+		if len(names) == 0 {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("listing filesnames from %s failed: %w", where, err)
+		}
+		for i := range names {
+			match, err := filepath.Match(suffix, names[i])
+			if err != nil {
+				return nil, fmt.Errorf("using %s as pattern failed: %w", suffix, err)
+			}
+			if match {
+				matches = append(matches, filepath.Join(f.root, subdir, names[i]))
+			}
+		}
+	}
+
 	out := make([]FileStat, 0, len(matches))
 	for i := range matches {
 		stat, _ := os.Stat(matches[i])
