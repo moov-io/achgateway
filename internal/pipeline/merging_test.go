@@ -325,7 +325,7 @@ func TestMerging__saveMergedFile(t *testing.T) {
 	})
 
 	require.NoError(t, m.storage.MkdirAll("uploaded"))
-	err = m.saveMergedFile("uploaded", file)
+	err = m.saveMergedFile(context.Background(), "uploaded", file)
 	require.NoError(t, err)
 
 	mergableFilenames := getFilenames(t, m.storage, "uploaded")
