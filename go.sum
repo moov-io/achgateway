@@ -368,8 +368,8 @@ github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd h1:TRLaZ9cD/w
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9Gz0M=
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
-github.com/moov-io/ach v1.36.2-0.20240321195227-2c9dcf105dab h1:GAbtIpd/SlQukNWhIML1sD7kN4O2dee+0W17Kx0ttUY=
-github.com/moov-io/ach v1.36.2-0.20240321195227-2c9dcf105dab/go.mod h1:g/XLp337pbEMctCDazuCHMnmNcoV04aMqZGoQfOsrpI=
+github.com/moov-io/ach v1.36.2-0.20240326190529-f4895d8d5781 h1:Ene/L5fffp0NO8Ya5jPkNYzYRw8Vybz8UoIcIUJGPXA=
+github.com/moov-io/ach v1.36.2-0.20240326190529-f4895d8d5781/go.mod h1:g/XLp337pbEMctCDazuCHMnmNcoV04aMqZGoQfOsrpI=
 github.com/moov-io/base v0.48.5 h1:QaTyTo6eFFFV35R9l/GdePQN40IJti9knD5hqdWPnnM=
 github.com/moov-io/base v0.48.5/go.mod h1:D5ZV9COV/qtCjTQuYpq7gGInCk64AhOQI6UY4kt4Rq8=
 github.com/moov-io/cryptfs v0.7.1 h1:aT79fcxvX3vLJ25GMFlsl6WtPLijZ3VWMaRSq8OJu4M=
