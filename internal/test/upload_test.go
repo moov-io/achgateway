@@ -84,10 +84,6 @@ var (
 					},
 					OutboundFilenameTemplate: `{{ .ShardName }}-{{ date "150405.00000" }}-{{ .RoutingNumber }}.ach`,
 					UploadAgent:              "ftp-live",
-
-					Mergable: service.MergableConfig{
-						MergeInGroupsOf: 100,
-					},
 				},
 				{
 					Name: "beta",
@@ -97,9 +93,6 @@ var (
 					},
 					OutboundFilenameTemplate: `{{ .ShardName }}-{{ date "150405.00000" }}-{{ .RoutingNumber }}.ach`,
 					UploadAgent:              "ftp-live",
-					Mergable: service.MergableConfig{
-						MergeInGroupsOf: 100,
-					},
 				},
 				// This shard is never used, but we include it to verify merge/upload works
 				{
@@ -109,9 +102,6 @@ var (
 						Windows:  []string{"14:30"},
 					},
 					UploadAgent: "ftp-live",
-					Mergable: service.MergableConfig{
-						MergeInGroupsOf: 100,
-					},
 				},
 			},
 		},

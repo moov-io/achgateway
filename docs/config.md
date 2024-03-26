@@ -181,8 +181,7 @@ ACHGateway:
           Conditions:
             MaxLines: <integer>
             MaxDollarAmount: <integer>
-          FlattenBatches: {} # Specify a non-null object to flatten batches
-          [ MergeInGroupsOf: <integer> | default = 100 ]
+          FlattenBatches: {} # Specify a non-null object to flatten batches, often not needed
         OutboundFilenameTemplate: <string>
         Audit:
           ID: <string>
