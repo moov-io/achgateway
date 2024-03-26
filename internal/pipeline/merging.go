@@ -302,16 +302,17 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 
 		// Write our file to the mergable directory
 		if err := m.saveMergedFile(ctx, uploadedDir, files[i]); err != nil {
-			el.Add(fmt.Errorf("problem writing merged file: %v", err))
-			logger.Error().Logf("skipping upload of %s after cache failure", files[i])
-			continue // skip upload if we can't cache what to upload
+			err = fmt.Errorf("problem writing merged file: %v", err)
+			span.RecordError(err)
+			el.Add(err)
+			continue
 		}
 
 		// Upload the file
 		if filename, err := f(ctx, i, agent, files[i]); err != nil {
-			telemetry.RecordError(ctx, err)
-
-			el.Add(fmt.Errorf("problem from callback: %v", err))
+			err = fmt.Errorf("problem from callback: %v", err)
+			span.RecordError(err)
+			el.Add(err)
 		} else {
 			merged = append(merged, mergedFile{
 				UploadedFilename: filename,
