@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/achgateway/pkg/models"
@@ -145,23 +146,30 @@ func (pc *creditReconciliation) produceFileEvent(ctx context.Context, logger log
 }
 
 func (pc *creditReconciliation) produceEntryEvents(ctx context.Context, logger log.Logger, file File) error {
-	g := new(errgroup.Group)
-
+	var g errgroup.Group
 	for i := range file.ACHFile.Batches {
-		batch := file.ACHFile.Batches[i]
+		g.Go(func() error {
+			return pc.produceEventsForBatch(ctx, logger, file, file.ACHFile.Batches[i])
+		})
+	}
+	return g.Wait()
+}
 
-		entries := batch.GetEntries()
-		for j := range entries {
-			// Produce ReconciliationEntry event
-			entry := entries[j]
-			g.Go(func() error {
-				return pc.sendEvent(ctx, models.ReconciliationEntry{
-					Filename: filepath.Base(file.Filepath),
-					Header:   batch.GetHeader(),
-					Entry:    entry,
-				})
+func (pc *creditReconciliation) produceEventsForBatch(ctx context.Context, logger log.Logger, file File, batch ach.Batcher) error {
+	var g errgroup.Group
+
+	bh := batch.GetHeader()
+	filename := filepath.Base(file.Filepath)
+
+	entries := batch.GetEntries()
+	for j := range entries {
+		g.Go(func() error {
+			return pc.sendEvent(ctx, models.ReconciliationEntry{
+				Filename: filename,
+				Header:   bh,
+				Entry:    entries[j],
 			})
-		}
+		})
 	}
 
 	return g.Wait()
