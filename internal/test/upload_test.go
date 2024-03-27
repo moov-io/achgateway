@@ -281,7 +281,7 @@ func setupTestDirectory(t *testing.T, cfg *service.Config) string {
 
 	dir, err := os.MkdirTemp(filepath.Join("..", "..", "testdata", "ftp-server"), "outbound-*")
 	require.NoError(t, err)
-	// t.Cleanup(func() { os.RemoveAll(dir) })
+	t.Cleanup(func() { os.RemoveAll(dir) })
 
 	cfg.Upload.Agents[0].Paths.Outbound = filepath.Base(dir)
 	return dir
