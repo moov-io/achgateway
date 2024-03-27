@@ -1,18 +1,15 @@
-## v0.30.0 (Released 2024-03-27)
-
-This release of achgateway includes several performance improvements when merging / uploading files.
+## v0.30.1 (Released 2024-03-27)
 
 IMPROVEMENTS
 
-- notify: send failure related content on Critical email's
-- pipeline: add more spans inside WithEachMerged
-- pipeline: cache uploadable files prior to remote write
-- pipeline: use ach.MergeDir
-- pipeline: write and read ValidateOpts as part of merging
-- service: remove MergeInGroupsOf
-- storage: chunk through large directories
+- incoming/odfi: let gc cleanup memory when producing ReconciliationEntry
+- test: delete outbound directory after
 
-## v0.29.0 (Released 2024-03-13)
+BUILD
+
+- build: update moov-io/ach to v1.37.1
+
+## v0.30.0 (Released 2024-03-27)
 
 This release contains an updated moov-io/ach with various improvements to merging files. Refer to the [moov-io/ach changelog](https://github.com/moov-io/ach/blob/master/CHANGELOG.md#v1361-released-2024-03-13) for more details.
 
@@ -20,6 +17,13 @@ IMPROVEMENTS
 
 - feat: respond to CancelACHFile events with FileCancellationResponse
 - incoming/web: better wait timeout for FileCancellationResponse
+- notify: send failure related content on Critical email's
+- pipeline: add more spans inside WithEachMerged
+- pipeline: cache uploadable files prior to remote write
+- pipeline: use ach.MergeDir
+- pipeline: write and read ValidateOpts as part of merging
+- service: remove MergeInGroupsOf
+- storage: chunk through large directories
 
 BUILD
 
