@@ -287,9 +287,7 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 	}
 	logger.Logf("found %T agent", agent)
 
-	// Write each file to our remote agent
-	var merged []mergedFile
-	successfulRemoteWrites := 0
+	// Write each file to local cache
 	for i := range files {
 		// Optionally Flatten Batches
 		if m.shard.Mergable.FlattenBatches != nil {
@@ -307,9 +305,14 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 			el.Add(err)
 			continue
 		}
+	}
 
-		// Upload the file
-		if filename, err := f(ctx, i, agent, files[i]); err != nil {
+	// Write each file to the remote agent
+	var merged []mergedFile
+	successfulRemoteWrites := 0
+	for i := range files {
+		filename, err := f(ctx, i, agent, files[i]) // upload
+		if err != nil {
 			err = fmt.Errorf("problem from callback: %v", err)
 			span.RecordError(err)
 			el.Add(err)
@@ -326,7 +329,6 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 			}
 		}
 	}
-
 	logger.Logf("wrote %d of %d files to remote agent", successfulRemoteWrites, len(files))
 
 	span.SetAttributes(
