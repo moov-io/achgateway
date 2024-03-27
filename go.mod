@@ -14,7 +14,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.4
 	github.com/igrmk/treemap/v2 v2.0.1
 	github.com/jlaffaye/ftp v0.2.0
-	github.com/moov-io/ach v1.36.2-0.20240326190529-f4895d8d5781
+	github.com/moov-io/ach v1.37.0
 	github.com/moov-io/base v0.48.5
 	github.com/moov-io/cryptfs v0.7.1
 	github.com/moov-io/go-ftp v0.3.2
