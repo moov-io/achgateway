@@ -336,7 +336,7 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 	)
 
 	// Build a mapping of BatchHeader + EntryDetail from dir
-	mappings, err := m.buildDirMapping(dir)
+	mappings, err := m.buildDirMapping(dir, canceledFiles)
 	if err != nil {
 		el.Add(err)
 	}
@@ -395,8 +395,10 @@ func fileAcceptor(canceledFiles []string) func(string) ach.FileAcceptance {
 	}
 }
 
-func (m *filesystemMerging) buildDirMapping(dir string) (*treemap.TreeMap[string, string], error) {
+func (m *filesystemMerging) buildDirMapping(dir string, canceledFiles []string) (*treemap.TreeMap[string, string], error) {
 	tree := treemap.New[string, string]()
+
+	acceptor := fileAcceptor(canceledFiles)
 
 	err := fs.WalkDir(m.storage, dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -412,6 +414,11 @@ func (m *filesystemMerging) buildDirMapping(dir string) (*treemap.TreeMap[string
 		if strings.Contains(path, "uploaded") || strings.HasSuffix(path, ".json") {
 			// Skip /uploaded/ as we're only interested in the input files.
 			// Skip .json files as they contain ValidateOpts
+			return nil
+		}
+
+		// Skip the file if merging would have skipped it
+		if acceptor(path) == ach.SkipFile {
 			return nil
 		}
 

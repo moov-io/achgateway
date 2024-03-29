@@ -165,6 +165,12 @@ func TestMerging_mappings(t *testing.T) {
 	copyFile(t, filepath.Join("testdata", "ppd-debit4.ach"), filepath.Join(dir, "mergable", "ppd-debit4.ach"))
 	copyFile(t, filepath.Join("testdata", "duplicate-trace.ach"), filepath.Join(dir, "mergable", "duplicate-trace.ach"))
 
+	// Canceled files
+	err := os.WriteFile(filepath.Join(dir, "mergable", "foo2.ach"), nil, 0600)
+	require.NoError(t, err)
+	err = os.WriteFile(filepath.Join(dir, "mergable", "foo2.ach.canceled"), nil, 0600)
+	require.NoError(t, err)
+
 	fs, err := storage.NewFilesystem(dir)
 	require.NoError(t, err)
 
@@ -184,7 +190,8 @@ func TestMerging_mappings(t *testing.T) {
 		},
 	}
 
-	mappings, err := m.buildDirMapping(".")
+	canceledFiles := []string{"foo2.ach"}
+	mappings, err := m.buildDirMapping(".", canceledFiles)
 	require.NoError(t, err)
 
 	for it := mappings.Iterator(); it.Valid(); it.Next() {
