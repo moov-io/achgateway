@@ -1,3 +1,9 @@
+## v0.30.2 (Released 2024-03-29)
+
+IMPROVEMENTS
+
+- fix: skip canceled files in buildDirMapping
+
 ## v0.30.1 (Released 2024-03-27)
 
 IMPROVEMENTS
