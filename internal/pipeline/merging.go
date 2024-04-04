@@ -24,7 +24,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/fs"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -102,7 +101,9 @@ func (m *filesystemMerging) writeACHFile(ctx context.Context, xfer incoming.ACHF
 	if err := ach.NewWriter(&buf).Write(xfer.File); err != nil {
 		return err
 	}
-	path := filepath.Join("mergable", m.shard.Name, fmt.Sprintf("%s.ach", xfer.FileID))
+
+	fileID := strings.TrimSuffix(xfer.FileID, ".ach")
+	path := filepath.Join("mergable", m.shard.Name, fmt.Sprintf("%s.ach", fileID))
 	if err := m.storage.WriteFile(path, buf.Bytes()); err != nil {
 		return err
 	}
@@ -116,7 +117,8 @@ func (m *filesystemMerging) writeACHFile(ctx context.Context, xfer incoming.ACHF
 				"shardKey": log.String(xfer.ShardKey),
 			}).Logf("ERROR encoding ValidateOpts: %v", err)
 		}
-		path := filepath.Join("mergable", m.shard.Name, fmt.Sprintf("%s.json", xfer.FileID))
+
+		path := filepath.Join("mergable", m.shard.Name, fmt.Sprintf("%s.json", fileID))
 		if err := m.storage.WriteFile(path, buf.Bytes()); err != nil {
 			m.logger.Warn().With(log.Fields{
 				"fileID":   log.String(xfer.FileID),
@@ -129,7 +131,8 @@ func (m *filesystemMerging) writeACHFile(ctx context.Context, xfer incoming.ACHF
 }
 
 func (m *filesystemMerging) HandleCancel(ctx context.Context, cancel incoming.CancelACHFile) (incoming.FileCancellationResponse, error) {
-	path := filepath.Join("mergable", m.shard.Name, fmt.Sprintf("%s.ach", cancel.FileID))
+	fileID := strings.TrimSuffix(cancel.FileID, ".ach")
+	path := filepath.Join("mergable", m.shard.Name, fmt.Sprintf("%s.ach", fileID))
 
 	// Check if the file exists already
 	file, _ := m.storage.Open(path)
@@ -335,7 +338,7 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 		attribute.Int("achgateway.successful_remote_writes", successfulRemoteWrites),
 	)
 
-	// Build a mapping of BatchHeader + EntryDetail from dir
+	// Build a mapping of BatchHeader + EntryDetail from dir (input files)
 	mappings, err := m.buildDirMapping(dir, canceledFiles)
 	if err != nil {
 		el.Add(err)
@@ -395,79 +398,87 @@ func fileAcceptor(canceledFiles []string) func(string) ach.FileAcceptance {
 	}
 }
 
+// buildDirMapping computes a tree of the input files and their entries together so that we can quickly find
+// where they were merged into.
 func (m *filesystemMerging) buildDirMapping(dir string, canceledFiles []string) (*treemap.TreeMap[string, string], error) {
 	tree := treemap.New[string, string]()
 
+	fds, err := m.storage.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
 	acceptor := fileAcceptor(canceledFiles)
 
-	err := fs.WalkDir(m.storage, dir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			if strings.Contains(err.Error(), "is a directory") {
-				return nil
-			}
-			return err
-		}
-		if d.IsDir() {
-			return nil // skip directories
-		}
+	for i := range fds {
+		path := fds[i].Name()
 
-		if strings.Contains(path, "uploaded") || strings.HasSuffix(path, ".json") {
-			// Skip /uploaded/ as we're only interested in the input files.
-			// Skip .json files as they contain ValidateOpts
-			return nil
+		// Ignore directories as ReadDir continues inside of them.
+		// .json files contain ValidateOpts which we can skip
+		if fds[i].IsDir() || strings.HasSuffix(path, ".json") {
+			continue
 		}
 
 		// Skip the file if merging would have skipped it
 		if acceptor(path) == ach.SkipFile {
-			return nil
+			continue
 		}
 
-		fd, err := m.storage.Open(path)
+		err = m.accumulateMappings(tree, filepath.Join(dir, path))
 		if err != nil {
-			return fmt.Errorf("opening %s failed: %w", path, err)
+			return nil, fmt.Errorf("accumulating mappings from %s failed: %w", path, err)
 		}
-		defer fd.Close()
+	}
 
-		// Check for validate opts
-		validateOptsPath := strings.TrimSuffix(path, filepath.Ext(path)) + ".json"
-		var validateOpts *ach.ValidateOpts
-		if optsFD, err := m.storage.Open(validateOptsPath); err == nil {
-			if optsFD != nil {
-				defer optsFD.Close()
-			}
+	return tree, nil
+}
 
-			err = json.NewDecoder(optsFD).Decode(&validateOpts)
-			if err != nil {
-				return fmt.Errorf("reading %s as validate opts failed: %w", validateOptsPath, err)
-			}
+func (m *filesystemMerging) accumulateMappings(tree *treemap.TreeMap[string, string], path string) error {
+	fd, err := m.storage.Open(path)
+	if err != nil {
+		return fmt.Errorf("opening %s failed: %w", path, err)
+	}
+	defer fd.Close()
+
+	// Check for validate opts
+	validateOptsPath := strings.TrimSuffix(path, filepath.Ext(path)) + ".json"
+	var validateOpts *ach.ValidateOpts
+	if optsFD, err := m.storage.Open(validateOptsPath); err == nil {
+		if optsFD != nil {
+			defer optsFD.Close()
 		}
 
-		rdr := ach.NewReader(fd)
-		if validateOpts != nil {
-			rdr.SetValidation(validateOpts)
-		}
-
-		file, err := rdr.Read()
+		err = json.NewDecoder(optsFD).Decode(&validateOpts)
 		if err != nil {
-			return fmt.Errorf("reading %s failed: %w", path, err)
+			return fmt.Errorf("reading %s as validate opts failed: %w", validateOptsPath, err)
 		}
+	}
 
-		_, filename := filepath.Split(path)
+	rdr := ach.NewReader(fd)
+	if validateOpts != nil {
+		rdr.SetValidation(validateOpts)
+	}
 
-		// Add each BatchHeader and Entry to the map
-		for i := range file.Batches {
-			bh := file.Batches[i].GetHeader().String()
+	file, err := rdr.Read()
+	if err != nil {
+		return fmt.Errorf("reading %s failed: %w", path, err)
+	}
 
-			entries := file.Batches[i].GetEntries()
-			for m := range entries {
-				tree.Set(makeKey(bh, entries[m]), filename)
-			}
+	_, filename := filepath.Split(path)
+
+	// Add each BatchHeader and Entry to the map
+	for i := range file.Batches {
+		bh := file.Batches[i].GetHeader().String()
+
+		entries := file.Batches[i].GetEntries()
+
+		for m := range entries {
+			key := makeKey(bh, entries[m])
+			tree.Set(key, filename)
 		}
+	}
 
-		return nil
-	})
-
-	return tree, err
+	return nil
 }
 
 func makeKey(bh string, entry *ach.EntryDetail) string {

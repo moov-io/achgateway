@@ -127,8 +127,8 @@ func TestEventsAPI_FileUploaded(t *testing.T) {
 			switch i {
 			case 0:
 				// Example: TESTING-143425.52750.ach
-				require.True(t, strings.HasPrefix(v.Filename, "TESTING-"))
-				require.True(t, strings.HasSuffix(v.Filename, ".ach"))
+				require.True(t, strings.HasPrefix(v.Filename, "TESTING-"), v.Filename)
+				require.True(t, strings.HasSuffix(v.Filename, ".ach"), v.Filename)
 			case 1:
 				require.Equal(t, "foo.ach", v.Filename)
 			}

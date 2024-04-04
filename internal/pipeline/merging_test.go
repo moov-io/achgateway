@@ -20,8 +20,9 @@ package pipeline
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -98,22 +99,6 @@ func TestMerging__getNonCanceledMatches(t *testing.T) {
 	require.NotContains(t, matches[0], filepath.Join("test-2021", cancel2))
 }
 
-func copyFile(t *testing.T, src, dest string) {
-	t.Helper()
-
-	s, err := os.Open(src)
-	require.NoError(t, err)
-	defer s.Close()
-
-	d, err := os.Create(dest)
-	require.NoError(t, err)
-	defer d.Close()
-
-	n, err := io.Copy(d, s)
-	require.NoError(t, err)
-	require.Greater(t, n, int64(0))
-}
-
 func read(t testing.TB, where string) *ach.File {
 	t.Helper()
 
@@ -156,42 +141,62 @@ func TestMerging_fileAcceptor(t *testing.T) {
 }
 
 func TestMerging_mappings(t *testing.T) {
-	dir := t.TempDir()
-	os.MkdirAll(filepath.Join(dir, "mergable"), 0777)
-	copyFile(t, filepath.Join("testdata", "ppd-debit.ach"), filepath.Join(dir, "mergable", "ppd-debit.ach"))
-	copyFile(t, filepath.Join("testdata", "ppd-debit.json"), filepath.Join(dir, "mergable", "ppd-debit.json"))
-	copyFile(t, filepath.Join("testdata", "ppd-debit2.ach"), filepath.Join(dir, "mergable", "ppd-debit2.ach"))
-	copyFile(t, filepath.Join("testdata", "ppd-debit3.ach"), filepath.Join(dir, "mergable", "ppd-debit3.ach"))
-	copyFile(t, filepath.Join("testdata", "ppd-debit4.ach"), filepath.Join(dir, "mergable", "ppd-debit4.ach"))
-	copyFile(t, filepath.Join("testdata", "duplicate-trace.ach"), filepath.Join(dir, "mergable", "duplicate-trace.ach"))
+	// dir := t.TempDir()
+	dir := "."
 
-	// Canceled files
-	err := os.WriteFile(filepath.Join(dir, "mergable", "foo2.ach"), nil, 0600)
-	require.NoError(t, err)
-	err = os.WriteFile(filepath.Join(dir, "mergable", "foo2.ach.canceled"), nil, 0600)
-	require.NoError(t, err)
-
-	fs, err := storage.NewFilesystem(dir)
-	require.NoError(t, err)
-
-	m := &filesystemMerging{
-		logger: log.NewTestLogger(),
-		cfg: service.UploadAgents{
-			Agents: []service.UploadAgent{
-				{
-					ID:   "mock",
-					Mock: &service.MockAgent{},
+	logger := log.NewTestLogger()
+	shard := service.Shard{
+		Name:        "SD-testing",
+		UploadAgent: "mock",
+	}
+	cfg := service.UploadAgents{
+		Agents: []service.UploadAgent{
+			{
+				ID:   "mock",
+				Mock: &service.MockAgent{},
+			},
+		},
+		Merging: service.Merging{
+			Storage: storage.Config{
+				Filesystem: storage.FilesystemConfig{
+					Directory: dir,
+				},
+				Encryption: storage.EncryptionConfig{
+					AES: &storage.AESConfig{
+						Base64Key: base64.RawStdEncoding.EncodeToString([]byte("1111111111111111")),
+					},
+					Encoding: "base64",
 				},
 			},
 		},
-		storage: fs,
-		shard: service.Shard{
-			UploadAgent: "mock",
-		},
 	}
 
+	merging, err := NewMerging(logger, shard, cfg)
+	require.NoError(t, err)
+
+	enqueueFile(t, merging, filepath.Join("testdata", "ppd-debit.ach"))
+	enqueueFile(t, merging, filepath.Join("testdata", "ppd-debit2.ach"))
+	enqueueFile(t, merging, filepath.Join("testdata", "ppd-debit3.ach"))
+	enqueueFile(t, merging, filepath.Join("testdata", "ppd-debit4.ach"))
+	enqueueFile(t, merging, filepath.Join("testdata", "duplicate-trace.ach"))
+
+	// Sanity check the directory
+	m, ok := merging.(*filesystemMerging)
+	require.True(t, ok)
+
+	// Write an invalid ACH file that we cancel (serves both to check that we don't open it and that it's not merged)
+	err = m.storage.WriteFile(filepath.Join(dir, "mergable", "SD-testing", "foo2.ach"), nil)
+	require.NoError(t, err)
+
+	cancelResponse, err := merging.HandleCancel(context.Background(), incoming.CancelACHFile{
+		FileID:   "foo2.ach",
+		ShardKey: "SD-testing",
+	})
+	require.NoError(t, err)
+	require.True(t, cancelResponse.Successful)
+
 	canceledFiles := []string{"foo2.ach"}
-	mappings, err := m.buildDirMapping(".", canceledFiles)
+	mappings, err := m.buildDirMapping(filepath.Join("mergable", "SD-testing"), canceledFiles)
 	require.NoError(t, err)
 
 	for it := mappings.Iterator(); it.Valid(); it.Next() {
@@ -226,6 +231,42 @@ func TestMerging_mappings(t *testing.T) {
 	require.ElementsMatch(t, expected, mapped[0].InputFilepaths)
 	require.Equal(t, "MAPPING-0.ach", mapped[0].UploadedFilename)
 	require.Equal(t, 2, len(mapped[0].ACHFile.Batches))
+}
+
+func enqueueFile(t *testing.T, merging XferMerging, path string) {
+	t.Helper()
+
+	file, err := ach.ReadFile(path)
+	if err != nil {
+		t.Fatalf("reading %s failed: %v", path, err)
+	}
+
+	// Add ValidateOpts to a special file
+	dir, filename := filepath.Split(path)
+	switch filename {
+	case "ppd-debit.ach":
+		fd, err := os.Open(filepath.Join(dir, "ppd-debit.json"))
+		require.NoError(t, err)
+		defer fd.Close()
+
+		var opts ach.ValidateOpts
+		err = json.NewDecoder(fd).Decode(&opts)
+		require.NoError(t, err)
+
+		file.SetValidation(&opts)
+
+	case "duplicate-trace.ach":
+		require.NoError(t, file.Create()) // fix EntryHash
+	}
+
+	err = merging.HandleXfer(context.Background(), incoming.ACHFile{
+		FileID:   filename,
+		ShardKey: "SD-testing",
+		File:     file,
+	})
+	if err != nil {
+		t.Fatalf("handling xfer %s failed: %v", path, err)
+	}
 }
 
 func TestMerging__writeACHFile(t *testing.T) {
