@@ -1,3 +1,13 @@
+## v0.30.3 (Released 2024-04-08)
+
+IMPROVEMENTS
+
+- pipeline: call .ReadDir instead of fs.WalkDir to gather all file descriptors
+
+BUILD
+
+- chore(deps): update github.com/moov-io/ach to v1.37.2
+
 ## v0.30.2 (Released 2024-03-29)
 
 IMPROVEMENTS
