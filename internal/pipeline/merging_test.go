@@ -141,8 +141,7 @@ func TestMerging_fileAcceptor(t *testing.T) {
 }
 
 func TestMerging_mappings(t *testing.T) {
-	// dir := t.TempDir()
-	dir := "."
+	dir := t.TempDir()
 
 	logger := log.NewTestLogger()
 	shard := service.Shard{
