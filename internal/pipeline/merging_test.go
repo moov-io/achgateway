@@ -27,6 +27,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/incoming"
@@ -184,8 +185,18 @@ func TestMerging_mappings(t *testing.T) {
 	require.True(t, ok)
 
 	// Write an invalid ACH file that we cancel (serves both to check that we don't open it and that it's not merged)
-	err = m.storage.WriteFile(filepath.Join(dir, "mergable", "SD-testing", "foo2.ach"), nil)
+	foo2Path := filepath.Join("mergable", "SD-testing", "foo2.ach")
+	err = m.storage.WriteFile(foo2Path, nil)
 	require.NoError(t, err)
+
+	// Verify file is written
+	require.Eventually(t, func() bool {
+		fd, err := m.storage.Open(foo2Path)
+		if fd != nil {
+			defer fd.Close()
+		}
+		return err == nil
+	}, 10*time.Second, 500*time.Millisecond)
 
 	cancelResponse, err := merging.HandleCancel(context.Background(), incoming.CancelACHFile{
 		FileID:   "foo2.ach",

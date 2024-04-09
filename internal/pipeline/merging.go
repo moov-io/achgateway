@@ -24,6 +24,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -131,23 +132,50 @@ func (m *filesystemMerging) writeACHFile(ctx context.Context, xfer incoming.ACHF
 }
 
 func (m *filesystemMerging) HandleCancel(ctx context.Context, cancel incoming.CancelACHFile) (incoming.FileCancellationResponse, error) {
+	_, span := telemetry.StartSpan(ctx, "handle-cancel", trace.WithAttributes(
+		attribute.String("achgateway.file_id", cancel.FileID),
+		attribute.String("achgateway.shard", m.shard.Name),
+		attribute.String("achgateway.shard_key", cancel.ShardKey),
+	))
+	defer span.End()
+
 	fileID := strings.TrimSuffix(cancel.FileID, ".ach")
 	path := filepath.Join("mergable", m.shard.Name, fmt.Sprintf("%s.ach", fileID))
 
 	// Check if the file exists already
-	file, _ := m.storage.Open(path)
-	if file != nil {
-		defer file.Close()
+	originalFile, _ := m.storage.Open(path)
+	if originalFile != nil {
+		defer originalFile.Close()
+	}
+
+	// Check if the canceled file exists already
+	var canceledFile fs.File
+	if originalFile == nil {
+		canceledFile, _ = m.storage.Open(path + ".canceled")
+		if canceledFile != nil {
+			defer canceledFile.Close()
+		}
 	}
 
 	// Write the canceled File
 	err := m.storage.ReplaceFile(path, path+".canceled")
 	if err != nil {
-		telemetry.RecordError(ctx, err)
+		span.RecordError(err)
 	}
 
-	// File was found and we didn't error during the rename
-	var successful bool = file != nil && err == nil
+	originalFileWasFound := originalFile != nil
+	canceledFileWasFound := canceledFile != nil
+	successfulReplace := err == nil
+
+	span.SetAttributes(
+		attribute.Bool("achgateway.canceled_file_found", canceledFileWasFound),
+		attribute.Bool("achgateway.cancel_replacement_written", successfulReplace),
+		attribute.Bool("achgateway.original_file_found", originalFileWasFound),
+		attribute.String("achgateway.path", path),
+	)
+
+	// We need a file to be found and we no errors during the rename
+	var successful bool = (originalFileWasFound || canceledFileWasFound) && successfulReplace
 
 	out := incoming.FileCancellationResponse{
 		FileID:     cancel.FileID,
