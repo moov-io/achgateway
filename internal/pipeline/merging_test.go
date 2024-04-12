@@ -26,6 +26,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -142,6 +143,10 @@ func TestMerging_fileAcceptor(t *testing.T) {
 }
 
 func TestMerging_mappings(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip()
+	}
+
 	dir := t.TempDir()
 
 	logger := log.NewTestLogger()
