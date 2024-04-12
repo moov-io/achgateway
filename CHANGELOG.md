@@ -1,3 +1,14 @@
+## v0.30.4 (Released 2024-04-12)
+
+IMPROVEMENTS
+
+- incoming/web: always trim fileID in cancel handler
+- pipeline: record more information when canceling file
+
+BUILD
+
+- build: update github.com/moov-io/ach to v1.37.3
+
 ## v0.30.3 (Released 2024-04-08)
 
 IMPROVEMENTS
