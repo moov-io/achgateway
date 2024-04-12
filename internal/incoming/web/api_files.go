@@ -193,6 +193,9 @@ func (c *FilesController) CancelFileHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// Remove .ach suffix if the request added it
+	fileID = strings.TrimSuffix(fileID, ".ach")
+
 	ctx, span := telemetry.StartSpan(r.Context(), "cancel-file-handler", trace.WithAttributes(
 		attribute.String("achgateway.shardKey", shardKey),
 		attribute.String("achgateway.fileID", fileID),
@@ -231,9 +234,6 @@ func (c *FilesController) CancelFileHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (c *FilesController) cancelFile(ctx context.Context, shardKey, fileID string, waiter chan models.FileCancellationResponse) error {
-	// Remove .ach suffix if the request added it
-	fileID = strings.TrimSuffix(fileID, ".ach")
-
 	c.cancellationLock.Lock()
 	c.activeCancellations[fileID] = waiter
 	c.cancellationLock.Unlock()
