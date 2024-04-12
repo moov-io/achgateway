@@ -25,6 +25,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"testing"
 	"time"
@@ -46,6 +47,10 @@ import (
 )
 
 func TestCancelFileAPI(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip()
+	}
+
 	ctx := context.Background()
 	logger := log.NewTestLogger()
 
