@@ -5,6 +5,7 @@ module github.com/moov-io/achgateway
 go 1.22.0
 
 require (
+	cloud.google.com/go/spanner v1.55.0
 	github.com/PagerDuty/go-pagerduty v1.7.0
 	github.com/ProtonMail/go-crypto v1.0.0
 	github.com/Shopify/sarama v1.38.1
@@ -45,7 +46,6 @@ require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/iam v1.1.5 // indirect
 	cloud.google.com/go/longrunning v0.5.4 // indirect
-	cloud.google.com/go/spanner v1.55.0 // indirect
 	cloud.google.com/go/storage v1.35.1 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.7.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.3.0 // indirect
