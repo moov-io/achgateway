@@ -136,9 +136,10 @@ type SFTP struct {
 	Hostname string
 	Username string
 
-	Password         string
-	ClientPrivateKey string
-	HostPublicKey    string
+	Password             string
+	ClientPrivateKey     string
+	ClientPrivateKeyFile string
+	HostPublicKey        string
 
 	DialTimeout           time.Duration
 	MaxConnectionsPerFile int
@@ -154,9 +155,10 @@ func (cfg *SFTP) MarshalJSON() ([]byte, error) {
 		Hostname string
 		Username string
 
-		Password         string
-		ClientPrivateKey string
-		HostPublicKey    string
+		Password             string
+		ClientPrivateKey     string
+		ClientPrivateKeyFile string
+		HostPublicKey        string
 
 		DialTimeout           time.Duration
 		MaxConnectionsPerFile int
@@ -168,9 +170,10 @@ func (cfg *SFTP) MarshalJSON() ([]byte, error) {
 		Hostname: cfg.Hostname,
 		Username: cfg.Username,
 
-		Password:         mask.Password(cfg.Password),
-		ClientPrivateKey: cfg.ClientPrivateKey,
-		HostPublicKey:    cfg.HostPublicKey,
+		Password:             mask.Password(cfg.Password),
+		ClientPrivateKey:     cfg.ClientPrivateKey,
+		ClientPrivateKeyFile: cfg.ClientPrivateKeyFile,
+		HostPublicKey:        cfg.HostPublicKey,
 
 		DialTimeout:           cfg.DialTimeout,
 		MaxConnectionsPerFile: cfg.MaxConnectionsPerFile,
@@ -207,6 +210,7 @@ func (cfg *SFTP) String() string {
 	buf.WriteString(fmt.Sprintf("Username=%s, ", cfg.Username))
 	buf.WriteString(fmt.Sprintf("Password=%s, ", mask.Password(cfg.Password)))
 	buf.WriteString(fmt.Sprintf("ClientPrivateKey:%v, ", cfg.ClientPrivateKey != ""))
+	buf.WriteString(fmt.Sprintf("ClientPrivateKeyFile:%v, ", cfg.ClientPrivateKeyFile != ""))
 	buf.WriteString(fmt.Sprintf("HostPublicKey:%v}, ", cfg.HostPublicKey != ""))
 	return buf.String()
 }
