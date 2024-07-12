@@ -1,3 +1,15 @@
+## v0.31.0 (Released 2024-07-12)
+
+IMPROVEMENTS
+
+- feat: add client SFTP file support in config and fix docs
+- feat: add support for Spanner as a data repository (#220)
+
+BUILD
+
+- build: update deps, moov-io/ach and moov-io/base
+- chore: update cryptfs version and test keys (#235)
+
 ## v0.30.4 (Released 2024-04-12)
 
 IMPROVEMENTS
