@@ -6,6 +6,10 @@ type MockRepository struct {
 	Err error
 }
 
+func NewMockRepository() Repository {
+	return &MockRepository{}
+}
+
 func (r *MockRepository) Record(_ context.Context, file AcceptedFile) error {
 	return r.Err
 }

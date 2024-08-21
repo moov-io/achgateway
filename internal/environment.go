@@ -189,10 +189,15 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		fileRepository = files.NewRepository(env.DB)
 		shardRepository = shards.NewRepository(env.DB, env.Config.Sharding.Mappings)
 	}
-
 	if env.SpannerClient != nil {
 		fileRepository = files.NewSpannerRepository(env.SpannerClient)
 		shardRepository = shards.NewSpannerRepository(env.SpannerClient, env.Config.Sharding.Mappings)
+	}
+	if fileRepository == nil {
+		fileRepository = files.NewMockRepository()
+	}
+	if shardRepository == nil {
+		shardRepository = shards.NewInMemoryRepository()
 	}
 
 	fileReceiver, err := pipeline.Start(ctx, env.Logger, env.Config, shardRepository, fileRepository, httpSub)
