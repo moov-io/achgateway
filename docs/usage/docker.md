@@ -11,6 +11,7 @@ menubar: docs-menu
 You can download a [docker image called `moov/achgateway`](https://hub.docker.com/r/moov/achgateway/) from Docker Hub or use this repository. However it's recommended to [download the code repository](https://github.com/moov-io/achgateway) and running `docker compose up` in the root directory.
 
 ```
+# Inside of ./examples/getting-started/
 $ docker compose up achgateway
 ...
 achgateway_1  | ts=2021-06-18T23:38:06Z msg="public listening on :8484" version=v0.4.1 level=info app=achgateway
