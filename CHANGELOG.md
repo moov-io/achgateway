@@ -1,3 +1,9 @@
+## v0.31.1 (Released 2024-08-21)
+
+IMPROVEMENTS
+
+- fix: init in-memory files and shard repositories as defaults
+
 ## v0.31.0 (Released 2024-07-12)
 
 IMPROVEMENTS
