@@ -66,6 +66,10 @@ func TestCreateFileHandler(t *testing.T) {
 	require.Equal(t, "f1", file.FileID)
 	require.Equal(t, "s1", file.ShardKey)
 	require.Equal(t, "231380104", file.File.Header.ImmediateDestination)
+
+	validateOpts := file.File.GetValidation()
+	require.NotNil(t, validateOpts)
+	require.True(t, validateOpts.PreserveSpaces)
 }
 
 func TestCreateFileHandlerErr(t *testing.T) {
