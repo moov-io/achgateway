@@ -1,3 +1,10 @@
+## v0.31.2 (Released 2024-08-30)
+
+BUILD
+
+- build: update deps
+- build: update moov-io/ach to read validateOpts in JSON
+
 ## v0.31.1 (Released 2024-08-21)
 
 IMPROVEMENTS
