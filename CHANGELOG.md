@@ -1,3 +1,14 @@
+## v0.31.3 (Released 2024-09-27)
+
+IMPROVEMENTS
+
+- fix(repository): correct an issue with shard querying in spanner
+
+BUILD
+
+- build: update upload/download actions
+- chore: update go/spanner, moov-io/base,cryptfs, otel, etc
+
 ## v0.31.2 (Released 2024-08-30)
 
 BUILD
