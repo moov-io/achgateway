@@ -189,7 +189,12 @@ func (r *spannerRepository) Lookup(shardKey string) (string, error) {
 		return "", err
 	}
 
-	return row.String(), nil
+	var shardName string
+	if err := row.ColumnByName("shard_name", &shardName); err != nil {
+		return "", err
+	}
+
+	return shardName, nil
 }
 
 func (r *spannerRepository) List() ([]service.ShardMapping, error) {
