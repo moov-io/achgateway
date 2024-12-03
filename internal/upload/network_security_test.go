@@ -5,7 +5,6 @@
 package upload
 
 import (
-	"fmt"
 	"net"
 	"testing"
 
@@ -33,13 +32,13 @@ func TestRejectOutboundIPRange(t *testing.T) {
 	}
 
 	// multiple whitelisted, but exact IP match
-	cfg.AllowedIPs = fmt.Sprintf("127.0.0.1/24,%s", addr.String())
+	cfg.AllowedIPs = "127.0.0.1/24," + addr.String()
 	if err := rejectOutboundIPRange(cfg.SplitAllowedIPs(), "moov.io"); err != nil {
 		t.Error(err)
 	}
 
 	// multiple whitelisted, match range (convert IP to /24)
-	cfg.AllowedIPs = fmt.Sprintf("%s/24", addr.Mask(net.IPv4Mask(0xFF, 0xFF, 0xFF, 0x0)).String())
+	cfg.AllowedIPs = addr.Mask(net.IPv4Mask(0xFF, 0xFF, 0xFF, 0x0)).String() + "/24"
 	if err := rejectOutboundIPRange(cfg.SplitAllowedIPs(), "moov.io"); err != nil {
 		t.Error(err)
 	}

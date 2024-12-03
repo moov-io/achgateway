@@ -19,7 +19,6 @@ package service
 
 import (
 	"encoding/json"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -29,12 +28,12 @@ func TestFTPMasking(t *testing.T) {
 	cfg := &FTP{Password: "secret"}
 	bs, err := json.Marshal(cfg)
 	require.NoError(t, err)
-	require.True(t, strings.Contains(string(bs), `,"Password":"s****t",`))
+	require.Contains(t, string(bs), `,"Password":"s****t",`)
 }
 
 func TestSFTPMasking(t *testing.T) {
 	cfg := &SFTP{Password: "secret"}
 	bs, err := json.Marshal(cfg)
 	require.NoError(t, err)
-	require.True(t, strings.Contains(string(bs), `,"Password":"s****t",`))
+	require.Contains(t, string(bs), `,"Password":"s****t",`)
 }

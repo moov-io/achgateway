@@ -19,7 +19,7 @@ package streamtest
 
 import (
 	"context"
-	"fmt"
+
 	"testing"
 
 	"github.com/moov-io/achgateway/internal/incoming/stream"
@@ -36,7 +36,7 @@ func InmemStream(t *testing.T) (stream.Publisher, stream.Subscription) {
 	conf := &service.Config{
 		Inbound: service.Inbound{
 			InMem: &service.InMemory{
-				URL: fmt.Sprintf("mem://%s", t.Name()),
+				URL: "mem://" + t.Name(),
 			},
 		},
 	}

@@ -71,7 +71,7 @@ func spawnSFTP(t *testing.T) *sftpDeployment {
 			fmt.Sprintf("demo:password:%d:%d:upload", uid, gid),
 		},
 		Mounts: []string{
-			fmt.Sprintf("%s:/home/demo/upload", dir),
+			dir + ":/home/demo/upload",
 		},
 	})
 	// Force container to shutdown prior to checking if it failed
@@ -83,7 +83,7 @@ func spawnSFTP(t *testing.T) *sftpDeployment {
 	})
 	require.NoError(t, err)
 
-	addr := fmt.Sprintf("localhost:%s", resource.GetPort("22/tcp"))
+	addr := "localhost:" + resource.GetPort("22/tcp")
 
 	var agent *SFTPTransferAgent
 	for i := 0; i < 10; i++ {
@@ -212,7 +212,7 @@ func TestSFTP__readFilesEmpty(t *testing.T) {
 
 	// Upload an empty file
 	ctx := context.Background()
-	filename := fmt.Sprintf("%s.ach", base.ID())
+	filename := base.ID() + ".ach"
 	err = deployment.agent.UploadFile(ctx, File{
 		Filepath: filename,
 		Contents: io.NopCloser(strings.NewReader("")),
@@ -237,7 +237,7 @@ func TestSFTP__readFilesEmpty(t *testing.T) {
 	// read a non-existent directory
 	filepaths, err = deployment.agent.readFilepaths(ctx, "/dev/null")
 	require.NoError(t, err)
-	require.Len(t, filepaths, 0)
+	require.Empty(t, filepaths)
 }
 
 func TestSFTP__uploadFile(t *testing.T) {

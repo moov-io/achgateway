@@ -5,7 +5,6 @@
 package notify
 
 import (
-	"fmt"
 	"net"
 	"testing"
 	"time"
@@ -50,7 +49,7 @@ func spawnMailslurp(t *testing.T) *mailslurpDeployment {
 	err = pool.Retry(func() error {
 		time.Sleep(1 * time.Second)
 
-		conn, err := net.Dial("tcp", fmt.Sprintf("localhost:%s", dep.SMTPPort()))
+		conn, err := net.Dial("tcp", "localhost:"+dep.SMTPPort())
 		if err != nil {
 			return err
 		}

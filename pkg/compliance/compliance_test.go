@@ -54,11 +54,11 @@ func TestCompliance(t *testing.T) {
 
 	encrypted, err := Protect(cfg, evt)
 	require.NoError(t, err)
-	require.Greater(t, len(encrypted), 0)
+	require.NotEmpty(t, encrypted)
 
 	decrypted, err := Reveal(cfg, encrypted)
 	require.NoError(t, err)
-	require.Greater(t, len(decrypted), 0)
+	require.NotEmpty(t, decrypted)
 
 	var uploaded models.FileUploaded
 	require.NoError(t, models.ReadEvent(decrypted, &uploaded))

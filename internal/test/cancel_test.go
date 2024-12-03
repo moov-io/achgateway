@@ -118,7 +118,7 @@ func TestCancelFileAPI(t *testing.T) {
 		require.NoError(t, err)
 
 		parent, _ := filepath.Split(where)
-		return slices.Contains(filenames, filepath.Join(parent, fmt.Sprintf("%s.ach", fileID)))
+		return slices.Contains(filenames, filepath.Join(parent, fileID+".ach"))
 	}, 10*time.Second, 1*time.Second)
 
 	// Now cancel that file

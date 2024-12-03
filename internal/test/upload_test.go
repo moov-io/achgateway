@@ -216,8 +216,8 @@ func TestUploads(t *testing.T) {
 	require.NoError(t, g.Wait())
 
 	t.Logf("created %d entries (in %d files) and canceled %d entries (in %d files)", createdEntries, len(createdFileIDs), canceledEntries, len(canceledFileIDs))
-	require.Greater(t, createdEntries, 0, "created entries")
-	require.Greater(t, canceledEntries, 0, "canceled entries")
+	require.Positive(t, createdEntries, "created entries")
+	require.Positive(t, canceledEntries, "canceled entries")
 
 	// Pause for long enough that all files get accepted
 	wait := time.Duration(5*iterations) * time.Millisecond // 50k iterations is 4m10s
@@ -256,13 +256,13 @@ func TestUploads(t *testing.T) {
 	time.Sleep(10 * time.Second)
 
 	filenamePrefixCounts := countFilenamePrefixes(t, outboundPath)
-	require.Greater(t, filenamePrefixCounts["BETA"], 0)
-	require.Greater(t, filenamePrefixCounts["PROD"], 0)
+	require.Positive(t, filenamePrefixCounts["BETA"])
+	require.Positive(t, filenamePrefixCounts["PROD"])
 
 	// Verify no files are left in mergable/
 	mergableFiles, err := ach.ReadDir(filepath.Join("storage", "mergable"))
 	require.NoError(t, err)
-	require.Equal(t, 0, len(mergableFiles))
+	require.Empty(t, mergableFiles)
 
 	// Verify each fileID was isolated on disk
 	verifyFilesWereIsolated(t, createdFileIDs)
@@ -377,7 +377,7 @@ func randomTraceNumbers(t *testing.T, file *ach.File) *ach.File {
 				b.AddEntry(entries[i])
 			} else {
 				n, _ := strconv.Atoi(entries[0].TraceNumber)
-				entries[i].TraceNumber = fmt.Sprintf("%d", n+1)
+				entries[i].TraceNumber = strconv.Itoa(n + 1)
 				b.AddEntry(entries[i])
 			}
 		}
@@ -473,7 +473,7 @@ func causeSubscriptionFailure(t *testing.T) error {
 func firstDirectory(t *testing.T, fsys fs.FS, prefix string) string {
 	t.Helper()
 
-	matches, err := fs.Glob(fsys, fmt.Sprintf("%s-*", prefix))
+	matches, err := fs.Glob(fsys, prefix+"-*")
 	require.NoError(t, err)
 	require.Len(t, matches, 1)
 
@@ -487,8 +487,8 @@ func verifyFilesWereIsolated(t *testing.T, fileIDs []string) {
 	beta, prod := firstDirectory(t, fsys, "beta"), firstDirectory(t, fsys, "prod")
 
 	for i := range fileIDs {
-		betaMatches, _ := fs.Glob(fsys, filepath.Join(beta, fmt.Sprintf("%s.*", fileIDs[i])))
-		prodMatches, _ := fs.Glob(fsys, filepath.Join(prod, fmt.Sprintf("%s.*", fileIDs[i])))
+		betaMatches, _ := fs.Glob(fsys, filepath.Join(beta, fileIDs[i]+".*"))
+		prodMatches, _ := fs.Glob(fsys, filepath.Join(prod, fileIDs[i]+".*"))
 
 		total := len(betaMatches) + len(prodMatches)
 		if total == 0 {

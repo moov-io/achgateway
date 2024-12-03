@@ -54,7 +54,7 @@ func (s *Slack) AuthTest() error {
 		return fmt.Errorf("slack auth test: %v", err)
 	}
 	if resp.UserID == "" {
-		return fmt.Errorf("slack: missing user_id")
+		return errors.New("slack: missing user_id")
 	}
 
 	return nil

@@ -28,5 +28,5 @@ func TestSignerMasking(t *testing.T) {
 	cfg := &Signer{KeyFile: "/foo.pem", KeyPassword: "secret"}
 	bs, err := json.Marshal(cfg)
 	require.NoError(t, err)
-	require.Equal(t, bs, []byte(`{"KeyFile":"/foo.pem","KeyPassword":"s****t"}`))
+	require.JSONEq(t, string(bs), `{"KeyFile":"/foo.pem","KeyPassword":"s****t"}`)
 }

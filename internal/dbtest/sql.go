@@ -66,13 +66,13 @@ func CreateTestDatabase(t *testing.T, config database.DatabaseConfig) database.D
 	}
 
 	dbName := "test" + base.ID()
-	_, err = rootDb.Exec(fmt.Sprintf("CREATE DATABASE %s", dbName))
+	_, err = rootDb.Exec("CREATE DATABASE " + dbName)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Cleanup(func() {
-		rootDb.Exec(fmt.Sprintf("DROP DATABASE %s", dbName))
+		rootDb.Exec("DROP DATABASE " + dbName)
 		rootDb.Close()
 	})
 

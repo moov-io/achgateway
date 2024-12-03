@@ -65,7 +65,7 @@ func TestCreditReconciliation(t *testing.T) {
 		}
 		batch.AddEntry(&entry)
 	}
-	require.Equal(t, 20, len(file.Batches))
+	require.Len(t, file.Batches, 20)
 
 	// Set ValidateOpts similar to what Processor sets
 	file.SetValidation(&ach.ValidateOpts{
@@ -122,7 +122,7 @@ func TestCreditReconciliation(t *testing.T) {
 			return len(sent) > 0
 		}, 5*time.Second, 100*time.Millisecond)
 
-		require.Equal(t, 499, len(sent)) // one from previous subtest
+		require.Len(t, sent, 499) // one from previous subtest
 
 		foundTraces := make(map[string]bool)
 		for i := range sent {
@@ -132,6 +132,6 @@ func TestCreditReconciliation(t *testing.T) {
 			require.True(t, ok)
 			foundTraces[event.Entry.TraceNumber] = true
 		}
-		require.Equal(t, 499, len(foundTraces)) // 499 unique trace numbers
+		require.Len(t, foundTraces, 499) // 499 unique trace numbers
 	})
 }

@@ -47,15 +47,15 @@ func TestMerging__getCanceledFiles(t *testing.T) {
 	dir := filepath.Join(root, "test-2024")
 	require.NoError(t, os.MkdirAll(dir, 0777))
 
-	name1 := fmt.Sprintf("%s.ach", base.ID())
+	name1 := base.ID() + ".ach"
 	xfer1 := write(t, filepath.Join(dir, name1), nil)
-	write(t, filepath.Join(dir, fmt.Sprintf("%s.canceled", xfer1)), nil)
+	write(t, filepath.Join(dir, xfer1+".canceled"), nil)
 
-	name2 := fmt.Sprintf("%s.ach", base.ID())
+	name2 := base.ID() + ".ach"
 	write(t, filepath.Join(dir, name2), nil)
 
-	name3 := fmt.Sprintf("%s.ach", base.ID())
-	write(t, filepath.Join(dir, fmt.Sprintf("%s.canceled", name3)), nil)
+	name3 := base.ID() + ".ach"
+	write(t, filepath.Join(dir, name3+".canceled"), nil)
 
 	fs, err := storage.NewFilesystem(root)
 	require.NoError(t, err)
@@ -76,12 +76,12 @@ func TestMerging__getNonCanceledMatches(t *testing.T) {
 	dir := filepath.Join(root, "test-2021")
 	require.NoError(t, os.Mkdir(dir, 0777))
 
-	xfer1 := write(t, filepath.Join(dir, fmt.Sprintf("%s.ach", base.ID())), nil)
+	xfer1 := write(t, filepath.Join(dir, base.ID()+".ach"), nil)
 
-	cancel1 := write(t, filepath.Join(dir, fmt.Sprintf("%s.ach.canceled", base.ID())), nil)
+	cancel1 := write(t, filepath.Join(dir, base.ID()+".ach.canceled"), nil)
 
-	xfer2 := write(t, filepath.Join(dir, fmt.Sprintf("%s.ach", base.ID())), nil)
-	cancel2 := write(t, filepath.Join(dir, fmt.Sprintf("%s.canceled", xfer2)), nil)
+	xfer2 := write(t, filepath.Join(dir, base.ID()+".ach"), nil)
+	cancel2 := write(t, filepath.Join(dir, xfer2+".canceled"), nil)
 
 	fs, err := storage.NewFilesystem(root)
 	require.NoError(t, err)
@@ -122,9 +122,9 @@ func write(t *testing.T, where string, contents []byte) string {
 }
 
 func TestMerging_fileAcceptor(t *testing.T) {
-	name1 := fmt.Sprintf("%s.ach", base.ID())
-	name2 := fmt.Sprintf("%s.ach", base.ID())
-	json1 := fmt.Sprintf("%s.json", base.ID())
+	name1 := base.ID() + ".ach"
+	name2 := base.ID() + ".ach"
+	json1 := base.ID() + ".json"
 
 	output := fileAcceptor(nil)(name1)
 	require.Equal(t, ach.AcceptFile, output)
@@ -245,7 +245,7 @@ func TestMerging_mappings(t *testing.T) {
 	expected := []string{"duplicate-trace.ach", "ppd-debit.ach", "ppd-debit2.ach", "ppd-debit3.ach", "ppd-debit4.ach"}
 	require.ElementsMatch(t, expected, mapped[0].InputFilepaths)
 	require.Equal(t, "MAPPING-0.ach", mapped[0].UploadedFilename)
-	require.Equal(t, 2, len(mapped[0].ACHFile.Batches))
+	require.Len(t, mapped[0].ACHFile.Batches, 2)
 }
 
 func enqueueFile(t *testing.T, merging XferMerging, path string) {
@@ -317,7 +317,7 @@ func TestMerging__writeACHFile(t *testing.T) {
 
 	// Verify the .ach and .json files were written
 	mergableFilenames := getFilenames(t, m.storage, "mergable/testing")
-	expected := []string{fmt.Sprintf("%s.ach", fileID), fmt.Sprintf("%s.json", fileID)}
+	expected := []string{fileID + ".ach", fileID + ".json"}
 	require.ElementsMatch(t, expected, mergableFilenames)
 
 	var mergeConditions ach.Conditions

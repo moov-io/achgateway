@@ -29,5 +29,5 @@ func TestAESConfigMasking(t *testing.T) {
 	cfg := &AESConfig{Key: strings.Repeat("1", 32)}
 	bs, err := json.Marshal(cfg)
 	require.NoError(t, err)
-	require.Equal(t, bs, []byte(`{"Key":"1*****1"}`))
+	require.JSONEq(t, string(bs), `{"Key":"1*****1"}`)
 }

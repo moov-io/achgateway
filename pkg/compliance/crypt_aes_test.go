@@ -36,7 +36,7 @@ func TestCryptor__AES(t *testing.T) {
 
 	enc, err := cc.Encrypt([]byte("hello, world"))
 	require.NoError(t, err)
-	require.Greater(t, len(enc), 0)
+	require.NotEmpty(t, enc)
 
 	dec1, err := cc.Decrypt(enc)
 	require.NoError(t, err)
