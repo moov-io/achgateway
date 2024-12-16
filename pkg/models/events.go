@@ -300,6 +300,7 @@ type FileCancellationResponse incoming.FileCancellationResponse
 type FileUploaded struct {
 	FileID     string    `json:"fileID"`
 	ShardKey   string    `json:"shardKey"`
+	ShardName  string    `json:"shardName"`
 	Filename   string    `json:"filename"`
 	UploadedAt time.Time `json:"uploadedAt"`
 }

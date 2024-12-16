@@ -24,9 +24,10 @@ import (
 )
 
 type ACHFile struct {
-	FileID   string    `json:"id"`
-	ShardKey string    `json:"shardKey"`
-	File     *ach.File `json:"file"`
+	FileID    string    `json:"id"`
+	ShardKey  string    `json:"shardKey"`
+	ShardName string    `json:"shardName"`
+	File      *ach.File `json:"file"`
 }
 
 func (f ACHFile) Validate() error {
@@ -43,12 +44,14 @@ func (f ACHFile) Validate() error {
 }
 
 type CancelACHFile struct {
-	FileID   string `json:"id"`
-	ShardKey string `json:"shardKey"`
+	FileID    string `json:"id"`
+	ShardKey  string `json:"shardKey"`
+	ShardName string `json:"shardName"`
 }
 
 type FileCancellationResponse struct {
 	FileID     string `json:"id"`
 	ShardKey   string `json:"shardKey"`
+	ShardName  string `json:"shardName"`
 	Successful bool   `json:"successful"`
 }
