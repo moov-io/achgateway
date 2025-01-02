@@ -148,6 +148,10 @@ type SFTP struct {
 	// SkipDirectoryCreation will configure achgateway to create
 	// directories on the remote server prior to uploading files.
 	SkipDirectoryCreation bool
+
+	// SkipChmodAfterUpload will not chmod files after uploading them.
+	// Some SFTP servers need uploads to be left alone once they're put on the server.
+	SkipChmodAfterUpload bool
 }
 
 func (cfg *SFTP) MarshalJSON() ([]byte, error) {
