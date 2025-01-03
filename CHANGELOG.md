@@ -1,3 +1,9 @@
+## v0.31.4 (Released 2025-01-03)
+
+IMPROVEMENTS
+
+- upload: pass SkipChmodAfterUpload for SFTP
+
 ## v0.31.3 (Released 2024-09-27)
 
 IMPROVEMENTS
