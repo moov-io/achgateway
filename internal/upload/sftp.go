@@ -58,6 +58,7 @@ func newSFTPTransferAgent(logger log.Logger, cfg *service.UploadAgent) (*SFTPTra
 		PacketSize:     cfg.SFTP.MaxPacketSize,
 
 		SkipDirectoryCreation: cfg.SFTP.SkipDirectoryCreation,
+		SkipChmodAfterUpload:  cfg.SFTP.SkipChmodAfterUpload,
 	})
 	if err != nil {
 		return nil, err
