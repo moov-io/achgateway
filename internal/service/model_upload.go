@@ -169,6 +169,7 @@ func (cfg *SFTP) MarshalJSON() ([]byte, error) {
 		MaxPacketSize         int
 
 		SkipDirectoryCreation bool
+		SkipChmodAfterUpload  bool
 	}
 	return json.Marshal(Aux{
 		Hostname: cfg.Hostname,
@@ -184,6 +185,7 @@ func (cfg *SFTP) MarshalJSON() ([]byte, error) {
 		MaxPacketSize:         cfg.MaxPacketSize,
 
 		SkipDirectoryCreation: cfg.SkipDirectoryCreation,
+		SkipChmodAfterUpload:  cfg.SkipChmodAfterUpload,
 	})
 }
 
