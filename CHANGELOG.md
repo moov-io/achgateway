@@ -1,3 +1,28 @@
+## v0.31.5 (Released 2025-01-23)
+
+IMPROVEMENTS
+
+- add SkipChmodAfterUpload to marshal if for SFTP config
+
+BUILD
+
+- build: update cloud.google.com/go/spanner v1.68.0
+- build: update github.com/PagerDuty/go-pagerduty v1.8.0
+- build: update github.com/ProtonMail/go-crypto v1.1.5
+- build: update github.com/moov-io/ach v1.45.3
+- build: update github.com/moov-io/base v0.53.0
+- build: update github.com/moov-io/go-ftp v0.4.0
+- build: update github.com/moov-io/go-sftp v0.15.0
+- build: update github.com/prometheus/client_golang v1.20.5
+- build: update github.com/rickar/cal/v2 v2.1.21
+- build: update github.com/sethvargo/go-retry v0.3.0
+- build: update github.com/slack-go/slack v0.15.0
+- build: update github.com/stretchr/testify v1.10.0
+- build: update golang.org/x/crypto v0.32.0
+- build: update golang.org/x/sync v0.10.0
+- build: update golang.org/x/text v0.21.0
+- build: update google.golang.org/api v0.199.0
+
 ## v0.31.4 (Released 2025-01-03)
 
 IMPROVEMENTS
