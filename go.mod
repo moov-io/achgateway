@@ -35,6 +35,7 @@ require (
 	gocloud.dev v0.37.0
 	gocloud.dev/pubsub/kafkapubsub v0.34.0
 	goftp.io/server v0.4.1
+	goftp.io/server/v2 v2.0.1
 	golang.org/x/crypto v0.32.0
 	golang.org/x/sync v0.10.0
 	golang.org/x/text v0.21.0
