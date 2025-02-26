@@ -21,7 +21,10 @@ func OpenTopic(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Topic, erro
 	config.Net.TLS.Enable = cfg.TLS
 
 	config.Net.SASL.Enable = cfg.Key != ""
-	config.Net.SASL.Mechanism = sarama.SASLMechanism("PLAIN")
+	config.Net.SASL.Mechanism = sarama.SASLMechanism(cfg.SASLMechanism)
+	if config.Net.SASL.Mechanism == "" {
+		config.Net.SASL.Mechanism = sarama.SASLMechanism("PLAIN")
+	}
 	config.Net.SASL.User = cfg.Key
 	config.Net.SASL.Password = cfg.Secret
 
@@ -46,7 +49,10 @@ func OpenSubscription(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Subs
 	config.Net.TLS.Enable = cfg.TLS
 
 	config.Net.SASL.Enable = cfg.Key != ""
-	config.Net.SASL.Mechanism = sarama.SASLMechanism("PLAIN")
+	config.Net.SASL.Mechanism = sarama.SASLMechanism(cfg.SASLMechanism)
+	if config.Net.SASL.Mechanism == "" {
+		config.Net.SASL.Mechanism = sarama.SASLMechanism("PLAIN")
+	}
 	config.Net.SASL.User = cfg.Key
 	config.Net.SASL.Password = cfg.Secret
 

@@ -77,7 +77,8 @@ type KafkaConfig struct {
 	// AutoCommit in Sarama refers to "automated publishing of consumer offsets
 	// to the broker" rather than a Kafka broker's meaning of "commit consumer
 	// offsets on read" which leads to "at-most-once" delivery.
-	AutoCommit bool
+	AutoCommit    bool
+	SASLMechanism string
 
 	Consumer KafkaConsumerConfig
 	Producer KafkaProducerConfig

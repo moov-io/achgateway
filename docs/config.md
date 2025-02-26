@@ -72,6 +72,7 @@ ACHGateway:
       Topic: <string>
       TLS: <boolean>
       AutoCommit: <boolean>
+      [ SASLMechanism: <string> | default = "PLAIN" ]
       Transform:
         Encoding:
           [ Base64: <boolean> | default = false ]
@@ -156,6 +157,7 @@ ACHGateway:
         Topic: <string>
         [ TLS: <boolean> | default = false ]
         [ AutoCommit: <boolean> | default = false ]
+        [ SASLMechanism: <string> | default = "PLAIN" ]
     Webhook:
       [ Endpoint: <string> | default = "" ]
 ```
