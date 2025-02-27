@@ -80,6 +80,11 @@ type KafkaConfig struct {
 	AutoCommit    bool
 	SASLMechanism string
 
+	AWSRegion      string
+	AWSProfile     string
+	AWSRoleARN     string
+	AWSSessionName string
+
 	Consumer KafkaConsumerConfig
 	Producer KafkaProducerConfig
 

@@ -158,6 +158,10 @@ ACHGateway:
         [ TLS: <boolean> | default = false ]
         [ AutoCommit: <boolean> | default = false ]
         [ SASLMechanism: <string> | default = "PLAIN" ]
+        [ AWSRegion: <string> | default = "" ]
+        [ AWSProfile: <string> | default = "" ]
+        [ AWSRoleARN: <string> | default = "" ]
+        [ AWSSessionName: <string> | default = "" ]
     Webhook:
       [ Endpoint: <string> | default = "" ]
 ```
