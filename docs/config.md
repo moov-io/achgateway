@@ -73,6 +73,10 @@ ACHGateway:
       TLS: <boolean>
       AutoCommit: <boolean>
       [ SASLMechanism: <string> | default = "PLAIN" ]
+      [ AWSRegion: <string> | default = "" ]
+      [ AWSProfile: <string> | default = "" ]
+      [ AWSRoleARN: <string> | default = "" ]
+      [ AWSSessionName: <string> | default = "" ]
       Transform:
         Encoding:
           [ Base64: <boolean> | default = false ]
