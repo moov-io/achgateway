@@ -22,9 +22,25 @@ func OpenTopic(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Topic, erro
 
 	config.Net.SASL.Enable = cfg.Key != ""
 	config.Net.SASL.Mechanism = sarama.SASLMechanism(cfg.SASLMechanism)
-	if config.Net.SASL.Mechanism == "" {
+
+	// Default to PLAIN if no SASL mechanism is specified
+	switch cfg.SASLMechanism {
+	case "SCRAM-SHA-512":
+		config.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
+			return &XDGSCRAMClient{HashGeneratorFcn: SHA512}
+		}
+		config.Net.SASL.Mechanism = sarama.SASLMechanism(cfg.SASLMechanism)
+
+	case "SCRAM-SHA-256":
+		config.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
+			return &XDGSCRAMClient{HashGeneratorFcn: SHA256}
+		}
+		config.Net.SASL.Mechanism = sarama.SASLMechanism(cfg.SASLMechanism)
+
+	default:
 		config.Net.SASL.Mechanism = sarama.SASLMechanism("PLAIN")
 	}
+
 	config.Net.SASL.User = cfg.Key
 	config.Net.SASL.Password = cfg.Secret
 
@@ -49,10 +65,24 @@ func OpenSubscription(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Subs
 	config.Net.TLS.Enable = cfg.TLS
 
 	config.Net.SASL.Enable = cfg.Key != ""
-	config.Net.SASL.Mechanism = sarama.SASLMechanism(cfg.SASLMechanism)
-	if config.Net.SASL.Mechanism == "" {
+	// Default to PLAIN if no SASL mechanism is specified
+	switch cfg.SASLMechanism {
+	case "SCRAM-SHA-512":
+		config.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
+			return &XDGSCRAMClient{HashGeneratorFcn: SHA512}
+		}
+		config.Net.SASL.Mechanism = sarama.SASLMechanism(cfg.SASLMechanism)
+
+	case "SCRAM-SHA-256":
+		config.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
+			return &XDGSCRAMClient{HashGeneratorFcn: SHA256}
+		}
+		config.Net.SASL.Mechanism = sarama.SASLMechanism(cfg.SASLMechanism)
+
+	default:
 		config.Net.SASL.Mechanism = sarama.SASLMechanism("PLAIN")
 	}
+
 	config.Net.SASL.User = cfg.Key
 	config.Net.SASL.Password = cfg.Secret
 

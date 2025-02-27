@@ -29,6 +29,7 @@ require (
 	github.com/slack-go/slack v0.12.3
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.9.0
+	github.com/xdg-go/scram v1.1.2
 	go.opentelemetry.io/otel v1.21.0
 	go.opentelemetry.io/otel/trace v1.21.0
 	gocloud.dev v0.34.0
@@ -37,6 +38,11 @@ require (
 	golang.org/x/crypto v0.22.0
 	golang.org/x/sync v0.7.0
 	golang.org/x/text v0.14.0
+)
+
+require (
+	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
+	github.com/xdg-go/stringprep v1.0.4 // indirect
 )
 
 require (
