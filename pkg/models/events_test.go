@@ -117,7 +117,7 @@ func TestRead__InvalidQueueFile(t *testing.T) {
 
 func TestPartialReconciliationFile(t *testing.T) {
 	file, err := ach.ReadFile(filepath.Join("testdata", "partial-recon.ach"))
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.True(t, base.Has(err, ach.ErrFileHeader))
 
 	var bs bytes.Buffer

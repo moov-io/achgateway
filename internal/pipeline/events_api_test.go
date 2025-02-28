@@ -169,11 +169,11 @@ func TestEventsAPI_FileUploadedErrors(t *testing.T) {
 		for i := range paths {
 			address := fmt.Sprintf("http://%s/shards/testing/pipeline/%s/file-uploaded", adminServer.BindAddr(), paths[i])
 			req, err := http.NewRequest("PUT", address, nil)
-			require.NoError(t, err, fmt.Sprintf("on address %s", address))
+			require.NoError(t, err, "on address "+address)
 			resp, err := http.DefaultClient.Do(req)
 			require.NoError(t, err)
 			defer resp.Body.Close()
-			require.Equal(t, http.StatusNotFound, resp.StatusCode, fmt.Sprintf("on address %s", address))
+			require.Equal(t, http.StatusNotFound, resp.StatusCode, "on address "+address)
 		}
 	})
 

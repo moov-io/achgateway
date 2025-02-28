@@ -136,9 +136,10 @@ type SFTP struct {
 	Hostname string
 	Username string
 
-	Password         string
-	ClientPrivateKey string
-	HostPublicKey    string
+	Password             string
+	ClientPrivateKey     string
+	ClientPrivateKeyFile string
+	HostPublicKey        string
 
 	DialTimeout           time.Duration
 	MaxConnectionsPerFile int
@@ -147,6 +148,10 @@ type SFTP struct {
 	// SkipDirectoryCreation will configure achgateway to create
 	// directories on the remote server prior to uploading files.
 	SkipDirectoryCreation bool
+
+	// SkipChmodAfterUpload will not chmod files after uploading them.
+	// Some SFTP servers need uploads to be left alone once they're put on the server.
+	SkipChmodAfterUpload bool
 }
 
 func (cfg *SFTP) MarshalJSON() ([]byte, error) {
@@ -154,29 +159,33 @@ func (cfg *SFTP) MarshalJSON() ([]byte, error) {
 		Hostname string
 		Username string
 
-		Password         string
-		ClientPrivateKey string
-		HostPublicKey    string
+		Password             string
+		ClientPrivateKey     string
+		ClientPrivateKeyFile string
+		HostPublicKey        string
 
 		DialTimeout           time.Duration
 		MaxConnectionsPerFile int
 		MaxPacketSize         int
 
 		SkipDirectoryCreation bool
+		SkipChmodAfterUpload  bool
 	}
 	return json.Marshal(Aux{
 		Hostname: cfg.Hostname,
 		Username: cfg.Username,
 
-		Password:         mask.Password(cfg.Password),
-		ClientPrivateKey: cfg.ClientPrivateKey,
-		HostPublicKey:    cfg.HostPublicKey,
+		Password:             mask.Password(cfg.Password),
+		ClientPrivateKey:     cfg.ClientPrivateKey,
+		ClientPrivateKeyFile: cfg.ClientPrivateKeyFile,
+		HostPublicKey:        cfg.HostPublicKey,
 
 		DialTimeout:           cfg.DialTimeout,
 		MaxConnectionsPerFile: cfg.MaxConnectionsPerFile,
 		MaxPacketSize:         cfg.MaxPacketSize,
 
 		SkipDirectoryCreation: cfg.SkipDirectoryCreation,
+		SkipChmodAfterUpload:  cfg.SkipChmodAfterUpload,
 	})
 }
 
@@ -207,6 +216,7 @@ func (cfg *SFTP) String() string {
 	buf.WriteString(fmt.Sprintf("Username=%s, ", cfg.Username))
 	buf.WriteString(fmt.Sprintf("Password=%s, ", mask.Password(cfg.Password)))
 	buf.WriteString(fmt.Sprintf("ClientPrivateKey:%v, ", cfg.ClientPrivateKey != ""))
+	buf.WriteString(fmt.Sprintf("ClientPrivateKeyFile:%v, ", cfg.ClientPrivateKeyFile != ""))
 	buf.WriteString(fmt.Sprintf("HostPublicKey:%v}, ", cfg.HostPublicKey != ""))
 	return buf.String()
 }

@@ -49,7 +49,7 @@ func TestFacilitatorService_List(t *testing.T) {
 
 	list, err := s.Service.List()
 	require.NoError(t, err)
-	require.Equal(t, 3, len(list))
+	require.Len(t, list, 3)
 }
 
 func TestFacilitatorService_Get(t *testing.T) {

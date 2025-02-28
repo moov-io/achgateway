@@ -254,7 +254,8 @@ ACHGateway:
         Hostname: <host>
         Username: <string>
         [ Password: <secret> ]
-        [ ClientPrivateKey: <filename> ]
+        [ ClientPrivateKey: <string> ]
+        [ ClientPrivateKeyFile: <filename> ]
         [ HostPublicKey: <filename> ]
         [ DialTimeout: <duration> | default = 10s ]
         [ MaxConnectionsPerFile: <number> | default = 1 ]

@@ -123,10 +123,10 @@ func TestODFIDownload(t *testing.T) {
 	downloadConf.Inbound.ODFI.Storage.Directory = odfiStorageDir
 	auditDir := t.TempDir()
 	downloadConf.Inbound.ODFI.Audit = &service.AuditTrail{
-		BucketURI: fmt.Sprintf("file://%s", auditDir),
+		BucketURI: "file://" + auditDir,
 	}
 
-	eventTopic := fmt.Sprintf("mem://%s", t.Name())
+	eventTopic := "mem://" + t.Name()
 	downloadConf.Events = &service.EventsConfig{
 		Stream: &service.EventsStream{
 			InMem: &service.InMemory{

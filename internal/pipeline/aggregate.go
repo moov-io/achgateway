@@ -436,7 +436,7 @@ func formatHolidayMessage(day *schedule.Day, shardName string) string {
 	hostname, _ := os.Hostname()
 
 	if shardName != "" {
-		shardName = fmt.Sprintf("for %s", shardName)
+		shardName = "for " + shardName
 	}
 
 	return strings.TrimSpace(fmt.Sprintf("%s %s so %s will skip processing %s", day.Time.Format("Jan 02"), name, hostname, shardName))

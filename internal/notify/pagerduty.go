@@ -47,7 +47,7 @@ func (pd *PagerDuty) Ping() error {
 		return fmt.Errorf("pagerduty list abilities: %v", err)
 	}
 	if len(resp.Abilities) <= 0 {
-		return fmt.Errorf("pagerduty: missing abilities")
+		return errors.New("pagerduty: missing abilities")
 	}
 
 	return nil

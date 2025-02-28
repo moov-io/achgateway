@@ -100,7 +100,7 @@ func bootAdminServer(errs chan<- error, logger log.Logger, config service.Admin)
 	}
 
 	go func() {
-		logger.Info().Log(fmt.Sprintf("listening on %s", adminServer.BindAddr()))
+		logger.Info().Log("listening on " + adminServer.BindAddr())
 		if err := adminServer.Listen(); err != nil {
 			errs <- logger.Fatal().LogErrorf("problem starting admin http: %w", err).Err()
 		}

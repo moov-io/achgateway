@@ -105,7 +105,7 @@ func (ct *CutoffTimes) register(tz string, timestamp string) error {
 	var zone string
 	var location *time.Location
 	if tz != "" {
-		zone = fmt.Sprintf("CRON_TZ=%s", tz)
+		zone = "CRON_TZ=" + tz
 		l, _ := time.LoadLocation(tz)
 		location = l
 	} else {

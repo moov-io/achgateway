@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/moov-io/ach"
@@ -92,12 +93,12 @@ func (pc *prenoteEmitter) Handle(ctx context.Context, logger log.Logger, file Fi
 				"origin":      log.String(file.ACHFile.Header.ImmediateOrigin),
 				"destination": log.String(file.ACHFile.Header.ImmediateDestination),
 			})
-			logger.Log(fmt.Sprintf("odfi: pre-notification traceNumber=%s", entries[j].TraceNumber))
+			logger.Log("odfi: pre-notification traceNumber=" + entries[j].TraceNumber)
 
 			prenoteEntriesProcessed.With(
 				"origin", file.ACHFile.Header.ImmediateOrigin,
 				"destination", file.ACHFile.Header.ImmediateDestination,
-				"transactionCode", fmt.Sprintf("%d", entries[j].TransactionCode),
+				"transactionCode", strconv.Itoa(entries[j].TransactionCode),
 			).Add(1)
 		}
 	}

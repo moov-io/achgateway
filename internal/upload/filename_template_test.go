@@ -54,7 +54,7 @@ func TestFilenameTemplate(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	expected = fmt.Sprintf("%s.ach", time.Now().Format("20060102"))
+	expected = time.Now().Format("20060102") + ".ach"
 	if filename != expected {
 		t.Errorf("filename=%s", filename)
 	}

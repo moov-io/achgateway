@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"fmt"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -50,7 +49,7 @@ func setupFilesystemGlobTest(tb testing.TB, iterations int) (Chest, string, int)
 		go func(i int) {
 			defer wg.Done()
 
-			where := filepath.Join(sub, fmt.Sprintf("%s.ach", base.ID()))
+			where := filepath.Join(sub, base.ID()+".ach")
 
 			err := chest.WriteFile(where, contents)
 			require.NoError(tb, err)
@@ -81,7 +80,7 @@ func TestFilesystemGlob(t *testing.T) {
 
 	matches, err := chest.Glob(sub + "/*.canceled")
 	require.NoError(t, err)
-	require.Equal(t, canceled, len(matches))
+	require.Len(t, matches, canceled)
 }
 
 func BenchmarkFilesystem_Glob(b *testing.B) {
@@ -105,7 +104,7 @@ func BenchmarkFilesystem_Glob(b *testing.B) {
 
 		matches, err := chest.Glob("/*.canceled")
 		require.NoError(b, err)
-		require.Greater(b, len(matches), 0)
+		require.NotEmpty(b, matches)
 	})
 
 	b.Run("write files", func(b *testing.B) {
@@ -116,6 +115,6 @@ func BenchmarkFilesystem_Glob(b *testing.B) {
 
 		matches, err := chest.Glob(sub + "/*.canceled")
 		require.NoError(b, err)
-		require.Equal(b, canceled, len(matches))
+		require.Len(b, matches, canceled)
 	})
 }

@@ -104,7 +104,7 @@ func (m *filesystemMerging) writeACHFile(ctx context.Context, xfer incoming.ACHF
 	}
 
 	fileID := strings.TrimSuffix(xfer.FileID, ".ach")
-	path := filepath.Join("mergable", m.shard.Name, fmt.Sprintf("%s.ach", fileID))
+	path := filepath.Join("mergable", m.shard.Name, fileID+".ach")
 	if err := m.storage.WriteFile(path, buf.Bytes()); err != nil {
 		return err
 	}
@@ -119,7 +119,7 @@ func (m *filesystemMerging) writeACHFile(ctx context.Context, xfer incoming.ACHF
 			}).Logf("ERROR encoding ValidateOpts: %v", err)
 		}
 
-		path := filepath.Join("mergable", m.shard.Name, fmt.Sprintf("%s.json", fileID))
+		path := filepath.Join("mergable", m.shard.Name, fileID+".json")
 		if err := m.storage.WriteFile(path, buf.Bytes()); err != nil {
 			m.logger.Warn().With(log.Fields{
 				"fileID":   log.String(xfer.FileID),
@@ -140,7 +140,7 @@ func (m *filesystemMerging) HandleCancel(ctx context.Context, cancel incoming.Ca
 	defer span.End()
 
 	fileID := strings.TrimSuffix(cancel.FileID, ".ach")
-	path := filepath.Join("mergable", m.shard.Name, fmt.Sprintf("%s.ach", fileID))
+	path := filepath.Join("mergable", m.shard.Name, fileID+".ach")
 
 	// Check if the file exists already
 	originalFile, _ := m.storage.Open(path)
@@ -563,7 +563,7 @@ func (m *filesystemMerging) saveMergedFile(ctx context.Context, dir string, file
 	}
 
 	name := hash(buf.Bytes())
-	path := filepath.Join(dir, fmt.Sprintf("%s.ach", name))
+	path := filepath.Join(dir, name+".ach")
 
 	span.SetAttributes(
 		attribute.String("achgateway.merged_filename", path),
@@ -584,7 +584,7 @@ func (m *filesystemMerging) saveMergedFile(ctx context.Context, dir string, file
 			return fmt.Errorf("marshal of merged ACH file validate opts: %w", err)
 		}
 
-		path = filepath.Join(dir, fmt.Sprintf("%s.json", name))
+		path = filepath.Join(dir, name+".json")
 		err = m.storage.WriteFile(path, buf.Bytes())
 		if err != nil {
 			return fmt.Errorf("writing merged ACH file validate opts: %w", err)

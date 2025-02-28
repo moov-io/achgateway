@@ -94,7 +94,7 @@ func TestFileReceiver__ManualCutoffErr(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, resp.Shards, 1)
-	require.Equal(t, *resp.Shards["testing"], "bad thing")
+	require.Equal(t, "bad thing", *resp.Shards["testing"])
 }
 
 func setupFileReceiver(t *testing.T, waiterResponse error) (*FileReceiver, *sync.WaitGroup) {

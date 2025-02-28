@@ -3,7 +3,6 @@
 package shards_test
 
 import (
-	"fmt"
 	"github.com/moov-io/achgateway/internal/service"
 	"net/http"
 	"testing"
@@ -74,7 +73,7 @@ func clientShardMappingCreate(s ShardMappingTestScope, create *service.ShardMapp
 
 func clientShardMappingGet(s ShardMappingTestScope, shardKey string) (*service.ShardMapping, *http.Response) {
 	i := &service.ShardMapping{}
-	resp := s.MakeCall(s.MakeRequest("GET", fmt.Sprintf("/shard_mappings/%s", shardKey), nil), i)
+	resp := s.MakeCall(s.MakeRequest("GET", "/shard_mappings/"+shardKey, nil), i)
 	return i, resp
 }
 

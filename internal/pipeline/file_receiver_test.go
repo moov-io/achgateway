@@ -81,7 +81,7 @@ func testFileReceiver(t *testing.T) *TestFileReceiver {
 	conf := &service.Config{
 		Inbound: service.Inbound{
 			InMem: &service.InMemory{
-				URL: fmt.Sprintf("mem://%s", t.Name()),
+				URL: "mem://" + t.Name(),
 			},
 		},
 		Sharding: service.Sharding{

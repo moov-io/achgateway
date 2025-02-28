@@ -1,3 +1,70 @@
+## v0.31.5 (Released 2025-01-23)
+
+IMPROVEMENTS
+
+- add SkipChmodAfterUpload to marshal if for SFTP config
+
+BUILD
+
+- build: update cloud.google.com/go/spanner v1.68.0
+- build: update github.com/PagerDuty/go-pagerduty v1.8.0
+- build: update github.com/ProtonMail/go-crypto v1.1.5
+- build: update github.com/moov-io/ach v1.45.3
+- build: update github.com/moov-io/base v0.53.0
+- build: update github.com/moov-io/go-ftp v0.4.0
+- build: update github.com/moov-io/go-sftp v0.15.0
+- build: update github.com/prometheus/client_golang v1.20.5
+- build: update github.com/rickar/cal/v2 v2.1.21
+- build: update github.com/sethvargo/go-retry v0.3.0
+- build: update github.com/slack-go/slack v0.15.0
+- build: update github.com/stretchr/testify v1.10.0
+- build: update golang.org/x/crypto v0.32.0
+- build: update golang.org/x/sync v0.10.0
+- build: update golang.org/x/text v0.21.0
+- build: update google.golang.org/api v0.199.0
+
+## v0.31.4 (Released 2025-01-03)
+
+IMPROVEMENTS
+
+- upload: pass SkipChmodAfterUpload for SFTP
+
+## v0.31.3 (Released 2024-09-27)
+
+IMPROVEMENTS
+
+- fix(repository): correct an issue with shard querying in spanner
+
+BUILD
+
+- build: update upload/download actions
+- chore: update go/spanner, moov-io/base,cryptfs, otel, etc
+
+## v0.31.2 (Released 2024-08-30)
+
+BUILD
+
+- build: update deps
+- build: update moov-io/ach to read validateOpts in JSON
+
+## v0.31.1 (Released 2024-08-21)
+
+IMPROVEMENTS
+
+- fix: init in-memory files and shard repositories as defaults
+
+## v0.31.0 (Released 2024-07-12)
+
+IMPROVEMENTS
+
+- feat: add client SFTP file support in config and fix docs
+- feat: add support for Spanner as a data repository (#220)
+
+BUILD
+
+- build: update deps, moov-io/ach and moov-io/base
+- chore: update cryptfs version and test keys (#235)
+
 ## v0.30.4 (Released 2024-04-12)
 
 IMPROVEMENTS

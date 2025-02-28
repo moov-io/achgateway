@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -34,12 +35,22 @@ func newSFTPTransferAgent(logger log.Logger, cfg *service.UploadAgent) (*SFTPTra
 		return nil, fmt.Errorf("sftp: %s is not whitelisted: %v", cfg.SFTP.Hostname, err)
 	}
 
+	clientPrivateKey := cfg.SFTP.ClientPrivateKey
+
+	if clientPrivateKey == "" && cfg.SFTP.ClientPrivateKeyFile != "" {
+		key, err := os.ReadFile(cfg.SFTP.ClientPrivateKeyFile)
+		if err != nil {
+			return nil, fmt.Errorf("sftp: unable to read private key file %s: %v", cfg.SFTP.ClientPrivateKeyFile, err)
+		}
+		clientPrivateKey = string(key)
+	}
+
 	client, err := go_sftp.NewClient(logger, &go_sftp.ClientConfig{
 		Hostname: cfg.SFTP.Hostname,
 		Username: cfg.SFTP.Username,
 		Password: cfg.SFTP.Password,
 
-		ClientPrivateKey: cfg.SFTP.ClientPrivateKey,
+		ClientPrivateKey: clientPrivateKey,
 		HostPublicKey:    cfg.SFTP.HostPublicKey,
 
 		Timeout:        cfg.SFTP.DialTimeout,
@@ -47,6 +58,7 @@ func newSFTPTransferAgent(logger log.Logger, cfg *service.UploadAgent) (*SFTPTra
 		PacketSize:     cfg.SFTP.MaxPacketSize,
 
 		SkipDirectoryCreation: cfg.SFTP.SkipDirectoryCreation,
+		SkipChmodAfterUpload:  cfg.SFTP.SkipChmodAfterUpload,
 	})
 	if err != nil {
 		return nil, err

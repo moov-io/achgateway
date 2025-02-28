@@ -35,7 +35,7 @@ func Test_ConfigLoading(t *testing.T) {
 
 	gc := &service.GlobalConfig{}
 	err := ConfigService.Load(gc)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	// Validate config
 	require.NoError(t, gc.ACHGateway.Validate())

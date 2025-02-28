@@ -60,7 +60,7 @@ func TestEnvironment_Startup(t *testing.T) {
 	}
 
 	env, err := NewEnvironment(env)
-	a.Nil(err)
+	a.NoError(err)
 
 	t.Cleanup(env.Shutdown)
 }
