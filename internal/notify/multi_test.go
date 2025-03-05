@@ -36,6 +36,26 @@ func TestMultiSender(t *testing.T) {
 	require.NoError(t, sender.Critical(ctx, msg))
 }
 
+func TestMultiSender_senderTypes(t *testing.T) {
+	logger := log.NewTestLogger()
+	cfg := &service.Notifications{
+		Email: []service.Email{
+			{
+				ID:   "testing",
+				From: "user:pass@localhost:4133",
+			},
+		},
+	}
+	notifiers := &service.UploadNotifiers{
+		Email: []string{"testing"},
+	}
+
+	sender, err := NewMultiSender(logger, cfg, notifiers)
+	require.NoError(t, err)
+
+	require.Equal(t, "*notify.Email", sender.senderTypes()) // no password leaked
+}
+
 func TestMultiSenderErr(t *testing.T) {
 	sendErr := errors.New("bad error")
 
