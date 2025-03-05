@@ -54,13 +54,15 @@ func OpenTopic(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Topic, erro
 
 	switch cfg.SASLMechanism {
 	case "AWS_MSK_IAM":
-		config.Net.SASL.Mechanism = sarama.SASLTypeOAuth
-		config.Net.SASL.TokenProvider = &MSKAccessTokenProvider{
-			Region:      cfg.AWSRegion,
-			Profile:     cfg.AWSProfile,
-			RoleARN:     cfg.AWSRoleARN,
-			SessionName: cfg.AWSSessionName,
+		if cfg.AWS != nil {
+			config.Net.SASL.TokenProvider = &MSKAccessTokenProvider{
+				Region:      cfg.AWS.Region,
+				Profile:     cfg.AWS.Profile,
+				RoleARN:     cfg.AWS.RoleARN,
+				SessionName: cfg.AWS.SessionName,
+			}
 		}
+		config.Net.SASL.Mechanism = sarama.SASLTypeOAuth
 		config.Net.TLS.Enable = true
 		config.Net.TLS.Config = &tls.Config{}
 
@@ -82,7 +84,6 @@ func OpenTopic(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Topic, erro
 		Set("sasl.mechanism", log.String(string(config.Net.SASL.Mechanism))).
 		Set("sasl.user", log.String(cfg.Key)).
 		Set("topic", log.String(cfg.Topic)).
-		Set("aws.region", log.String(cfg.AWSRegion)).
 		Log("opening kafka topic")
 
 	return kafkapubsub.OpenTopic(cfg.Brokers, config, cfg.Topic, nil)
@@ -97,13 +98,15 @@ func OpenSubscription(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Subs
 	// Default to PLAIN if no SASL mechanism is specified
 	switch cfg.SASLMechanism {
 	case "AWS_MSK_IAM":
-		config.Net.SASL.Mechanism = sarama.SASLTypeOAuth
-		config.Net.SASL.TokenProvider = &MSKAccessTokenProvider{
-			Region:      cfg.AWSRegion,
-			Profile:     cfg.AWSProfile,
-			RoleARN:     cfg.AWSRoleARN,
-			SessionName: cfg.AWSSessionName,
+		if cfg.AWS != nil {
+			config.Net.SASL.TokenProvider = &MSKAccessTokenProvider{
+				Region:      cfg.AWS.Region,
+				Profile:     cfg.AWS.Profile,
+				RoleARN:     cfg.AWS.RoleARN,
+				SessionName: cfg.AWS.SessionName,
+			}
 		}
+		config.Net.SASL.Mechanism = sarama.SASLTypeOAuth
 		config.Net.TLS.Enable = true
 		config.Net.TLS.Config = &tls.Config{}
 
@@ -129,7 +132,6 @@ func OpenSubscription(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Subs
 		Set("sasl.mechanism", log.String(string(config.Net.SASL.Mechanism))).
 		Set("sasl.user", log.String(cfg.Key)).
 		Set("topic", log.String(cfg.Topic)).
-		Set("aws.region", log.String(cfg.AWSRegion)).
 		Log("setting up kafka subscription")
 
 	return kafkapubsub.OpenSubscription(cfg.Brokers, config, cfg.Group, []string{cfg.Topic}, &kafkapubsub.SubscriptionOptions{

@@ -73,10 +73,11 @@ ACHGateway:
       TLS: <boolean>
       AutoCommit: <boolean>
       [ SASLMechanism: <string> | default = "PLAIN" ]
-      [ AWSRegion: <string> | default = "" ]
-      [ AWSProfile: <string> | default = "" ]
-      [ AWSRoleARN: <string> | default = "" ]
-      [ AWSSessionName: <string> | default = "" ]
+      AWS:
+        [ Region: <string> | default = "" ]
+        [ Profile: <string> | default = "" ]
+        [ RoleARN: <string> | default = "" ]
+        [ SessionName: <string> | default = "" ]
       Transform:
         Encoding:
           [ Base64: <boolean> | default = false ]
@@ -162,10 +163,11 @@ ACHGateway:
         [ TLS: <boolean> | default = false ]
         [ AutoCommit: <boolean> | default = false ]
         [ SASLMechanism: <string> | default = "PLAIN" ]
-        [ AWSRegion: <string> | default = "" ]
-        [ AWSProfile: <string> | default = "" ]
-        [ AWSRoleARN: <string> | default = "" ]
-        [ AWSSessionName: <string> | default = "" ]
+        AWS:
+          [ Region: <string> | default = "" ]
+          [ Profile: <string> | default = "" ]
+          [ RoleARN: <string> | default = "" ]
+          [ SessionName: <string> | default = "" ]
     Webhook:
       [ Endpoint: <string> | default = "" ]
 ```

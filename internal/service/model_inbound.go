@@ -66,6 +66,15 @@ func (cfg *InMemory) Validate() error {
 	return nil
 }
 
+// AWSConfig holds authentication settings for AWS MSK clusters.
+// Used when KafkaConfig.SASLMechanism is set to AWS_MSK_IAM.
+type AWSConfig struct {
+	Region      string
+	Profile     string
+	RoleARN     string
+	SessionName string
+}
+
 type KafkaConfig struct {
 	Brokers []string
 	Key     string
@@ -80,10 +89,7 @@ type KafkaConfig struct {
 	AutoCommit    bool
 	SASLMechanism string
 
-	AWSRegion      string
-	AWSProfile     string
-	AWSRoleARN     string
-	AWSSessionName string
+	AWS *AWSConfig
 
 	Consumer KafkaConsumerConfig
 	Producer KafkaProducerConfig
