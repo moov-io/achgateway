@@ -54,12 +54,12 @@ func OpenTopic(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Topic, erro
 
 	switch cfg.SASLMechanism {
 	case "AWS_MSK_IAM":
-		if cfg.AWS != nil {
+		if cfg.Provider != nil && cfg.Provider.AWS != nil {
 			config.Net.SASL.TokenProvider = &MSKAccessTokenProvider{
-				Region:      cfg.AWS.Region,
-				Profile:     cfg.AWS.Profile,
-				RoleARN:     cfg.AWS.RoleARN,
-				SessionName: cfg.AWS.SessionName,
+				Region:      cfg.Provider.AWS.Region,
+				Profile:     cfg.Provider.AWS.Profile,
+				RoleARN:     cfg.Provider.AWS.RoleARN,
+				SessionName: cfg.Provider.AWS.SessionName,
 			}
 		}
 		config.Net.SASL.Mechanism = sarama.SASLTypeOAuth
@@ -98,12 +98,12 @@ func OpenSubscription(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Subs
 	// Default to PLAIN if no SASL mechanism is specified
 	switch cfg.SASLMechanism {
 	case "AWS_MSK_IAM":
-		if cfg.AWS != nil {
+		if cfg.Provider != nil && cfg.Provider.AWS != nil {
 			config.Net.SASL.TokenProvider = &MSKAccessTokenProvider{
-				Region:      cfg.AWS.Region,
-				Profile:     cfg.AWS.Profile,
-				RoleARN:     cfg.AWS.RoleARN,
-				SessionName: cfg.AWS.SessionName,
+				Region:      cfg.Provider.AWS.Region,
+				Profile:     cfg.Provider.AWS.Profile,
+				RoleARN:     cfg.Provider.AWS.RoleARN,
+				SessionName: cfg.Provider.AWS.SessionName,
 			}
 		}
 		config.Net.SASL.Mechanism = sarama.SASLTypeOAuth

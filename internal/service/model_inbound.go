@@ -75,6 +75,11 @@ type AWSConfig struct {
 	SessionName string
 }
 
+// KafkaProvider represents the cloud provider settings for Kafka
+type KafkaProvider struct {
+	AWS *AWSConfig
+}
+
 type KafkaConfig struct {
 	Brokers []string
 	Key     string
@@ -89,7 +94,7 @@ type KafkaConfig struct {
 	AutoCommit    bool
 	SASLMechanism string
 
-	AWS *AWSConfig
+	Provider *KafkaProvider
 
 	Consumer KafkaConsumerConfig
 	Producer KafkaProducerConfig
