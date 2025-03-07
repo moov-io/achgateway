@@ -66,6 +66,20 @@ func (cfg *InMemory) Validate() error {
 	return nil
 }
 
+// AWSConfig holds authentication settings for AWS MSK clusters.
+// Used when KafkaConfig.SASLMechanism is set to AWS_MSK_IAM.
+type AWSConfig struct {
+	Region      string
+	Profile     string
+	RoleARN     string
+	SessionName string
+}
+
+// KafkaProvider represents the cloud provider settings for Kafka
+type KafkaProvider struct {
+	AWS *AWSConfig
+}
+
 type KafkaConfig struct {
 	Brokers []string
 	Key     string
@@ -77,7 +91,10 @@ type KafkaConfig struct {
 	// AutoCommit in Sarama refers to "automated publishing of consumer offsets
 	// to the broker" rather than a Kafka broker's meaning of "commit consumer
 	// offsets on read" which leads to "at-most-once" delivery.
-	AutoCommit bool
+	AutoCommit    bool
+	SASLMechanism string
+
+	Provider *KafkaProvider
 
 	Consumer KafkaConsumerConfig
 	Producer KafkaProducerConfig
