@@ -1,3 +1,19 @@
+## v0.32.0 (Released 2025-03-11)
+
+ADDITIONS
+
+- feat: added [AWS MSK IAM authentication](https://aws.amazon.com/blogs/big-data/amazon-msk-iam-authentication-now-supports-all-programming-languages/)
+
+IMPROVEMENTS
+
+- notify: verify passowrd isn't leaked from Email sender
+
+BUILD
+
+- build: update golang.org/x/crypto and use go1.23
+- build: update github.com/go-jose/go-jose/v4
+- build: update setup-go, checkout and codeql-action Github Actions
+
 ## v0.31.5 (Released 2025-01-23)
 
 IMPROVEMENTS
