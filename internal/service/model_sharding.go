@@ -107,6 +107,7 @@ func (cfg Shard) Validate() error {
 type Cutoffs struct {
 	Timezone string
 	Windows  []string
+	On       string
 }
 
 func (cfg Cutoffs) Location() *time.Location {

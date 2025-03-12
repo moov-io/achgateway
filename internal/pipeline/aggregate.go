@@ -128,13 +128,12 @@ func (xfagg *aggregator) Start(ctx context.Context) {
 		// process automated cutoff time triggering
 		case day := <-xfagg.cutoffs.C:
 			// Run our regular routines
-			if day.IsBankingDay {
+			if day.IsBankingDay || xfagg.shard.Cutoffs.On == "all-days" {
 				if err := xfagg.withEachFile(day.Time); err != nil {
 					err = xfagg.logger.Error().LogErrorf("merging files: %v", err).Err()
 					xfagg.alertOnError(err)
 				}
-			}
-			if day.IsHoliday && !day.IsWeekend {
+			} else if day.IsHoliday && !day.IsWeekend {
 				xfagg.notifyAboutHoliday(day)
 			}
 
