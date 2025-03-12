@@ -183,6 +183,7 @@ ACHGateway:
           Timezone: <string>
           Windows:
             - <string>
+          [ On: <string> | default = "banking-days" ] # banking-days or all-days
         PreUpload:
           GPG: # Optional
             KeyFile: <string>
