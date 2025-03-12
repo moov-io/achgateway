@@ -1,3 +1,13 @@
+## v0.33.0 (Released 2025-03-12)
+
+ADDITIONS
+
+- feat: configuration to run cutoffs on non-banking days
+
+BUILD
+
+- build: update golang.org/x/net to v0.36.0
+
 ## v0.32.0 (Released 2025-03-11)
 
 ADDITIONS
