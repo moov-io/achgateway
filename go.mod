@@ -5,29 +5,29 @@ module github.com/moov-io/achgateway
 go 1.23.0
 
 require (
-	cloud.google.com/go/spanner v1.68.0
+	cloud.google.com/go/spanner v1.77.0
 	github.com/PagerDuty/go-pagerduty v1.8.0
-	github.com/ProtonMail/go-crypto v1.1.5
-	github.com/Shopify/sarama v1.38.1
+	github.com/ProtonMail/go-crypto v1.1.6
+	github.com/Shopify/sarama v1.45.1
 	github.com/go-kit/kit v0.13.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/igrmk/treemap/v2 v2.0.1
 	github.com/jlaffaye/ftp v0.2.0
-	github.com/moov-io/ach v1.45.3
-	github.com/moov-io/base v0.53.0
+	github.com/moov-io/ach v1.45.5
+	github.com/moov-io/base v0.54.1
 	github.com/moov-io/cryptfs v0.8.0
 	github.com/moov-io/go-ftp v0.4.0
-	github.com/moov-io/go-sftp v0.15.0
+	github.com/moov-io/go-sftp v0.15.1
 	github.com/ory/dockertest/v3 v3.11.0
 	github.com/ory/mail/v3 v3.0.0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.20.5
-	github.com/rickar/cal/v2 v2.1.21
+	github.com/prometheus/client_golang v1.21.1
+	github.com/rickar/cal/v2 v2.1.22
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sethvargo/go-retry v0.3.0
-	github.com/slack-go/slack v0.15.0
+	github.com/slack-go/slack v0.16.0
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/otel v1.35.0
@@ -38,7 +38,7 @@ require (
 	golang.org/x/crypto v0.36.0
 	golang.org/x/sync v0.12.0
 	golang.org/x/text v0.23.0
-	google.golang.org/api v0.199.0
+	google.golang.org/api v0.226.0
 )
 
 require (
