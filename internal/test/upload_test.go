@@ -270,10 +270,14 @@ func TestUploads(t *testing.T) {
 	uploadedFiles, err := ach.ReadDir(outboundPath)
 	require.NoError(t, err)
 
-	expected := createdEntries - canceledEntries
-	found := countAllEntries(uploadedFiles)
-	t.Logf("found %d entries of %d expected (%d canceled) (%d errored) from %d uploaded files", found, expected, canceledEntries, erroredSubscriptions, len(uploadedFiles))
-	require.Equal(t, expected, found)
+	require.Eventually(t, func() bool {
+		expected := createdEntries - canceledEntries
+		found := countAllEntries(uploadedFiles)
+
+		t.Logf("found %d entries of %d expected (%d canceled) (%d errored) from %d uploaded files", found, expected, canceledEntries, erroredSubscriptions, len(uploadedFiles))
+
+		return expected == found
+	}, wait, tick)
 }
 
 func setupTestDirectory(t *testing.T, cfg *service.Config) string {
