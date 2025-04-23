@@ -64,7 +64,9 @@ func OpenTopic(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Topic, erro
 		}
 		config.Net.SASL.Mechanism = sarama.SASLTypeOAuth
 		config.Net.TLS.Enable = true
-		config.Net.TLS.Config = &tls.Config{}
+		config.Net.TLS.Config = &tls.Config{
+			MinVersion: tls.VersionTLS12,
+		}
 
 	default:
 		config.Net.SASL.Mechanism = sarama.SASLTypePlaintext
@@ -108,7 +110,9 @@ func OpenSubscription(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Subs
 		}
 		config.Net.SASL.Mechanism = sarama.SASLTypeOAuth
 		config.Net.TLS.Enable = true
-		config.Net.TLS.Config = &tls.Config{}
+		config.Net.TLS.Config = &tls.Config{
+			MinVersion: tls.VersionTLS12,
+		}
 
 	default:
 		config.Net.SASL.Mechanism = sarama.SASLTypePlaintext

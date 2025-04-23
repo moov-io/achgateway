@@ -183,7 +183,7 @@ func marshalFile(contents fs.File) (string, error) {
 	var buf bytes.Buffer
 	if err == nil {
 		if writeErr := ach.NewWriter(&buf).Write(&file); writeErr != nil {
-			err = fmt.Errorf("error parsing file: %v -- error writing file: %v", err, writeErr)
+			err = fmt.Errorf("error writing file: %v", writeErr)
 		}
 	}
 	if err == nil {

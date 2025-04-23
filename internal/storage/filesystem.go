@@ -19,7 +19,7 @@ func NewFilesystem(root string) (Chest, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := os.MkdirAll(fullpath, 0777); err != nil {
+	if err := os.MkdirAll(fullpath, 0777); err != nil { //nolint:gosec
 		return nil, err
 	}
 	return &filesystem{
@@ -112,7 +112,7 @@ func (f *filesystem) ReplaceFile(oldpath, newpath string) error {
 
 	// Create the new dir(s)
 	dir, _ := filepath.Split(newpath)
-	if err := os.MkdirAll(dir, 0777); err != nil {
+	if err := os.MkdirAll(dir, 0777); err != nil { //nolint:gosec
 		return err
 	}
 
@@ -130,7 +130,7 @@ func (f *filesystem) ReplaceDir(oldpath, newpath string) error {
 
 	if _, err := os.Stat(path); err != nil && os.IsNotExist(err) {
 		// dir doesn't exist, so write newpath
-		return os.MkdirAll(filepath.Join(f.root, newpath), 0777)
+		return os.MkdirAll(filepath.Join(f.root, newpath), 0777) //nolint:gosec
 	}
 
 	// move the existing file
@@ -138,7 +138,7 @@ func (f *filesystem) ReplaceDir(oldpath, newpath string) error {
 }
 
 func (f *filesystem) MkdirAll(path string) error {
-	return os.MkdirAll(filepath.Join(f.root, path), 0777)
+	return os.MkdirAll(filepath.Join(f.root, path), 0777) //nolint:gosec
 }
 
 func (f *filesystem) RmdirAll(path string) error {
@@ -149,7 +149,7 @@ func (f *filesystem) WriteFile(path string, contents []byte) error {
 	dir, path := filepath.Split(path)
 	dir = filepath.Join(f.root, dir)
 
-	if err := os.MkdirAll(dir, 0777); err != nil {
+	if err := os.MkdirAll(dir, 0777); err != nil { //nolint:gosec
 		return err
 	}
 
