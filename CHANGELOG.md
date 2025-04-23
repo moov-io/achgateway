@@ -1,3 +1,12 @@
+## v0.33.1 (Released 2025-04-23)
+
+BUILD
+
+- build: update to go1.24 and bump deps
+- chore: update github.com/moov-io/ach to v1.48.0
+- chore: update github.com/moov-io/base to v0.54.4
+- chore: update github.com/moov-io/go-sftp to v0.16.0
+
 ## v0.33.0 (Released 2025-03-12)
 
 ADDITIONS
