@@ -20,7 +20,6 @@
 package dbtest
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"testing"
@@ -83,7 +82,7 @@ func CreateTestDatabase(t *testing.T, config database.DatabaseConfig) database.D
 
 func LoadDatabase(t *testing.T, config database.DatabaseConfig) *sql.DB {
 	l := log.NewTestLogger()
-	db, err := database.New(context.Background(), l, config)
+	db, err := database.New(t.Context(), l, config)
 	if err != nil {
 		t.Fatal(err)
 	}
