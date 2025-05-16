@@ -5,22 +5,22 @@ module github.com/moov-io/achgateway
 go 1.24.2
 
 require (
-	cloud.google.com/go/spanner v1.79.0
+	cloud.google.com/go/spanner v1.81.1
 	github.com/PagerDuty/go-pagerduty v1.8.0
-	github.com/ProtonMail/go-crypto v1.1.6
-	github.com/Shopify/sarama v1.38.1
+	github.com/ProtonMail/go-crypto v1.2.0
+	github.com/Shopify/sarama v1.45.1
 	github.com/go-kit/kit v0.13.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/igrmk/treemap/v2 v2.0.1
 	github.com/jlaffaye/ftp v0.2.0
-	github.com/moov-io/ach v1.48.0
-	github.com/moov-io/base v0.54.4
+	github.com/moov-io/ach v1.48.1
+	github.com/moov-io/base v0.55.0
 	github.com/moov-io/cryptfs v0.8.0
 	github.com/moov-io/go-ftp v0.4.0
 	github.com/moov-io/go-sftp v0.16.0
-	github.com/ory/dockertest/v3 v3.11.0
+	github.com/ory/dockertest/v3 v3.12.0
 	github.com/ory/mail/v3 v3.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.22.0
@@ -35,10 +35,10 @@ require (
 	gocloud.dev v0.37.0
 	gocloud.dev/pubsub/kafkapubsub v0.34.0
 	goftp.io/server v0.4.1
-	golang.org/x/crypto v0.37.0
-	golang.org/x/sync v0.13.0
-	golang.org/x/text v0.24.0
-	google.golang.org/api v0.228.0
+	golang.org/x/crypto v0.38.0
+	golang.org/x/sync v0.14.0
+	golang.org/x/text v0.25.0
+	google.golang.org/api v0.233.0
 )
 
 require (
@@ -77,7 +77,7 @@ require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.27.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
-	github.com/aws/aws-msk-iam-sasl-signer-go v1.0.1
+	github.com/aws/aws-msk-iam-sasl-signer-go v1.0.3
 	github.com/aws/aws-sdk-go v1.50.36 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.32.4 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.1 // indirect
