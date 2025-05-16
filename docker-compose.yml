@@ -19,7 +19,7 @@ services:
       - /var/lib/mysql
 
   ftp:
-    image: moov/fsftp:v0.2.1
+    image: moov/fsftp:v0.2.2
     ports:
       - "2121:2121"
       - "30000-30009:30000-30009"
@@ -42,7 +42,7 @@ services:
       - "demo:password:::inbound,outbound,reconciliation,returned"
 
   kafka1:
-    image: redpandadata/redpanda:v24.3.6
+    image: redpandadata/redpanda:v24.3.13
     container_name: kafka1
     healthcheck:
       {
@@ -75,7 +75,7 @@ services:
       - --default-log-level=info
 
   topics:
-    image: redpandadata/redpanda:v24.3.6
+    image: redpandadata/redpanda:v24.3.13
     depends_on:
       kafka1:
         condition: service_healthy
