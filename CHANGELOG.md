@@ -1,3 +1,17 @@
+## v0.33.2 (Released 2025-05-19)
+
+BUILD
+
+- build(chore): update cloud.google.com/go/spanner to v1.81.1
+- build(chore): update github.com/ProtonMail/go-crypto to v1.2.0
+- build(chore): update github.com/moov-io/ach to v1.48.1
+- build(chore): update github.com/moov-io/base to v0.55.0
+- build(chore): update github.com/ory/dockertest/v3 to v3.12.0
+- build(chore): update golang.org/x/crypto to v0.38.0
+- build(chore): update golang.org/x/sync to v0.14.0
+- build(chore): update golang.org/x/text to v0.25.0
+- build(chore): update google.golang.org/api to v0.232.0
+
 ## v0.33.1 (Released 2025-04-23)
 
 BUILD
