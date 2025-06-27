@@ -64,6 +64,7 @@ type aggregator struct {
 	preuploadTransformers []transform.PreUpload
 	outputFormatter       output.Formatter
 	alerters              alerting.Alerters
+	cleanupService        *CleanupService
 }
 
 func newAggregator(logger log.Logger, eventEmitter events.Emitter, shard service.Shard, uploadAgents service.UploadAgents, errorAlerting service.ErrorAlerting) (*aggregator, error) {
@@ -107,6 +108,21 @@ func newAggregator(logger log.Logger, eventEmitter events.Emitter, shard service
 		return nil, fmt.Errorf("error setting up alerters: %v", err)
 	}
 
+	// Create cleanup service if configured
+	var cleanupService *CleanupService
+	if uploadAgents.Merging.Cleanup != nil && uploadAgents.Merging.Cleanup.Enabled {
+		// Get the storage from merger (it's a filesystemMerging which has storage)
+		if fm, ok := merger.(*filesystemMerging); ok {
+			cleanupService, err = NewCleanupService(logger, fm.storage, shard, uploadAgents.Merging.Cleanup)
+			if err != nil {
+				return nil, fmt.Errorf("error creating cleanup service: %v", err)
+			}
+			logger.Info().With(log.Fields{
+				"shard": log.String(shard.Name),
+			}).Log("setup cleanup service")
+		}
+	}
+
 	return &aggregator{
 		logger:                logger,
 		eventEmitter:          eventEmitter,
@@ -119,10 +135,16 @@ func newAggregator(logger log.Logger, eventEmitter events.Emitter, shard service
 		preuploadTransformers: preuploadTransformers,
 		outputFormatter:       outputFormatter,
 		alerters:              alerters,
+		cleanupService:        cleanupService,
 	}, nil
 }
 
 func (xfagg *aggregator) Start(ctx context.Context) {
+	// Start cleanup service if configured
+	if xfagg.cleanupService != nil {
+		xfagg.cleanupService.Start(ctx)
+	}
+
 	for {
 		select {
 		// process automated cutoff time triggering
@@ -153,6 +175,10 @@ func (xfagg *aggregator) Shutdown() {
 	xfagg.logger.Info().With(log.Fields{
 		"shard": log.String(xfagg.shard.Name),
 	}).Log("shutting down xfer aggregation")
+
+	if xfagg.cleanupService != nil {
+		xfagg.cleanupService.Stop()
+	}
 
 	if xfagg.auditStorage != nil {
 		xfagg.auditStorage.Close()

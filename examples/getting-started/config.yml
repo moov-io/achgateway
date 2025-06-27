@@ -71,3 +71,7 @@ ACHGateway:
           return: "/returned/"
     merging:
       directory: "./storage/"
+      cleanup:
+        enabled: false              # Set to true to enable automatic cleanup
+        retentionDuration: "24h"    # Keep files for 24 hours after processing
+        checkInterval: "1h"         # Check for files to clean up every hour

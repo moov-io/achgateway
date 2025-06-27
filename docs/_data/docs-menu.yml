@@ -46,6 +46,8 @@
       link: /ops/merging/
     - name: File Options
       link: /ops/file-options/
+    - name: File Cleanup
+      link: /ops/cleanup/
 
 - label: Production
   items:

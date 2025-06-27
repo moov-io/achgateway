@@ -48,6 +48,9 @@ func (ua UploadAgents) Validate() error {
 	if err := ua.Retry.Validate(); err != nil {
 		return fmt.Errorf("retry: %v", err)
 	}
+	if err := ua.Merging.Validate(); err != nil {
+		return fmt.Errorf("merging: %v", err)
+	}
 	return nil
 }
 
@@ -239,6 +242,37 @@ type UploadNotifiers struct {
 type Merging struct {
 	Storage   storage.Config
 	Directory string // fallback config for Storage.Filesystem.Directory
+	Cleanup   *CleanupConfig
+}
+
+func (m *Merging) Validate() error {
+	if m.Cleanup != nil {
+		return m.Cleanup.Validate()
+	}
+	return nil
+}
+
+type CleanupConfig struct {
+	Enabled           bool
+	RetentionDuration time.Duration
+	CheckInterval     time.Duration
+}
+
+func (c *CleanupConfig) Validate() error {
+	if c == nil || !c.Enabled {
+		return nil
+	}
+	if c.RetentionDuration <= 0 {
+		return fmt.Errorf("cleanup retention duration must be positive, got %v", c.RetentionDuration)
+	}
+	if c.CheckInterval <= 0 {
+		return fmt.Errorf("cleanup check interval must be positive, got %v", c.CheckInterval)
+	}
+	if c.CheckInterval > c.RetentionDuration {
+		return fmt.Errorf("cleanup check interval (%v) should not be greater than retention duration (%v)",
+			c.CheckInterval, c.RetentionDuration)
+	}
+	return nil
 }
 
 type UploadRetry struct {
