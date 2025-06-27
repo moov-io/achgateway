@@ -42,14 +42,9 @@ services:
       - "demo:password:::inbound,outbound,reconciliation,returned"
 
   kafka1:
-    image: redpandadata/redpanda:v24.3.6
+    image: docker.redpanda.com/redpandadata/redpanda:v23.2.21
     container_name: kafka1
-    healthcheck:
-      {
-        test: curl -f localhost:9644/v1/status/ready,
-        interval: 1s,
-        start_period: 30s,
-      }
+    healthcheck: { test: curl -f localhost:9644/v1/status/ready, interval: 1s, start_period: 30s }
     volumes:
       - redpanda-0:/var/lib/redpanda/data
     networks:
@@ -70,12 +65,12 @@ services:
       - --rpc-addr kafka1:33145
       - --advertise-rpc-addr kafka1:33145
       - --smp 1
-      - --memory 1G
+      - --memory 128M
       - --mode dev-container
       - --default-log-level=info
 
   topics:
-    image: redpandadata/redpanda:v24.3.6
+    image: docker.redpanda.com/redpandadata/redpanda:v23.2.21
     depends_on:
       kafka1:
         condition: service_healthy
