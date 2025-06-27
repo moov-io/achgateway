@@ -1,3 +1,14 @@
+## Future Releases
+
+Please refer to the [Github Releases](https://github.com/moov-io/achgateway/releases) page for future updates.
+
+## v0.33.3 (Released 2025-06-24)
+
+BUILD
+
+- build: update moov-io/ach to v1.51.0
+- fix(deps): update opentelemetry-go monorepo to v1.36.0 (#257)
+
 ## v0.33.2 (Released 2025-05-19)
 
 BUILD
