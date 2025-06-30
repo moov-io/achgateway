@@ -234,13 +234,21 @@ func (cs *CleanupService) shouldDeleteDirectory(ctx context.Context, dirName str
 	))
 	defer span.End()
 
+	// Extract just the directory name in case we got a full path
+	// This is important for Windows compatibility where dirName might be a full path
+	baseName := filepath.Base(dirName)
+
 	// Parse timestamp from directory name
 	// Format: <shard-name>-YYYYMMDD-HHMMSS
-	timestampStr := dirName[len(cs.shard.Name)+1:] // Skip shard name and hyphen
+	if len(baseName) <= len(cs.shard.Name)+1 {
+		return false, fmt.Errorf("directory name too short: %s", baseName)
+	}
+
+	timestampStr := baseName[len(cs.shard.Name)+1:] // Skip shard name and hyphen
 	dirTime, err := time.Parse("20060102-150405", timestampStr)
 	if err != nil {
 		span.RecordError(err)
-		return false, fmt.Errorf("failed to parse directory timestamp: %w", err)
+		return false, fmt.Errorf("failed to parse directory timestamp from %s: %w", baseName, err)
 	}
 
 	// Check if directory is old enough
