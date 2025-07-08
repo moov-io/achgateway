@@ -20,7 +20,7 @@ package pipeline
 import (
 	"context"
 	"fmt"
-	"path/filepath"
+	"path"
 	"testing"
 	"time"
 
@@ -90,17 +90,17 @@ func TestCleanupService_shouldDeleteDirectory(t *testing.T) {
 	newDirName := fmt.Sprintf("%s-%s", shard.Name, now.Add(-1*time.Hour).Format("20060102-150405"))
 
 	// Create old directory with uploaded files
-	oldUploadedPath := filepath.Join(oldDirName, "uploaded")
+	oldUploadedPath := path.Join(oldDirName, "uploaded")
 	err = storage.MkdirAll(oldUploadedPath)
 	require.NoError(t, err)
-	err = storage.WriteFile(filepath.Join(oldUploadedPath, "test.ach"), []byte("test content"))
+	err = storage.WriteFile(path.Join(oldUploadedPath, "test.ach"), []byte("test content"))
 	require.NoError(t, err)
 
 	// Create new directory with uploaded files
-	newUploadedPath := filepath.Join(newDirName, "uploaded")
+	newUploadedPath := path.Join(newDirName, "uploaded")
 	err = storage.MkdirAll(newUploadedPath)
 	require.NoError(t, err)
-	err = storage.WriteFile(filepath.Join(newUploadedPath, "test.ach"), []byte("test content"))
+	err = storage.WriteFile(path.Join(newUploadedPath, "test.ach"), []byte("test content"))
 	require.NoError(t, err)
 
 	// Create directory without uploaded subdirectory (use different timestamp to avoid conflict)
@@ -154,26 +154,26 @@ func TestCleanupService_runCleanup(t *testing.T) {
 	// Create directories to test
 	// 1. Old directory with uploaded files (should be deleted)
 	oldDir1 := fmt.Sprintf("%s-%s", shard.Name, now.Add(-48*time.Hour).Format("20060102-150405"))
-	oldUploadedPath1 := filepath.Join(oldDir1, "uploaded")
+	oldUploadedPath1 := path.Join(oldDir1, "uploaded")
 	err = storage.MkdirAll(oldUploadedPath1)
 	require.NoError(t, err)
-	err = storage.WriteFile(filepath.Join(oldUploadedPath1, "test1.ach"), []byte("test content 1"))
+	err = storage.WriteFile(path.Join(oldUploadedPath1, "test1.ach"), []byte("test content 1"))
 	require.NoError(t, err)
 
 	// 2. Another old directory with uploaded files (should be deleted)
 	oldDir2 := fmt.Sprintf("%s-%s", shard.Name, now.Add(-72*time.Hour).Format("20060102-150405"))
-	oldUploadedPath2 := filepath.Join(oldDir2, "uploaded")
+	oldUploadedPath2 := path.Join(oldDir2, "uploaded")
 	err = storage.MkdirAll(oldUploadedPath2)
 	require.NoError(t, err)
-	err = storage.WriteFile(filepath.Join(oldUploadedPath2, "test2.ach"), []byte("test content 2"))
+	err = storage.WriteFile(path.Join(oldUploadedPath2, "test2.ach"), []byte("test content 2"))
 	require.NoError(t, err)
 
 	// 3. New directory (should not be deleted)
 	newDir := fmt.Sprintf("%s-%s", shard.Name, now.Add(-1*time.Hour).Format("20060102-150405"))
-	newUploadedPath := filepath.Join(newDir, "uploaded")
+	newUploadedPath := path.Join(newDir, "uploaded")
 	err = storage.MkdirAll(newUploadedPath)
 	require.NoError(t, err)
-	err = storage.WriteFile(filepath.Join(newUploadedPath, "test3.ach"), []byte("test content 3"))
+	err = storage.WriteFile(path.Join(newUploadedPath, "test3.ach"), []byte("test content 3"))
 	require.NoError(t, err)
 
 	// 4. Old directory without uploaded files (should not be deleted)
@@ -237,10 +237,10 @@ func TestCleanupService_GetStats(t *testing.T) {
 	// Create test directories
 	// Old directory eligible for deletion
 	oldDir := fmt.Sprintf("%s-%s", shard.Name, now.Add(-48*time.Hour).Format("20060102-150405"))
-	oldUploadedPath := filepath.Join(oldDir, "uploaded")
+	oldUploadedPath := path.Join(oldDir, "uploaded")
 	err = storage.MkdirAll(oldUploadedPath)
 	require.NoError(t, err)
-	err = storage.WriteFile(filepath.Join(oldUploadedPath, "test.ach"), []byte("test content"))
+	err = storage.WriteFile(path.Join(oldUploadedPath, "test.ach"), []byte("test content"))
 	require.NoError(t, err)
 
 	// New directory not eligible

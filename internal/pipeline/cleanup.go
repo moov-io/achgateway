@@ -21,7 +21,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
+	"path"
 	"regexp"
 	"time"
 
@@ -242,7 +242,7 @@ func (cs *CleanupService) shouldDeleteDirectory(ctx context.Context, dirName str
 
 	// Extract just the directory name in case we got a full path
 	// This is important for Windows compatibility where dirName might be a full path
-	baseName := filepath.Base(dirName)
+	baseName := path.Base(dirName)
 
 	// Parse timestamp from directory name
 	// Format: <shard-name>-YYYYMMDD-HHMMSS
@@ -268,7 +268,7 @@ func (cs *CleanupService) shouldDeleteDirectory(ctx context.Context, dirName str
 	}
 
 	// Check for uploaded/ subdirectory
-	uploadedPath := filepath.Join(dirName, "uploaded")
+	uploadedPath := path.Join(dirName, "uploaded")
 	entries, err := cs.storage.ReadDir(uploadedPath)
 	if err != nil {
 		// If we can't read the uploaded directory, it might not exist
