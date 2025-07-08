@@ -5,7 +5,7 @@ title: File Cleanup
 
 # File Cleanup
 
-ACH Gateway includes an optional cleanup feature that automatically removes old processed files from the storage directory. This helps prevent file descriptor exhaustion and disk space issues in long-running deployments.
+ACHGateway v0.34.0 added an optional cleanup routine that automatically removes old processed files from the storage directory. This helps prevent file descriptor exhaustion and disk space issues in long-running deployments.
 
 ## Overview
 
