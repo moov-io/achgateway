@@ -20,6 +20,7 @@ package pipeline
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"regexp"
 	"time"
@@ -178,20 +179,24 @@ func (cs *CleanupService) runCleanup(ctx context.Context) {
 			continue
 		}
 
+		logger := cs.logger.Warn().With(log.Fields{
+			"shard":     log.String(cs.shard.Name),
+			"directory": log.String(dirName),
+		})
+
 		// Check if directory should be deleted
-		if shouldDelete, err := cs.shouldDeleteDirectory(ctx, dirName, cutoffTime); err != nil {
-			cs.logger.Warn().With(log.Fields{
-				"shard":     log.String(cs.shard.Name),
-				"directory": log.String(dirName),
-			}).Logf("error checking directory: %v", err)
+		shouldDelete, err := cs.shouldDeleteDirectory(ctx, dirName, cutoffTime)
+		switch {
+		case err != nil:
+			logger.Error().Logf("error checking directory: %v", err)
+
 			errorCount++
 			cleanupErrorsCounter.WithLabelValues(cs.shard.Name, "check_directory").Inc()
-		} else if shouldDelete {
+
+		case shouldDelete:
 			if err := cs.deleteDirectory(ctx, dirName); err != nil {
-				cs.logger.Error().With(log.Fields{
-					"shard":     log.String(cs.shard.Name),
-					"directory": log.String(dirName),
-				}).LogErrorf("failed to delete directory: %v", err)
+				logger.Error().LogErrorf("failed to delete directory: %v", err)
+
 				errorCount++
 				cleanupErrorsCounter.WithLabelValues(cs.shard.Name, "delete_directory").Inc()
 			} else {
@@ -203,12 +208,13 @@ func (cs *CleanupService) runCleanup(ctx context.Context) {
 
 	duration := time.Since(startTime)
 
-	cs.logger.Info().With(log.Fields{
+	logger := cs.logger.With(log.Fields{
 		"shard":    log.String(cs.shard.Name),
 		"deleted":  log.Int(deletedCount),
 		"errors":   log.Int(errorCount),
 		"duration": log.String(duration.String()),
-	}).Log("completed cleanup run")
+	})
+	logger.Info().Log("completed cleanup run")
 
 	span.SetAttributes(
 		attribute.Int("achgateway.cleanup.deleted_count", deletedCount),
@@ -325,7 +331,9 @@ func (cs *CleanupService) GetStats(ctx context.Context) (*CleanupStats, error) {
 
 	entries, err := cs.storage.ReadDir(".")
 	if err != nil {
-		return nil, err
+		wd, _ := os.Getwd()
+
+		return nil, fmt.Errorf("reading %s failed: %w", wd, err)
 	}
 
 	cutoffTime := time.Now().Add(-cs.config.RetentionDuration)
@@ -337,14 +345,18 @@ func (cs *CleanupService) GetStats(ctx context.Context) (*CleanupStats, error) {
 
 		info, err := entry.Info()
 		if err != nil {
-			continue
+			return nil, fmt.Errorf("getting info on %s failed: %w", entry.Name(), err)
 		}
 
 		stats.TotalDirectories++
 
-		if shouldDelete, err := cs.shouldDeleteDirectory(ctx, entry.Name(), cutoffTime); err == nil && shouldDelete {
+		shouldDelete, err := cs.shouldDeleteDirectory(ctx, entry.Name(), cutoffTime)
+		if err == nil && shouldDelete {
 			stats.EligibleForDeletion++
 			stats.TotalSize += info.Size()
+		}
+		if err != nil {
+			return nil, fmt.Errorf("checking %s to delete failed: %w", entry.Name(), err)
 		}
 	}
 
