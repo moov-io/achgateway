@@ -1,6 +1,9 @@
 ---
 layout: page
 title: File Cleanup
+hide_hero: true
+show_sidebar: false
+menubar: docs-menu
 ---
 
 # File Cleanup
