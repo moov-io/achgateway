@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 
 	"github.com/moov-io/achgateway/internal/service"
@@ -74,8 +75,16 @@ func setupBackoff(cfg *service.NotificationRetries) (retry.Backoff, error) {
 
 func (ms *MultiSender) senderTypes() string {
 	out := make([]string, len(ms.senders))
-	for i := range ms.senders {
-		out[i] = fmt.Sprintf("%T", ms.senders[i])
+	for i, sender := range ms.senders {
+		// Get the type of each sender
+		typeName := reflect.TypeOf(sender).Name()
+		if typeName == "" {
+			// Handle pointer types by getting the element type
+			if reflect.TypeOf(sender).Kind() == reflect.Ptr {
+				typeName = reflect.TypeOf(sender).Elem().Name()
+			}
+		}
+		out[i] = typeName
 	}
 	return strings.Join(out, ", ")
 }
