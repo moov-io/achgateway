@@ -50,10 +50,12 @@ func TestMultiSender_senderTypes(t *testing.T) {
 		Email: []string{"testing"},
 	}
 
-	sender, err := NewMultiSender(logger, cfg, notifiers)
+	ms, err := NewMultiSender(logger, cfg, notifiers)
 	require.NoError(t, err)
 
-	require.Equal(t, "*notify.Email", sender.senderTypes()) // no password leaked
+	ms.senders = append(ms.senders, &MockSender{})
+
+	require.Equal(t, "Email, MockSender", ms.senderTypes()) // no password leaked
 }
 
 func TestMultiSenderErr(t *testing.T) {
