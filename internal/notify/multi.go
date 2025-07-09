@@ -73,18 +73,26 @@ func setupBackoff(cfg *service.NotificationRetries) (retry.Backoff, error) {
 	return fib, nil
 }
 
+func senderType(input Sender) string {
+	if input == nil {
+		return ""
+	}
+
+	// Get the type of each sender
+	typeName := reflect.TypeOf(input).Name()
+	if typeName == "" {
+		// Handle pointer types by getting the element type
+		if reflect.TypeOf(input).Kind() == reflect.Ptr {
+			typeName = reflect.TypeOf(input).Elem().Name()
+		}
+	}
+	return typeName
+}
+
 func (ms *MultiSender) senderTypes() string {
 	out := make([]string, len(ms.senders))
-	for i, sender := range ms.senders {
-		// Get the type of each sender
-		typeName := reflect.TypeOf(sender).Name()
-		if typeName == "" {
-			// Handle pointer types by getting the element type
-			if reflect.TypeOf(sender).Kind() == reflect.Ptr {
-				typeName = reflect.TypeOf(sender).Elem().Name()
-			}
-		}
-		out[i] = typeName
+	for i := range ms.senders {
+		out[i] = senderType(ms.senders[i])
 	}
 	return strings.Join(out, ", ")
 }
@@ -96,7 +104,7 @@ func (ms *MultiSender) Info(ctx context.Context, msg *Message) error {
 			return ms.senders[i].Info(ctx, msg)
 		})
 		if err != nil {
-			ms.logger.Logf("multi-sender: Info %T: %v", ms.senders[i], err)
+			ms.logger.Logf("multi-sender: Info %v: %v", senderType(ms.senders[i]), err)
 			if firstError == nil {
 				firstError = err
 			}
@@ -115,7 +123,7 @@ func (ms *MultiSender) Critical(ctx context.Context, msg *Message) error {
 			return ms.senders[i].Critical(ctx, msg)
 		})
 		if err != nil {
-			ms.logger.Logf("multi-sender: Critical %T: %v", ms.senders[i], err)
+			ms.logger.Logf("multi-sender: Critical %v: %v", senderType(ms.senders[i]), err)
 			if firstError == nil {
 				firstError = err
 			}
