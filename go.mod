@@ -8,14 +8,14 @@ require (
 	cloud.google.com/go/spanner v1.83.0
 	github.com/PagerDuty/go-pagerduty v1.8.0
 	github.com/ProtonMail/go-crypto v1.3.0
-	github.com/Shopify/sarama v1.38.1
+	github.com/Shopify/sarama v1.45.2
 	github.com/go-kit/kit v0.13.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/igrmk/treemap/v2 v2.0.1
 	github.com/jlaffaye/ftp v0.2.0
-	github.com/moov-io/ach v1.52.0
+	github.com/moov-io/ach v1.52.1
 	github.com/moov-io/base v0.57.0
 	github.com/moov-io/cryptfs v0.9.0
 	github.com/moov-io/go-ftp v0.4.0
@@ -35,10 +35,10 @@ require (
 	gocloud.dev v0.41.0
 	gocloud.dev/pubsub/kafkapubsub v0.34.0
 	goftp.io/server v0.4.1
-	golang.org/x/crypto v0.39.0
-	golang.org/x/sync v0.15.0
-	golang.org/x/text v0.26.0
-	google.golang.org/api v0.240.0
+	golang.org/x/crypto v0.40.0
+	golang.org/x/sync v0.16.0
+	golang.org/x/text v0.27.0
+	google.golang.org/api v0.241.0
 )
 
 require (
