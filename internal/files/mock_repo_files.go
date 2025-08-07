@@ -14,6 +14,10 @@ func (r *MockRepository) Record(_ context.Context, file AcceptedFile) error {
 	return r.Err
 }
 
+func (r *MockRepository) Cleanup(ctx context.Context, file AcceptedFile) error {
+	return r.Err
+}
+
 func (r *MockRepository) Cancel(_ context.Context, fileID string) error {
 	return r.Err
 }
