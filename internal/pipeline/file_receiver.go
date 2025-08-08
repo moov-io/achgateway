@@ -64,6 +64,7 @@ type FileReceiver struct {
 	httpFiles   stream.Subscription
 	streamFiles stream.Subscription
 
+	QueueFileResponses    chan incoming.QueueACHFileResponse
 	CancellationResponses chan models.FileCancellationResponse
 
 	transformConfig *models.TransformConfig
@@ -89,6 +90,7 @@ func newFileReceiver(
 		shardAggregators:      shardAggregators,
 		fileRepository:        fileRepository,
 		httpFiles:             httpFiles,
+		QueueFileResponses:    make(chan incoming.QueueACHFileResponse, 1000),
 		CancellationResponses: make(chan models.FileCancellationResponse, 1000),
 		transformConfig:       transformConfig,
 	}
@@ -362,9 +364,11 @@ func (fr *FileReceiver) processMessage(ctx context.Context, msg *pubsub.Message)
 				}
 				return err
 			}
+
 			if !committed {
 				msg.Ack()
 			}
+
 			return nil
 		}
 	}
@@ -487,10 +491,12 @@ func (fr *FileReceiver) processACHFile(ctx context.Context, file incoming.ACHFil
 	}
 	logger.Log("begin handling of received ACH file")
 
-	err = agg.acceptFile(ctx, file)
+	response, err := agg.acceptFile(ctx, file)
 	if err != nil {
 		return logger.Error().LogErrorf("problem accepting file under shardName=%s", agg.shard.Name).Err()
 	}
+
+	fr.QueueFileResponses <- response
 
 	// Record the file as accepted
 	pendingFiles.With("shard", agg.shard.Name).Add(1)

@@ -95,7 +95,7 @@ func TestCancelFileAPI(t *testing.T) {
 	fileReceiver, err := pipeline.Start(ctx, logger, conf, shardRepo, fileRepo, httpFilesSub)
 	require.NoError(t, err)
 
-	controller := web.NewFilesController(logger, service.HTTPConfig{}, httpFilesTopic, fileReceiver.CancellationResponses)
+	controller := web.NewFilesController(logger, service.HTTPConfig{}, httpFilesTopic, fileReceiver.QueueFileResponses, fileReceiver.CancellationResponses)
 	r := mux.NewRouter()
 	controller.AppendRoutes(r)
 

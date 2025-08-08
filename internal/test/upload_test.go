@@ -164,7 +164,7 @@ func TestUploads(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { fileReceiver.Shutdown() })
 
-	fileController := web.NewFilesController(logger, service.HTTPConfig{}, httpPub, fileReceiver.CancellationResponses)
+	fileController := web.NewFilesController(logger, service.HTTPConfig{}, httpPub, fileReceiver.QueueFileResponses, fileReceiver.CancellationResponses)
 	r := mux.NewRouter()
 	fileController.AppendRoutes(r)
 

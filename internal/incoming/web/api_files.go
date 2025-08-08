@@ -43,16 +43,28 @@ import (
 	"gocloud.dev/pubsub"
 )
 
-func NewFilesController(logger log.Logger, cfg service.HTTPConfig, pub stream.Publisher, cancellationResponses chan models.FileCancellationResponse) *FilesController {
+func NewFilesController(
+	logger log.Logger,
+	cfg service.HTTPConfig,
+	pub stream.Publisher,
+	queueFileResponses chan incoming.QueueACHFileResponse,
+	cancellationResponses chan models.FileCancellationResponse,
+) *FilesController {
 	controller := &FilesController{
 		logger:    logger,
 		cfg:       cfg,
 		publisher: pub,
 
+		activeQueueFiles:   make(map[string]chan incoming.QueueACHFileResponse),
+		queueFileResponses: queueFileResponses,
+
 		activeCancellations:   make(map[string]chan models.FileCancellationResponse),
 		cancellationResponses: cancellationResponses,
 	}
+
+	controller.listenForQueueACHFileResponses()
 	controller.listenForCancellations()
+
 	return controller
 }
 
@@ -61,9 +73,43 @@ type FilesController struct {
 	cfg       service.HTTPConfig
 	publisher stream.Publisher
 
+	queueFileLock      sync.Mutex
+	activeQueueFiles   map[string]chan incoming.QueueACHFileResponse
+	queueFileResponses chan incoming.QueueACHFileResponse
+
 	cancellationLock      sync.Mutex
 	activeCancellations   map[string]chan models.FileCancellationResponse
 	cancellationResponses chan models.FileCancellationResponse
+}
+
+func (c *FilesController) listenForQueueACHFileResponses() {
+	c.logger.Info().Log("listening for QueueACHFile responses")
+	go func() {
+		for {
+			// Wait for a message
+			resp := <-c.queueFileResponses
+			logger := c.logger.Info().With(log.Fields{
+				"file_id":   log.String(resp.FileID),
+				"shard_key": log.String(resp.ShardKey),
+			})
+
+			if resp.Error != "" {
+				logger.Error().LogErrorf("problem with QueueACHFile: %v", resp.Error)
+			} else {
+				logger.Info().Logf("received QueueACHFile response")
+			}
+
+			fileID := strings.TrimSuffix(resp.FileID, ".ach")
+
+			c.queueFileLock.Lock()
+			out, exists := c.activeQueueFiles[fileID]
+			if exists {
+				out <- resp
+				delete(c.activeQueueFiles, fileID)
+			}
+			c.queueFileLock.Unlock()
+		}
+	}()
 }
 
 func (c *FilesController) listenForCancellations() {
@@ -121,9 +167,14 @@ func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Reque
 	))
 	defer span.End()
 
+	logger := c.logger.With(log.Fields{
+		"shard_key": log.String(shardKey),
+		"file_id":   log.String(fileID),
+	})
+
 	bs, err := c.readBody(r)
 	if err != nil {
-		c.logger.LogErrorf("error reading file: %v", err)
+		logger.LogErrorf("error reading file: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -139,17 +190,30 @@ func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Reque
 		file = *f
 	}
 
-	if err := c.publishFile(ctx, shardKey, fileID, &file); err != nil {
-		c.logger.With(log.Fields{
-			"shard_key": log.String(shardKey),
-			"file_id":   log.String(fileID),
-		}).LogErrorf("publishing file", err)
+	waiter := make(chan incoming.QueueACHFileResponse, 1)
+	if err := c.publishFile(ctx, shardKey, fileID, &file, waiter); err != nil {
+		logger.LogErrorf("publishing file", err)
 
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	var response incoming.QueueACHFileResponse
+	select {
+	case resp := <-waiter:
+		response = resp
+
+	case <-time.After(10 * time.Second):
+		response = incoming.QueueACHFileResponse{
+			FileID:   fileID,
+			ShardKey: shardKey,
+			Error:    "timeout exceeded",
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (c *FilesController) readBody(req *http.Request) ([]byte, error) {
@@ -167,7 +231,11 @@ func (c *FilesController) readBody(req *http.Request) ([]byte, error) {
 	return compliance.Reveal(c.cfg.Transform, bs)
 }
 
-func (c *FilesController) publishFile(ctx context.Context, shardKey, fileID string, file *ach.File) error {
+func (c *FilesController) publishFile(ctx context.Context, shardKey, fileID string, file *ach.File, waiter chan incoming.QueueACHFileResponse) error {
+	c.queueFileLock.Lock()
+	c.activeQueueFiles[fileID] = waiter
+	c.queueFileLock.Unlock()
+
 	bs, err := compliance.Protect(c.cfg.Transform, models.Event{
 		Event: incoming.ACHFile{
 			FileID:   fileID,
@@ -207,7 +275,6 @@ func (c *FilesController) CancelFileHandler(w http.ResponseWriter, r *http.Reque
 	defer span.End()
 
 	waiter := make(chan models.FileCancellationResponse, 1)
-
 	err := c.cancelFile(ctx, shardKey, fileID, waiter)
 	if err != nil {
 		c.logger.With(log.Fields{

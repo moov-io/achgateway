@@ -271,6 +271,9 @@ func (evt *QueueACHFile) SetValidation(opts *ach.ValidateOpts) {
 	evt.File.SetValidation(opts)
 }
 
+// QueueACHFileResponse is a response to the QueueACHFile event signaling if the file was successfully enqueued.
+type QueueACHFileResponse incoming.QueueACHFileResponse
+
 // InvalidQueueFile is an event that achgateway produces when a QueueACHFile could not be processed.
 // This event is typically produced when the ACH file is invalid.
 type InvalidQueueFile struct {
