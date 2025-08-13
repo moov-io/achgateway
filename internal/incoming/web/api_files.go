@@ -72,7 +72,11 @@ func (c *FilesController) listenForCancellations() {
 		for {
 			// Wait for a message
 			cancel := <-c.cancellationResponses
-			c.logger.Info().Logf("received cancellation response: %#v", cancel)
+			c.logger.Info().With(log.Fields{
+				"file_id":    log.String(cancel.FileID),
+				"shard_key":  log.String(cancel.ShardKey),
+				"successful": log.Bool(cancel.Successful),
+			}).Log("received cancellation response")
 
 			fileID := strings.TrimSuffix(cancel.FileID, ".ach")
 
