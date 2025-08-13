@@ -29,6 +29,7 @@ import (
 	"github.com/moov-io/achgateway"
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/files"
+	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/incoming/odfi"
 	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/incoming/web"
@@ -212,7 +213,8 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		env.PublicRouter.Path("/ping").Methods("GET").HandlerFunc(addPingRoute)
 
 		// append HTTP routes
-		web.NewFilesController(env.Config.Logger, env.Config.Inbound.HTTP, httpFiles, fileReceiver.CancellationResponses).AppendRoutes(env.PublicRouter)
+		queueFileResponses := make(chan incoming.QueueACHFileResponse, 1000)
+		web.NewFilesController(env.Config.Logger, env.Config.Inbound.HTTP, httpFiles, queueFileResponses, fileReceiver.CancellationResponses).AppendRoutes(env.PublicRouter)
 
 		// shard mapping HTTP routes
 		shardMappingService, err := shards.NewShardMappingService(stime.NewStaticTimeService(), env.Config.Logger, shardRepository)

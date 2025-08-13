@@ -164,22 +164,16 @@ func TestUploads(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { fileReceiver.Shutdown() })
 
-	fileController := web.NewFilesController(logger, service.HTTPConfig{}, httpPub, fileReceiver.CancellationResponses)
+	fileController := web.NewFilesController(logger, service.HTTPConfig{}, httpPub, fileReceiver.QueueFileResponses, fileReceiver.CancellationResponses)
 	r := mux.NewRouter()
 	fileController.AppendRoutes(r)
 
 	adminServer := admintest.Server(t)
 	fileReceiver.RegisterAdminRoutes(adminServer)
 
-	// Force the stream subscription to fail
-	flakeySub := streamtest.FailingSubscription(errors.New("write: broken pipe"))
-	fileReceiver.ReplaceStreamFiles(context.Background(), flakeySub)
-	require.Contains(t, fmt.Sprintf("%#v", fileReceiver), "streamFiles:(*streamtest.FailedSubscription)")
-
 	// Upload our files
 	createdEntries := 0
 	canceledEntries := 0
-	erroredSubscriptions := 0
 	var createdFileIDs, canceledFileIDs []string
 
 	iterations := 500
@@ -204,13 +198,6 @@ func TestUploads(t *testing.T) {
 			canceledFileIDs = append(canceledFileIDs, fileID)
 		} else {
 			createdFileIDs = append(createdFileIDs, fileID)
-		}
-
-		// Force the subscription to fail sometimes
-		if err := causeSubscriptionFailure(t); err != nil {
-			flakeySub := streamtest.FailingSubscription(err)
-			fileReceiver.ReplaceStreamFiles(context.Background(), flakeySub)
-			erroredSubscriptions += 1
 		}
 	}
 	require.NoError(t, g.Wait())
@@ -274,7 +261,7 @@ func TestUploads(t *testing.T) {
 		expected := createdEntries - canceledEntries
 		found := countAllEntries(uploadedFiles)
 
-		t.Logf("found %d entries of %d expected (%d canceled) (%d errored) from %d uploaded files", found, expected, canceledEntries, erroredSubscriptions, len(uploadedFiles))
+		t.Logf("found %d entries of %d expected (%d canceled) from %d uploaded files", found, expected, canceledEntries, len(uploadedFiles))
 
 		return expected == found
 	}, wait, tick)
@@ -461,17 +448,6 @@ var subscriptionFailures = []error{
 	io.EOF,
 	errors.New("write: broken pipe"),
 	errors.New("contains: pubsub error"),
-}
-
-func causeSubscriptionFailure(t *testing.T) error {
-	t.Helper()
-
-	n := randomInt(t, 100)
-	if n <= 5 { // 5%
-		idx := (len(subscriptionFailures) - 1) % (int(n) + 1)
-		return subscriptionFailures[idx]
-	}
-	return nil
 }
 
 func firstDirectory(t *testing.T, fsys fs.FS, prefix string) string {

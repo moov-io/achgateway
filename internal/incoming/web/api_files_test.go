@@ -42,27 +42,38 @@ import (
 func TestCreateFileHandler(t *testing.T) {
 	topic, sub := streamtest.InmemStream(t)
 
+	queueFileResponses := make(chan incoming.QueueACHFileResponse)
 	cancellationResponses := make(chan models.FileCancellationResponse)
-	controller := NewFilesController(log.NewTestLogger(), service.HTTPConfig{}, topic, cancellationResponses)
+	controller := NewFilesController(log.NewTestLogger(), service.HTTPConfig{}, topic, queueFileResponses, cancellationResponses)
 	r := mux.NewRouter()
 	controller.AppendRoutes(r)
+
+	// Setup the response
+	go func() {
+		time.Sleep(time.Second)
+
+		queueFileResponses <- incoming.QueueACHFileResponse{
+			FileID: "f1",
+		}
+	}()
 
 	// Send a file over HTTP
 	bs, _ := os.ReadFile(filepath.Join("..", "..", "..", "testdata", "ppd-valid.json"))
 	req := httptest.NewRequest("POST", "/shards/s1/files/f1", bytes.NewReader(bs))
 
 	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
+	r.ServeHTTP(w, req) // blocking call
 	require.Equal(t, http.StatusOK, w.Code)
 
-	// Verify our subscription receives a message
+	// Wait for the subscription to receive the QueueACHFile
 	msg, err := sub.Receive(context.Background())
 	require.NoError(t, err)
 
 	var file incoming.ACHFile
-	require.NoError(t, models.ReadEvent(msg.Body, &file))
+	err = models.ReadEvent(msg.Body, &file)
+	require.NoError(t, err)
 
+	// Verify the file details
 	require.Equal(t, "f1", file.FileID)
 	require.Equal(t, "s1", file.ShardKey)
 	require.Equal(t, "231380104", file.File.Header.ImmediateDestination)
@@ -72,11 +83,48 @@ func TestCreateFileHandler(t *testing.T) {
 	require.True(t, validateOpts.PreserveSpaces)
 }
 
+func TestCreateFileHandler_Error(t *testing.T) {
+	topic, _ := streamtest.InmemStream(t)
+
+	queueFileResponses := make(chan incoming.QueueACHFileResponse)
+	cancellationResponses := make(chan models.FileCancellationResponse)
+	controller := NewFilesController(log.NewTestLogger(), service.HTTPConfig{}, topic, queueFileResponses, cancellationResponses)
+	r := mux.NewRouter()
+	controller.AppendRoutes(r)
+
+	// Setup the response
+	go func() {
+		time.Sleep(time.Second)
+
+		queueFileResponses <- incoming.QueueACHFileResponse{
+			FileID: "f1",
+			Error:  "bad thing",
+		}
+	}()
+
+	// Send a file over HTTP
+	bs, _ := os.ReadFile(filepath.Join("..", "..", "..", "testdata", "ppd-debit.ach"))
+	req := httptest.NewRequest("POST", "/shards/s1/files/f1", bytes.NewReader(bs))
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req) // blocking call
+	require.Equal(t, http.StatusOK, w.Code)
+
+	var resp models.QueueACHFileResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+
+	require.Equal(t, "f1", resp.FileID)
+	require.Equal(t, "", resp.ShardKey)
+	require.Equal(t, "bad thing", resp.Error)
+}
+
 func TestCreateFileHandlerErr(t *testing.T) {
 	topic, _ := streamtest.InmemStream(t)
 
+	queueFileResponses := make(chan incoming.QueueACHFileResponse)
 	cancellationResponses := make(chan models.FileCancellationResponse)
-	controller := NewFilesController(log.NewTestLogger(), service.HTTPConfig{}, topic, cancellationResponses)
+	controller := NewFilesController(log.NewTestLogger(), service.HTTPConfig{}, topic, queueFileResponses, cancellationResponses)
 	r := mux.NewRouter()
 	controller.AppendRoutes(r)
 
@@ -92,8 +140,9 @@ func TestCreateFileHandlerErr(t *testing.T) {
 func TestCancelFileHandler(t *testing.T) {
 	topic, sub := streamtest.InmemStream(t)
 
+	queueFileResponses := make(chan incoming.QueueACHFileResponse)
 	cancellationResponses := make(chan models.FileCancellationResponse)
-	controller := NewFilesController(log.NewTestLogger(), service.HTTPConfig{}, topic, cancellationResponses)
+	controller := NewFilesController(log.NewTestLogger(), service.HTTPConfig{}, topic, queueFileResponses, cancellationResponses)
 	r := mux.NewRouter()
 	controller.AppendRoutes(r)
 
@@ -103,6 +152,7 @@ func TestCancelFileHandler(t *testing.T) {
 	// Setup the response
 	go func() {
 		time.Sleep(time.Second)
+
 		cancellationResponses <- models.FileCancellationResponse{
 			FileID:     "f2.ach",
 			ShardKey:   "s2",

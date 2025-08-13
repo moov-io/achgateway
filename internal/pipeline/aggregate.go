@@ -185,8 +185,18 @@ func (xfagg *aggregator) Shutdown() {
 	}
 }
 
-func (xfagg *aggregator) acceptFile(ctx context.Context, msg incoming.ACHFile) error {
-	return xfagg.merger.HandleXfer(ctx, msg)
+func (xfagg *aggregator) acceptFile(ctx context.Context, msg incoming.ACHFile) (incoming.QueueACHFileResponse, error) {
+	err := xfagg.merger.HandleXfer(ctx, msg)
+
+	resp := incoming.QueueACHFileResponse{
+		FileID:   msg.FileID,
+		ShardKey: msg.ShardKey,
+	}
+	if err != nil {
+		resp.Error = err.Error()
+	}
+
+	return resp, err
 }
 
 func (xfagg *aggregator) cancelFile(ctx context.Context, msg incoming.CancelACHFile) (models.FileCancellationResponse, error) {

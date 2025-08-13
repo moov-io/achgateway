@@ -42,6 +42,12 @@ func (f ACHFile) Validate() error {
 	return nil
 }
 
+type QueueACHFileResponse struct {
+	FileID   string `json:"id"`
+	ShardKey string `json:"shardKey"`
+	Error    string `json:"error"`
+}
+
 type CancelACHFile struct {
 	FileID   string `json:"id"`
 	ShardKey string `json:"shardKey"`
