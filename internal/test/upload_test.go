@@ -173,7 +173,7 @@ func TestUploads(t *testing.T) {
 
 	// Force the stream subscription to fail
 	flakeySub := streamtest.FailingSubscription(errors.New("write: broken pipe"))
-	fileReceiver.ReplaceStreamFiles(flakeySub)
+	fileReceiver.ReplaceStreamFiles(context.Background(), flakeySub)
 	require.Contains(t, fmt.Sprintf("%#v", fileReceiver), "streamFiles:(*streamtest.FailedSubscription)")
 
 	// Upload our files
@@ -209,7 +209,7 @@ func TestUploads(t *testing.T) {
 		// Force the subscription to fail sometimes
 		if err := causeSubscriptionFailure(t); err != nil {
 			flakeySub := streamtest.FailingSubscription(err)
-			fileReceiver.ReplaceStreamFiles(flakeySub)
+			fileReceiver.ReplaceStreamFiles(context.Background(), flakeySub)
 			erroredSubscriptions += 1
 		}
 	}
