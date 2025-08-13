@@ -119,24 +119,6 @@ func (fr *FileReceiver) reconnect() error {
 	return nil
 }
 
-func (fr *FileReceiver) ReplaceStreamFiles(ctx context.Context, sub stream.Subscription) {
-	fr.mu.Lock()
-	defer fr.mu.Unlock()
-
-	fr.logger.Info().Log("replacing stream subscription")
-
-	// Shut down receiving messages
-	fr.cancel()
-
-	// Close an existing stream subscription
-	if fr.streamFiles != nil {
-		fr.streamFiles.Shutdown(context.Background())
-	}
-	fr.streamFiles = sub
-
-	go fr.Start(ctx)
-}
-
 func (fr *FileReceiver) Start(ctx context.Context) {
 	for {
 		// Create a context that will be shutdown by its parent or after a read iteration
