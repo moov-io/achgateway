@@ -8,7 +8,7 @@ menubar: docs-menu
 
 # Configuration
 
-Custom configuration for this application may be specified via an environment variable `APP_CONFIG` to a configuration file that will be merged with the default configuration file.
+Custom configuration for this application may be specified via an environment variable `APP_CONFIG` to a configuration file that will be merged with the default configuration file. A second configuration file can be provided via `APP_CONFIG_SECRETS` that overrides fields of `APP_CONFIG`. The second file is typically used for providing secrets.
 
 - [Default Configuration](https://github.com/moov-io/achgateway/tree/master/configs/config.default.yml)
 - [Config Source Code](https://github.com/moov-io/achgateway/blob/master/internal/service/model_config.go)
