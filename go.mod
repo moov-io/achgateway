@@ -46,7 +46,7 @@ require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.51.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.2 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4 // indirect
-	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/moby/sys/user v0.3.0 // indirect
 	github.com/moov-io/iso3166 v0.2.1 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.5.0 // indirect
