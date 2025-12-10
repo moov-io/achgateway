@@ -46,7 +46,7 @@ jobs:
       if: runner.os != 'Linux'
       run: go test ./... -count 1 -short
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       if: ${{ always() }}
       with:
         name: "go-tooling-reports.zip"
