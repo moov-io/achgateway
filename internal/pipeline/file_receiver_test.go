@@ -229,3 +229,36 @@ func TestFileReceiver__contains(t *testing.T) {
 	require.False(t, contains(err, "connect: "))
 	require.False(t, contains(err, "EOF"))
 }
+
+func TestFileReceiver_AcceptFileErr(t *testing.T) {
+	fr := testFileReceiver(t)
+
+	m, ok := fr.shardAggregators["testing"].merger.(*filesystemMerging)
+	require.True(t, ok)
+
+	ms := &storage.MockStorage{
+		WriteFileErr: errors.New("bad thing"),
+	}
+	m.storage = ms
+
+	// queue a file
+	file, err := ach.ReadFile(filepath.Join("..", "..", "testdata", "ppd-debit.ach"))
+	require.NoError(t, err)
+
+	bs, err := compliance.Protect(nil, models.Event{
+		Event: models.QueueACHFile{
+			FileID:   base.ID(),
+			ShardKey: "testing",
+			File:     file,
+		},
+	})
+	require.NoError(t, err)
+
+	err = fr.Publisher.Send(context.Background(), &pubsub.Message{
+		Body: bs,
+	})
+	require.NoError(t, err)
+
+	// We should see an error, but can clear ms.WriteFileErr and retry
+	// TODO(adam):
+}

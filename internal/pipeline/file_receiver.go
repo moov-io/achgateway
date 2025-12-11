@@ -36,6 +36,7 @@ import (
 	"github.com/moov-io/achgateway/pkg/compliance"
 	"github.com/moov-io/achgateway/pkg/models"
 	"github.com/moov-io/base/admin"
+	"github.com/moov-io/base/database"
 	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/telemetry"
 
@@ -460,29 +461,38 @@ func (fr *FileReceiver) processACHFile(ctx context.Context, file incoming.ACHFil
 	})
 
 	// We only want to handle files once, so become the winner by saving the record.
-	hostname, _ := os.Hostname()
-	err = fr.fileRepository.Record(ctx, files.AcceptedFile{
+	acceptanceData := files.AcceptedFile{
 		FileID:     file.FileID,
 		ShardKey:   file.ShardKey,
-		Hostname:   hostname,
 		AcceptedAt: time.Now().In(time.UTC),
-	})
-	if err != nil {
-		logger.Warn().LogErrorf("not handling received ACH file: %v", err)
-		return nil
 	}
-	logger.Log("begin handling of received ACH file")
+	acceptanceData.Hostname, _ = os.Hostname()
 
-	response, err := agg.acceptFile(ctx, file)
-	if err != nil {
-		return logger.Error().LogErrorf("problem accepting file under shardName=%s", agg.shard.Name).Err()
+	fileRecordErr := fr.fileRepository.Record(ctx, acceptanceData)
+	if fileRecordErr != nil {
+		if database.UniqueViolation(fileRecordErr) {
+			logger.Debug().Log("already handled file -- skipping")
+			return nil
+		}
+		return logger.Error().LogErrorf("not handling received ACH file: %v", fileRecordErr).Err()
 	}
 
-	fr.QueueFileResponses <- response
+	acceptFileResponse, acceptFileErr := agg.acceptFile(ctx, file)
+	if acceptFileErr != nil {
+		// Delete the record from files table
+		deleteErr := fr.fileRepository.Cleanup(ctx, acceptanceData)
+		if deleteErr != nil {
+			logger.Error().LogErrorf("unable to cleanup files table: %v", err)
+		}
+		return logger.Error().LogErrorf("problem accepting file: %v", err).Err()
+	}
+
+	fr.QueueFileResponses <- acceptFileResponse
 
 	// Record the file as accepted
 	pendingFiles.With("shard", agg.shard.Name).Add(1)
-	logger.Log("finished handling ACH file")
+
+	logger.Log("accepted ACH file")
 
 	return nil
 }
