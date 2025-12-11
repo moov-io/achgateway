@@ -65,7 +65,7 @@ services:
       - --rpc-addr kafka1:33145
       - --advertise-rpc-addr kafka1:33145
       - --smp 1
-      - --memory 128M
+      - --memory 256M
       - --mode dev-container
       - --default-log-level=info
 
