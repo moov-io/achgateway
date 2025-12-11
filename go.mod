@@ -8,7 +8,7 @@ require (
 	cloud.google.com/go/spanner v1.86.1
 	github.com/PagerDuty/go-pagerduty v1.8.0
 	github.com/ProtonMail/go-crypto v1.3.0
-	github.com/Shopify/sarama v1.38.1
+	github.com/Shopify/sarama v1.46.3
 	github.com/go-kit/kit v0.13.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
@@ -38,7 +38,7 @@ require (
 	golang.org/x/crypto v0.46.0
 	golang.org/x/sync v0.19.0
 	golang.org/x/text v0.32.0
-	google.golang.org/api v0.251.0
+	google.golang.org/api v0.257.0
 )
 
 require (
