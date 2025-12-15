@@ -277,8 +277,9 @@ type QueueACHFileResponse incoming.QueueACHFileResponse
 // InvalidQueueFile is an event that achgateway produces when a QueueACHFile could not be processed.
 // This event is typically produced when the ACH file is invalid.
 type InvalidQueueFile struct {
-	File  QueueACHFile `json:"file"`
-	Error string       `json:"error"`
+	File     QueueACHFile `json:"file"`
+	Error    string       `json:"error"`
+	Hostname string       `json:"hostname"`
 }
 
 func (evt *InvalidQueueFile) SetValidation(opts *ach.ValidateOpts) {

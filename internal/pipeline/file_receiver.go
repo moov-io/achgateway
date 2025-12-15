@@ -391,10 +391,13 @@ func (fr *FileReceiver) msgWrappedLogger(msg *pubsub.Message) log.Logger {
 func (fr *FileReceiver) produceInvalidQueueFile(ctx context.Context, logger log.Logger, file incoming.ACHFile, err error) error {
 	logger.Info().Log("producing InvalidQueueFile")
 
+	hostname, _ := os.Hostname()
+
 	return fr.eventEmitter.Send(ctx, models.Event{
 		Event: models.InvalidQueueFile{
-			File:  models.QueueACHFile(file),
-			Error: err.Error(),
+			File:     models.QueueACHFile(file),
+			Error:    err.Error(),
+			Hostname: hostname,
 		},
 	})
 }
