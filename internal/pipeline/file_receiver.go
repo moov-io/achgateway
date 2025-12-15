@@ -391,10 +391,13 @@ func (fr *FileReceiver) msgWrappedLogger(msg *pubsub.Message) log.Logger {
 func (fr *FileReceiver) produceInvalidQueueFile(ctx context.Context, logger log.Logger, file incoming.ACHFile, err error) error {
 	logger.Info().Log("producing InvalidQueueFile")
 
+	hostname, _ := os.Hostname()
+
 	return fr.eventEmitter.Send(ctx, models.Event{
 		Event: models.InvalidQueueFile{
-			File:  models.QueueACHFile(file),
-			Error: err.Error(),
+			File:     models.QueueACHFile(file),
+			Error:    err.Error(),
+			Hostname: hostname,
 		},
 	})
 }
@@ -425,7 +428,7 @@ func (fr *FileReceiver) getAggregator(ctx context.Context, shardKey string) *agg
 		agg, exists = fr.shardAggregators[fr.defaultShardName]
 		if !exists {
 			filesMissingShardAggregators.With("shard", shardName).Add(1)
-			fr.logger.Error().LogErrorf("missing shardAggregator for shardKey=%s shardName=%s", shardKey, shardName)
+			fr.logger.Error().LogErrorf("no default shard %s configured after secondary lookup shardKey=%s shardName=%s", fr.defaultShardName, shardKey, shardName)
 			return nil
 		}
 	}
