@@ -15,6 +15,7 @@ import (
 
 type Repository interface {
 	Record(ctx context.Context, file AcceptedFile) error
+	Cleanup(ctx context.Context, file AcceptedFile) error
 	Cancel(ctx context.Context, fileID string) error
 }
 
@@ -52,6 +53,24 @@ func (r *sqlRepository) Record(ctx context.Context, file AcceptedFile) error {
 	)
 	if err != nil {
 		return fmt.Errorf("recording file failed: %w", err)
+	}
+	return nil
+}
+
+func (r *sqlRepository) Cleanup(ctx context.Context, file AcceptedFile) error {
+	ctx, span := telemetry.StartSpan(ctx, "files-cleanup", trace.WithAttributes(
+		attribute.String("achgateway.file_id", file.FileID),
+		attribute.String("achgateway.database", "sql"),
+	))
+	defer span.End()
+
+	qry := `DELETE FROM files WHERE file_id = ? AND shard_key = ?;`
+	_, err := r.db.ExecContext(ctx, qry,
+		file.FileID,
+		file.ShardKey,
+	)
+	if err != nil {
+		return fmt.Errorf("cleaning up fileID record: %w", err)
 	}
 	return nil
 }
@@ -94,6 +113,22 @@ func (r *spannerRepository) Record(ctx context.Context, file AcceptedFile) error
 	_, err := r.client.Apply(ctx, []*spanner.Mutation{m})
 	if err != nil {
 		return fmt.Errorf("recording file failed: %w", err)
+	}
+	return nil
+}
+
+func (r *spannerRepository) Cleanup(ctx context.Context, file AcceptedFile) error {
+	ctx, span := telemetry.StartSpan(ctx, "files-cleanup", trace.WithAttributes(
+		attribute.String("achgateway.file_id", file.FileID),
+		attribute.String("achgateway.database", "spanner"),
+	))
+	defer span.End()
+
+	m := spanner.Delete("files", spanner.Key{file.FileID})
+
+	_, err := r.client.Apply(ctx, []*spanner.Mutation{m})
+	if err != nil {
+		return fmt.Errorf("cleanup of files record failed: %w", err)
 	}
 	return nil
 }
