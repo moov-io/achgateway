@@ -79,7 +79,7 @@ func TestStreamErrors(t *testing.T) {
 		Metadata: make(map[string]string),
 	}
 	err = topic.Send(ctx, msg)
-	require.ErrorContains(t, err, "kafka server: Message was too large, server rejected it to avoid allocation error")
+	require.ErrorContains(t, err, "Attempt to produce message larger than configured Producer.MaxMessageBytes")
 }
 
 func send(t *testing.T, ctx context.Context, topic Publisher, body string) *pubsub.Message {

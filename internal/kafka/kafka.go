@@ -8,14 +8,10 @@ import (
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/aws/aws-msk-iam-sasl-signer-go/signer"
 	"gocloud.dev/pubsub"
 	"gocloud.dev/pubsub/kafkapubsub"
-)
-
-var (
-	minKafkaVersion = sarama.V2_6_0_0
 )
 
 type MSKAccessTokenProvider struct {
@@ -47,7 +43,6 @@ func (m *MSKAccessTokenProvider) Token() (*sarama.AccessToken, error) {
 
 func OpenTopic(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Topic, error) {
 	config := kafkapubsub.MinimalConfig()
-	config.Version = minKafkaVersion
 	config.Net.TLS.Enable = cfg.TLS
 
 	config.Net.SASL.Enable = cfg.Key != ""
@@ -93,7 +88,6 @@ func OpenTopic(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Topic, erro
 
 func OpenSubscription(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Subscription, error) {
 	config := kafkapubsub.MinimalConfig()
-	config.Version = minKafkaVersion
 	config.Net.TLS.Enable = cfg.TLS
 
 	config.Net.SASL.Enable = cfg.Key != ""
