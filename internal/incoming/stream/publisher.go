@@ -23,7 +23,7 @@ import (
 	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/telemetry"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"gocloud.dev/pubsub"
 	_ "gocloud.dev/pubsub/mempubsub"
 )
