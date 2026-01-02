@@ -194,8 +194,6 @@ ACHGateway:
         Mergable:
           # If Conditions is nil files are merged until reaching Nacha's limit of 10,000 lines
           Conditions:
-            # MaxLines controls how many lines are in each uploaded Nacha file.
-            # Set MaxLines=1 to upload unmerged files.
             MaxLines: <integer>
             MaxDollarAmount: <integer>
           FlattenBatches: {} # Specify a non-null object to flatten batches, often not needed
