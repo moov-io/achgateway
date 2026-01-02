@@ -217,7 +217,7 @@ func (fr *FileReceiver) handleMessage(ctx context.Context, sub stream.Subscripti
 			defer span.End()
 
 			if err != nil {
-				if err == context.Canceled {
+				if errors.Is(err, context.Canceled) {
 					return
 				}
 				if strings.Contains(err.Error(), "Subscription has been Shutdown") {
