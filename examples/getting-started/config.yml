@@ -11,8 +11,6 @@ ACHGateway:
     Kafka:
       brokers:
         - "kafka1:9092"
-      key: "admin"
-      secret: "secret"
       group: "achgateway"
       tls: false
       topic: "ach.outgoing-files"
@@ -35,8 +33,6 @@ ACHGateway:
       Kafka:
         Brokers:
           - "kafka1:9092"
-        Key: admin
-        Secret: secret
         TLS: false
         Topic: "ach.odfi-file-events"
     Transform:

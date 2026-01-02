@@ -34,53 +34,31 @@ services:
       - "-pass=123456"
       - "-passive-ports=30000-30009"
 
-  zookeeper:
-    image: wurstmeister/zookeeper
-    restart: unless-stopped
-    ports:
-      - "2181:2181"
-    networks:
-      - intranet
-    environment:
-      CLIENT_JVMFLAGS: "-Xms128m -Xmx128m"
-    healthcheck:
-      test: ["CMD", "nc", "-vz", "localhost", "2181"]
-      start_period: 5s
-      interval: 5s
-      timeout: 2s
-      retries: 20
-
   kafka1:
-    image: wurstmeister/kafka:latest
-    ports:
-      - "9092:9092"
-      - "9093:9093"
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CREATE_TOPICS: "ach.outgoing-files:1:1,ach.odfi-file-events:1:1"
-      KAFKA_HEAP_OPTS: "-Xms128m -Xmx256m"
-      KAFKA_LISTENERS: SASL_PLAINTEXT://:9092,OUTSIDE://:9093
-      KAFKA_ADVERTISED_LISTENERS: SASL_PLAINTEXT://kafka1.:9092,OUTSIDE://localhost:9093
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: SASL_PLAINTEXT:SASL_PLAINTEXT,OUTSIDE:PLAINTEXT
-      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka_server_jaas.conf"
-      KAFKA_INTER_BROKER_LISTENER_NAME: SASL_PLAINTEXT
-      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
-      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./conf/kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf
+    image: docker.redpanda.com/redpandadata/redpanda:v23.3.21
+    container_name: kafka1
+    healthcheck: { test: curl -f localhost:9644/v1/status/ready, interval: 1s, start_period: 30s }
     networks:
       - intranet
-    depends_on:
-      zookeeper:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "nc", "-vz", "localhost", "9092"]
-      start_period: 5s
-      interval: 5s
-      timeout: 5s
-      retries: 20
+    ports:
+      - 18081:18081
+      - 18082:18082
+      - 19092:19092
+      - 19644:9644
+    command:
+      - redpanda
+      - start
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://kafka1:9092,external://localhost:19092
+      - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
+      - --advertise-pandaproxy-addr internal://kafka1:8082,external://localhost:18082
+      - --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081
+      - --rpc-addr kafka1:33145
+      - --advertise-rpc-addr kafka1:33145
+      - --smp 1
+      - --memory 256M
+      - --mode dev-container
+      - --default-log-level=info
 
 networks:
   intranet: {}
