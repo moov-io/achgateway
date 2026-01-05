@@ -18,16 +18,21 @@
 package pipeline
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
-	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
+	"github.com/moov-io/base/telemetry"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type manuallyTriggeredCutoff struct {
-	C chan error
+	C   chan error
+	ctx context.Context
 }
 
 type manualCutoffBody struct {
@@ -63,16 +68,28 @@ func (fr *FileReceiver) triggerManualCutoff() http.HandlerFunc {
 			return
 		}
 
+		ctx, span := telemetry.StartSpan(r.Context(), "api-manual-cutoff", trace.WithAttributes(
+			attribute.StringSlice("achgateway.shards", body.ShardNames),
+		))
+		defer span.End()
+
 		responses := shardResponses{
 			Shards: make(map[string]*string),
 		}
 
-		for _, xfagg := range fr.shardAggregators {
+		for _, shardName := range body.ShardNames {
+			xfagg, ok := fr.shardAggregators[shardName]
+			if !ok {
+				errString := fmt.Sprintf("unknown shard %s", shardName)
+				responses.Shards[shardName] = &errString
+				continue
+			}
+
 			logger := fr.logger.With(log.Fields{
 				"shard": log.String(xfagg.shard.Name),
 			})
 
-			waiter, err := processManualCutoff(logger, body.ShardNames, xfagg.shard, xfagg)
+			waiter, err := processManualCutoff(ctx, logger, xfagg)
 			if err != nil {
 				errString := err.Error()
 				responses.Shards[xfagg.shard.Name] = &errString
@@ -107,15 +124,12 @@ func (fr *FileReceiver) triggerManualCutoff() http.HandlerFunc {
 	}
 }
 
-func processManualCutoff(logger log.Logger, shardNames []string, shard service.Shard, xfagg *aggregator) (*manuallyTriggeredCutoff, error) {
-	if !exists(shardNames, shard.Name) {
-		return nil, fmt.Errorf("unknown shard %s", shard.Name)
-	}
-
+func processManualCutoff(ctx context.Context, logger log.Logger, xfagg *aggregator) (*manuallyTriggeredCutoff, error) {
 	logger.Info().Log("found shard to manually trigger")
 
 	waiter := manuallyTriggeredCutoff{
-		C: make(chan error, 1),
+		C:   make(chan error, 1),
+		ctx: ctx,
 	}
 	xfagg.cutoffTrigger <- waiter
 	return &waiter, nil
@@ -128,4 +142,12 @@ func exists(names []string, shardName string) bool {
 		}
 	}
 	return false
+}
+
+func (fr *FileReceiver) getShardNames() []string {
+	shardNames := make([]string, 0, len(fr.shardAggregators))
+	for _, xfagg := range fr.shardAggregators {
+		shardNames = append(shardNames, xfagg.shard.Name)
+	}
+	return shardNames
 }

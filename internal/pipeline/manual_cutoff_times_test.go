@@ -71,6 +71,32 @@ func TestFileReceiver__ManualCutoff(t *testing.T) {
 	require.Nil(t, resp.Shards["testing"])
 }
 
+func TestFileReceiver__ManualCutoff_RequestedShard_NotConfigured(t *testing.T) {
+	fr, wg := setupFileReceiver(t, nil) // waiter returns 'nil' error
+
+	router := mux.NewRouter()
+	router.Path("/trigger-cutoff").HandlerFunc(fr.triggerManualCutoff())
+
+	var buf bytes.Buffer
+	buf.WriteString(`{"shardNames":["testing", "mordor"]}`)
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("PUT", "/trigger-cutoff", &buf)
+	router.ServeHTTP(w, req)
+
+	wg.Wait()
+	w.Flush()
+	require.Equal(t, http.StatusBadRequest, w.Code)
+
+	var resp shardResponses
+	err := json.NewDecoder(w.Body).Decode(&resp)
+	require.NoError(t, err)
+
+	require.Len(t, resp.Shards, 2)
+	require.Nil(t, resp.Shards["testing"])
+	require.NotNil(t, resp.Shards["mordor"])
+}
+
 func TestFileReceiver__ManualCutoffErr(t *testing.T) {
 	bad := errors.New("bad thing")
 	fr, wg := setupFileReceiver(t, bad) // waiter returns error
@@ -110,6 +136,14 @@ func setupFileReceiver(t *testing.T, waiterResponse error) (*FileReceiver, *sync
 	fr.shardAggregators["testing"] = &aggregator{
 		shard: service.Shard{
 			Name: "testing",
+		},
+		merger:        &MockXferMerging{},
+		cutoffTrigger: cutoffTrigger,
+	}
+
+	fr.shardAggregators["ND-live-veridian"] = &aggregator{
+		shard: service.Shard{
+			Name: "ND-live-veridian",
 		},
 		merger:        &MockXferMerging{},
 		cutoffTrigger: cutoffTrigger,
