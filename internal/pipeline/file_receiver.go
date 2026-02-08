@@ -333,7 +333,7 @@ func (fr *FileReceiver) processMessage(ctx context.Context, msg *pubsub.Message)
 		// Quit after we failed to read the event's file
 		if readErr != nil {
 			producerErr := fr.produceInvalidQueueFile(ctx, logger, *file, readErr)
-			if err != nil {
+			if producerErr != nil {
 				return logger.LogErrorf("problem producing InvalidQueueFile: %w", producerErr).Err()
 			}
 			return readErr
@@ -342,7 +342,7 @@ func (fr *FileReceiver) processMessage(ctx context.Context, msg *pubsub.Message)
 			err = fr.processACHFile(ctx, *file)
 			if err != nil {
 				producerErr := fr.produceInvalidQueueFile(ctx, logger, *file, err)
-				if err != nil {
+				if producerErr != nil {
 					return logger.LogErrorf("problem producing InvalidQueueFile after processing file: %w", producerErr).Err()
 				}
 				return err
