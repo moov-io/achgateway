@@ -159,6 +159,32 @@ func testFileReceiver(t *testing.T) *TestFileReceiver {
 	}
 }
 
+func processMessageWithFile(t *testing.T, fr *TestFileReceiver, file *ach.File) error {
+	t.Helper()
+
+	bs, err := compliance.Protect(nil, models.Event{
+		Event: models.QueueACHFile{
+			FileID:   base.ID(),
+			ShardKey: "testing",
+			File:     file,
+		},
+	})
+	require.NoError(t, err)
+
+	pub, sub := streamtest.InmemStream(t)
+	err = pub.Send(context.Background(), &pubsub.Message{Body: bs})
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	msg, err := sub.Receive(ctx)
+	require.NoError(t, err)
+	defer msg.Ack()
+
+	return fr.processMessage(context.Background(), msg)
+}
+
 func TestFileReceiver__InvalidQueueFile(t *testing.T) {
 	fr := testFileReceiver(t)
 
@@ -201,27 +227,7 @@ func TestFileReceiver__InvalidQueueFile_ProducerErr(t *testing.T) {
 	file, err := ach.ReadFile(filepath.Join("..", "incoming", "odfi", "testdata", "return-no-batch-controls.ach"))
 	require.ErrorContains(t, err, ach.ErrFileHeader.Error())
 
-	bs, err := compliance.Protect(nil, models.Event{
-		Event: models.QueueACHFile{
-			FileID:   base.ID(),
-			ShardKey: "testing",
-			File:     file,
-		},
-	})
-	require.NoError(t, err)
-
-	pub, sub := streamtest.InmemStream(t)
-	err = pub.Send(context.Background(), &pubsub.Message{Body: bs})
-	require.NoError(t, err)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-
-	msg, err := sub.Receive(ctx)
-	require.NoError(t, err)
-	defer msg.Ack()
-
-	err = fr.processMessage(context.Background(), msg)
+	err = processMessageWithFile(t, fr, file)
 	require.ErrorContains(t, err, "problem producing InvalidQueueFile")
 	require.True(t, emitter.called.Load())
 	require.Empty(t, fr.Events.Sent())
@@ -240,27 +246,7 @@ func TestFileReceiver__InvalidACHFile_ProducerErr(t *testing.T) {
 	file, err := ach.ReadFile(filepath.Join("..", "..", "testdata", "ppd-debit.ach"))
 	require.NoError(t, err)
 
-	bs, err := compliance.Protect(nil, models.Event{
-		Event: models.QueueACHFile{
-			FileID:   base.ID(),
-			ShardKey: "testing",
-			File:     file,
-		},
-	})
-	require.NoError(t, err)
-
-	pub, sub := streamtest.InmemStream(t)
-	err = pub.Send(context.Background(), &pubsub.Message{Body: bs})
-	require.NoError(t, err)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-
-	msg, err := sub.Receive(ctx)
-	require.NoError(t, err)
-	defer msg.Ack()
-
-	err = fr.processMessage(context.Background(), msg)
+	err = processMessageWithFile(t, fr, file)
 	require.ErrorContains(t, err, "problem producing InvalidQueueFile after processing file")
 	require.True(t, emitter.called.Load())
 	require.Empty(t, fr.Events.Sent())
