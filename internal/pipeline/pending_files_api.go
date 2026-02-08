@@ -44,7 +44,7 @@ type shard struct {
 
 func (fr *FileReceiver) listShards() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var shards []shard
+		shards := make([]shard, 0, len(fr.shardAggregators))
 
 		for name := range fr.shardAggregators {
 			shards = append(shards, shard{
