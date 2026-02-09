@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -43,6 +44,16 @@ import (
 	"github.com/stretchr/testify/require"
 	"gocloud.dev/pubsub"
 )
+
+type failingEmitter struct {
+	err    error
+	called atomic.Bool
+}
+
+func (e *failingEmitter) Send(context.Context, models.Event) error {
+	e.called.Store(true)
+	return e.err
+}
 
 type TestFileReceiver struct {
 	*FileReceiver
@@ -148,6 +159,32 @@ func testFileReceiver(t *testing.T) *TestFileReceiver {
 	}
 }
 
+func processMessageWithFile(t *testing.T, fr *TestFileReceiver, file *ach.File) error {
+	t.Helper()
+
+	bs, err := compliance.Protect(nil, models.Event{
+		Event: models.QueueACHFile{
+			FileID:   base.ID(),
+			ShardKey: "testing",
+			File:     file,
+		},
+	})
+	require.NoError(t, err)
+
+	pub, sub := streamtest.InmemStream(t)
+	err = pub.Send(context.Background(), &pubsub.Message{Body: bs})
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	msg, err := sub.Receive(ctx)
+	require.NoError(t, err)
+	defer msg.Ack()
+
+	return fr.processMessage(context.Background(), msg)
+}
+
 func TestFileReceiver__InvalidQueueFile(t *testing.T) {
 	fr := testFileReceiver(t)
 
@@ -179,6 +216,40 @@ func TestFileReceiver__InvalidQueueFile(t *testing.T) {
 	iqf, ok := event.Event.(*models.InvalidQueueFile)
 	require.True(t, ok)
 	require.Contains(t, iqf.Error, "reading QueueACHFile failed: ImmediateDestination")
+}
+
+func TestFileReceiver__InvalidQueueFile_ProducerErr(t *testing.T) {
+	fr := testFileReceiver(t)
+
+	emitter := &failingEmitter{err: errors.New("event emitter failed")}
+	fr.eventEmitter = emitter
+
+	file, err := ach.ReadFile(filepath.Join("..", "incoming", "odfi", "testdata", "return-no-batch-controls.ach"))
+	require.ErrorContains(t, err, ach.ErrFileHeader.Error())
+
+	err = processMessageWithFile(t, fr, file)
+	require.ErrorContains(t, err, "problem producing InvalidQueueFile")
+	require.True(t, emitter.called.Load())
+	require.Empty(t, fr.Events.Sent())
+}
+
+func TestFileReceiver__InvalidACHFile_ProducerErr(t *testing.T) {
+	fr := testFileReceiver(t)
+
+	emitter := &failingEmitter{err: errors.New("event emitter failed")}
+	fr.eventEmitter = emitter
+
+	mockRepo, ok := fr.fileRepository.(*files.MockRepository)
+	require.True(t, ok)
+	mockRepo.Err = errors.New("record failed")
+
+	file, err := ach.ReadFile(filepath.Join("..", "..", "testdata", "ppd-debit.ach"))
+	require.NoError(t, err)
+
+	err = processMessageWithFile(t, fr, file)
+	require.ErrorContains(t, err, "problem producing InvalidQueueFile after processing file")
+	require.True(t, emitter.called.Load())
+	require.Empty(t, fr.Events.Sent())
 }
 
 func TestFileReceiver__getAggregator(t *testing.T) {
