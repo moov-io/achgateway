@@ -375,7 +375,7 @@ func (fr *FileReceiver) msgWrappedLogger(msg *pubsub.Message) log.Logger {
 	})
 
 	var details *sarama.ConsumerMessage
-	ok := msg.As(details)
+	ok := msg.As(&details)
 	if ok && details != nil {
 		logger = logger.With(log.Fields{
 			"key":       log.String(string(details.Key)),
