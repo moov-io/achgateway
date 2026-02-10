@@ -174,7 +174,7 @@ func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Reque
 
 	bs, err := c.readBody(r)
 	if err != nil {
-		logger.LogErrorf("error reading file: %v", err)
+		logger.Error().LogErrorf("error reading file: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -192,7 +192,7 @@ func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Reque
 
 	waiter := make(chan incoming.QueueACHFileResponse, 1)
 	if err := c.publishFile(ctx, shardKey, fileID, &file, waiter); err != nil {
-		logger.LogErrorf("publishing file", err)
+		logger.Error().LogErrorf("publishing file: %v", err)
 
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -280,7 +280,7 @@ func (c *FilesController) CancelFileHandler(w http.ResponseWriter, r *http.Reque
 		c.logger.With(log.Fields{
 			"shard_key": log.String(shardKey),
 			"file_id":   log.String(fileID),
-		}).LogErrorf("canceling file: %v", err)
+		}).Error().LogErrorf("canceling file: %v", err)
 
 		w.WriteHeader(http.StatusInternalServerError)
 		return
