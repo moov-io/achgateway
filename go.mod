@@ -17,7 +17,7 @@ require (
 	github.com/jlaffaye/ftp v0.2.0
 	github.com/moov-io/ach v1.55.4
 	github.com/moov-io/base v0.61.0
-	github.com/moov-io/cryptfs v0.9.0
+	github.com/moov-io/cryptfs v0.10.0
 	github.com/moov-io/go-ftp v0.4.0
 	github.com/moov-io/go-sftp v0.16.1
 	github.com/ory/dockertest/v3 v3.12.0
@@ -38,7 +38,7 @@ require (
 	golang.org/x/crypto v0.48.0
 	golang.org/x/sync v0.19.0
 	golang.org/x/text v0.34.0
-	google.golang.org/api v0.266.0
+	google.golang.org/api v0.267.0
 )
 
 require (
@@ -143,12 +143,12 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-rootcerts v1.0.2 // indirect
-	github.com/hashicorp/go-secure-stdlib/parseutil v0.1.8 // indirect
+	github.com/hashicorp/go-secure-stdlib/parseutil v0.2.0 // indirect
 	github.com/hashicorp/go-secure-stdlib/strutil v0.1.2 // indirect
-	github.com/hashicorp/go-sockaddr v1.0.6 // indirect
+	github.com/hashicorp/go-sockaddr v1.0.7 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/hashicorp/hcl v1.0.1-vault-7 // indirect
-	github.com/hashicorp/vault/api v1.20.0 // indirect
+	github.com/hashicorp/vault/api v1.22.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgx/v5 v5.8.0 // indirect
