@@ -42,7 +42,7 @@ services:
       - "demo:password:::inbound,outbound,reconciliation,returned"
 
   kafka1:
-    image: docker.redpanda.com/redpandadata/redpanda:v25.3.7
+    image: docker.redpanda.com/redpandadata/redpanda:v25.3.8
     container_name: kafka1
     healthcheck: { test: curl -f localhost:9644/v1/status/ready, interval: 1s, start_period: 30s }
     volumes:
@@ -70,7 +70,7 @@ services:
       - --default-log-level=info
 
   topics:
-    image: docker.redpanda.com/redpandadata/redpanda:v25.3.7
+    image: docker.redpanda.com/redpandadata/redpanda:v25.3.8
     depends_on:
       kafka1:
         condition: service_healthy
