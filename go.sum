@@ -542,6 +542,7 @@ gocloud.dev/pubsub/kafkapubsub v0.44.0 h1:nQvzfnEN6lCh4j2p+1t0OLS4nmC2U/Ji5aWHVw
 gocloud.dev/pubsub/kafkapubsub v0.44.0/go.mod h1:/gcNz6OG4HgcY+w2LXwwY4qaRMgtq+SXoPSQU2jOlcw=
 goftp.io/server v0.4.1 h1:x7KG4HIxSMdK/rpYhExMinRN/aO/T9icvaG/B5e/XfY=
 goftp.io/server v0.4.1/go.mod h1:hFZeR656ErRt3ojMKt7H10vQ5nuWV1e0YeUTeorlR6k=
+goftp.io/server/v2 v2.0.2/go.mod h1:Fl1WdcV7fx1pjOWx7jEHb7tsJ8VwE7+xHu6bVJ6r2qg=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
 golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
