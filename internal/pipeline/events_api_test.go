@@ -95,12 +95,21 @@ func TestEventsAPI_FileUploaded(t *testing.T) {
 	}
 	require.NotEmpty(t, uploadDir)
 
+	// Verify there's an uploaded/ directory (merging has finished)
+	require.Eventually(t, func() bool {
+		_, err := os.Stat(filepath.Join(fr.MergingDir, uploadDir, "uploaded"))
+		return err == nil
+	}, 5*time.Second, 100*time.Millisecond)
+
 	// Reproduce FileUploaded event
 	address := fmt.Sprintf("http://%s/shards/testing/pipeline/%s/file-uploaded?filename=foo.ach", adminServer.BindAddr(), uploadDir)
+
 	req, err := http.NewRequest("PUT", address, nil)
 	require.NoError(t, err)
+
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
+
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
