@@ -174,6 +174,8 @@ ACHGateway:
       [ Endpoint: <string> | default = "" ]
 ```
 
+> TIP: Set `SARAMA_DEBUG_LOGGING=yes` to enable debug logging for the IBM/sarama (kafka) library.
+
 ### Sharding
 ```yaml
   Sharding:

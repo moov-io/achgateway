@@ -24,6 +24,7 @@ import (
 
 	"github.com/moov-io/achgateway"
 	"github.com/moov-io/achgateway/internal"
+	"github.com/moov-io/achgateway/internal/kafka"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
 )
@@ -32,6 +33,8 @@ func main() {
 	env := &internal.Environment{
 		Logger: log.NewDefaultLogger().Set("app", log.String("achgateway")).Set("version", log.String(achgateway.Version)),
 	}
+
+	kafka.EnableSaramaDebugLogging(env.Logger)
 
 	env, err := internal.NewEnvironment(env)
 	if err != nil {
