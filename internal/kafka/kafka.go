@@ -44,7 +44,7 @@ func (m *MSKAccessTokenProvider) Token() (*sarama.AccessToken, error) {
 func OpenTopic(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Topic, error) {
 	config := kafkapubsub.MinimalConfig()
 	config.Net.TLS.Enable = cfg.TLS
-
+	config.Version = sarama.V2_8_2_0
 	config.Net.SASL.Enable = cfg.Key != ""
 
 	switch cfg.SASLMechanism {
@@ -89,7 +89,7 @@ func OpenTopic(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Topic, erro
 func OpenSubscription(logger log.Logger, cfg *service.KafkaConfig) (*pubsub.Subscription, error) {
 	config := kafkapubsub.MinimalConfig()
 	config.Net.TLS.Enable = cfg.TLS
-
+	config.Version = sarama.V2_8_2_0
 	config.Net.SASL.Enable = cfg.Key != ""
 	// Default to PLAIN if no SASL mechanism is specified
 	switch cfg.SASLMechanism {
