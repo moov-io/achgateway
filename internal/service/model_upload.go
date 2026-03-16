@@ -95,10 +95,10 @@ func (cfg *FTP) MarshalJSON() ([]byte, error) {
 		DialTimeout  time.Duration
 		DisabledEPSV bool
 	}
-	return json.Marshal(Aux{
+	return json.Marshal(Aux{ //nolint:gosec
 		Hostname: cfg.Hostname,
 		Username: cfg.Username,
-		Password: mask.Password(cfg.Password),
+		Password: mask.Password(cfg.Password), // G117, except the function clearly masks
 
 		CAFilepath:   cfg.CAFilepath,
 		DialTimeout:  cfg.DialTimeout,
@@ -139,7 +139,7 @@ type SFTP struct {
 	Hostname string
 	Username string
 
-	Password             string
+	Password             string `json:"-"`
 	ClientPrivateKey     string
 	ClientPrivateKeyFile string
 	HostPublicKey        string
@@ -174,11 +174,11 @@ func (cfg *SFTP) MarshalJSON() ([]byte, error) {
 		SkipDirectoryCreation bool
 		SkipChmodAfterUpload  bool
 	}
-	return json.Marshal(Aux{
+	return json.Marshal(Aux{ //nolint:gosec
 		Hostname: cfg.Hostname,
 		Username: cfg.Username,
 
-		Password:             mask.Password(cfg.Password),
+		Password:             mask.Password(cfg.Password), // G117, except the function clearly masks
 		ClientPrivateKey:     cfg.ClientPrivateKey,
 		ClientPrivateKeyFile: cfg.ClientPrivateKeyFile,
 		HostPublicKey:        cfg.HostPublicKey,
