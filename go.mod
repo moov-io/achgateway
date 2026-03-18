@@ -8,7 +8,7 @@ require (
 	cloud.google.com/go/spanner v1.88.0
 	github.com/IBM/sarama v1.47.0
 	github.com/PagerDuty/go-pagerduty v1.8.0
-	github.com/ProtonMail/go-crypto v1.4.0
+	github.com/ProtonMail/go-crypto v1.4.1
 	github.com/go-kit/kit v0.13.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
