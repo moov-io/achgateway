@@ -31,3 +31,6 @@ pkged.go
 /testdata/download-test/reconciliation/empty.txt
 
 .idea/
+# Private keys
+*.key
+*.pem
