@@ -18,7 +18,10 @@ WORKDIR /
 RUN apt-get update && apt-get upgrade -y && apt-get install -y ca-certificates curl \
 	&& rm -rf /var/lib/apt/lists/*
 
+RUN useradd -m -r achuser
+
 COPY --from=builder /src/bin/achgateway /app/
+RUN chown -R achuser:achuser /app
 
 ENV HTTP_PORT=8484
 ENV HEALTH_PORT=9494
@@ -30,5 +33,7 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 	CMD curl -f http://localhost:${HEALTH_PORT}/live || exit 1
 
 VOLUME [ "/data", "/configs" ]
+
+USER achuser
 
 ENTRYPOINT ["/app/achgateway"]
