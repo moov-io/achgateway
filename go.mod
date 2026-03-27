@@ -5,7 +5,7 @@ module github.com/moov-io/achgateway
 go 1.25.0
 
 require (
-	cloud.google.com/go/spanner v1.88.0
+	cloud.google.com/go/spanner v1.89.0
 	github.com/IBM/sarama v1.47.0
 	github.com/PagerDuty/go-pagerduty v1.8.0
 	github.com/ProtonMail/go-crypto v1.4.1
