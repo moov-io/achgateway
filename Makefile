@@ -100,8 +100,8 @@ else
 	CGO_ENABLED=1 GOOS=$(PLATFORM) go build -o bin/achgateway-$(PLATFORM)-amd64 cmd/achgateway/*
 endif
 
-dist-arm64: clean
-	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -mod=vendor -ldflags "-X github.com/moov-io/achgateway.Version=${VERSION}" -o bin/achgateway-linux-arm64 ./cmd/achgateway/
+dist-arm64: update clean
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -mod=vendor -ldflags "-X github.com/moov-io/achgateway.Version=${VERSION}" -o bin/achgateway-linux-arm64 github.com/moov-io/achgateway/cmd/achgateway
 
 docker-multiarch: update
-	docker buildx build --platform linux/amd64,linux/arm64 --build-arg VERSION=${VERSION} -t moov/achgateway:${VERSION} -f Dockerfile .
+	docker buildx build --pull --platform linux/amd64,linux/arm64 --build-arg VERSION=${VERSION} -t moov/achgateway:${VERSION} -t moov/achgateway:latest -f Dockerfile .
