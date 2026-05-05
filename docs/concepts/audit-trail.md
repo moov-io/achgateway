@@ -8,7 +8,7 @@ menubar: docs-menu
 
 ## Audit Trail
 
-Complying with Nacha regulations and ODFI requirements, ACHGateway ensures the retention of submitted files for a mandated duration. This feature is not just about regulatory compliance; it's a valuable tool for debugging and recreating specific files and entries, enhancing the reliability and traceability of transactions. ACHGateway achieves this through encryption and storage of these files in an S3-compatible storage layer. Additionally, Moov introduces the [ach-web-viewer project](https://github.com/moov-io/ach-web-viewer), a utility for browsing and displaying individual files, further simplifying audit and review processes.
+Complying with Nacha regulations and ODFI requirements, ACHGateway ensures the retention of submitted files for a mandated duration. This feature is not just about regulatory compliance; it's a valuable tool for debugging and recreating specific files and entries, enhancing the reliability and traceability of transactions. ACHGateway achieves this through encryption and storage of these files in a blob storage backend (for example: AWS S3, Google Cloud Storage, or local filesystem/NAS via `file://` URLs). Additionally, Moov introduces the [ach-web-viewer project](https://github.com/moov-io/ach-web-viewer), a utility for browsing and displaying individual files, further simplifying audit and review processes.
 
 ### Pending Files
 
@@ -25,7 +25,7 @@ For more details on working with pending files, please visit the [pending file e
 
 ### Organized Storage Layout
 
-To ensure efficient file management and retrieval, ACHGateway adopts a systematic approach to storing files within an S3-compatible bucket. The layout is designed to differentiate easily between files received from the ODFI and those prepared for upload, as detailed below.
+To ensure efficient file management and retrieval, ACHGateway adopts a systematic approach to storing files in the configured audit trail bucket/directory. The layout is designed to differentiate easily between files received from the ODFI and those prepared for upload, as detailed below.
 
 #### Received from the ODFI
 
