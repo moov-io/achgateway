@@ -92,7 +92,7 @@ ACHGateway:
     ODFI:
       Audit:
         ID: <string>
-       # BucketURI is the audit trail blob storage location.
+        # BucketURI is the audit trail blob storage location.
         # Supported backends include AWS S3, Google Cloud Storage, and local filesystem/NAS via file:// URLs.
         # See https://gocloud.dev/howto/blob/ for provider-specific configuration details.
         # Example: s3://my-bucket?region=us-west-1 OR gcs://my-bucket/ OR file:///mnt/ach-audit
