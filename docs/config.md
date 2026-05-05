@@ -92,9 +92,10 @@ ACHGateway:
     ODFI:
       Audit:
         ID: <string>
-        # BucketURI is the S3-compatiable bucket location. AWS S3 and Google Cloud Storage are supported.
-        # See https://gocloud.dev/howto/blob/ for more information on configuring each cloud provide.r.
-        # Example: s3://my-bucket?region=us-west-1 OR gcs://my-bucket/
+       # BucketURI is the audit trail blob storage location.
+        # Supported backends include AWS S3, Google Cloud Storage, and local filesystem/NAS via file:// URLs.
+        # See https://gocloud.dev/howto/blob/ for provider-specific configuration details.
+        # Example: s3://my-bucket?region=us-west-1 OR gcs://my-bucket/ OR file:///mnt/ach-audit
         BucketURI: <string>
         BasePath: <string> # Example: "incoming"
         GPG: # Optional, but recommended
@@ -202,9 +203,10 @@ ACHGateway:
         OutboundFilenameTemplate: <string>
         Audit:
           ID: <string>
-          # BucketURI is the S3-compatiable bucket location. AWS S3 and Google Cloud Storage are supported.
-          # See https://gocloud.dev/howto/blob/ for more information on configuring each cloud provide.r.
-          # Example: s3://my-bucket?region=us-west-1 OR gcs://my-bucket/
+          # BucketURI is the audit trail blob storage location.
+          # Supported backends include AWS S3, Google Cloud Storage, and local filesystem/NAS via file:// URLs.
+          # See https://gocloud.dev/howto/blob/ for provider-specific configuration details.
+          # Example: s3://my-bucket?region=us-west-1 OR gcs://my-bucket/ OR file:///mnt/ach-audit
           BucketURI: <string>
           BasePath: <string> # Example: "outgoing"
           GPG:
