@@ -95,7 +95,7 @@ func (cfg *FTP) MarshalJSON() ([]byte, error) {
 		DialTimeout  time.Duration
 		DisabledEPSV bool
 	}
-	return json.Marshal(Aux{ //nolint:gosec
+	return json.Marshal(Aux{
 		Hostname: cfg.Hostname,
 		Username: cfg.Username,
 		Password: mask.Password(cfg.Password), // G117, except the function clearly masks
@@ -174,7 +174,7 @@ func (cfg *SFTP) MarshalJSON() ([]byte, error) {
 		SkipDirectoryCreation bool
 		SkipChmodAfterUpload  bool
 	}
-	return json.Marshal(Aux{ //nolint:gosec
+	return json.Marshal(Aux{
 		Hostname: cfg.Hostname,
 		Username: cfg.Username,
 

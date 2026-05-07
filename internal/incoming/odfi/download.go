@@ -50,7 +50,7 @@ type Downloader interface {
 
 func NewDownloader(logger log.Logger, cfg service.ODFIStorage) (Downloader, error) {
 	baseDir := strx.Or(cfg.Directory, "storage")
-	if err := os.MkdirAll(baseDir, 0777); err != nil { //nolint:gosec
+	if err := os.MkdirAll(baseDir, 0750); err != nil {
 		return nil, fmt.Errorf("problem creating %s: %v", baseDir, err)
 	}
 	return &downloaderImpl{
@@ -117,15 +117,15 @@ func (dl *downloaderImpl) setup(agent upload.Agent) (*downloadedFiles, error) {
 
 	// Create sub-directories for files we download
 	path := filepath.Join(dir, agent.InboundPath())
-	if err := os.MkdirAll(path, 0777); err != nil { //nolint:gosec
+	if err := os.MkdirAll(path, 0750); err != nil {
 		return nil, fmt.Errorf("problem creating %s: %v", path, err)
 	}
 	path = filepath.Join(dir, agent.ReconciliationPath())
-	if err := os.MkdirAll(path, 0777); err != nil { //nolint:gosec
+	if err := os.MkdirAll(path, 0750); err != nil {
 		return nil, fmt.Errorf("problem creating %s: %v", path, err)
 	}
 	path = filepath.Join(dir, agent.ReturnPath())
-	if err := os.MkdirAll(path, 0777); err != nil { //nolint:gosec
+	if err := os.MkdirAll(path, 0750); err != nil {
 		return nil, fmt.Errorf("problem creating %s: %v", path, err)
 	}
 
@@ -186,7 +186,9 @@ func saveFilepaths(ctx context.Context, logger log.Logger, agent upload.Agent, f
 	var firstErr error
 	var errordFilenames []string
 
-	os.MkdirAll(dir, 0777) //nolint:gosec
+	if err := os.MkdirAll(dir, 0750); err != nil {
+		return fmt.Errorf("mkdir %s failed: %w", dir, err)
+	}
 	for i := range filepaths {
 		outPath := filepath.Join(dir, filepath.Base(filepaths[i]))
 		f, err := os.Create(outPath)
