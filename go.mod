@@ -6,7 +6,7 @@ go 1.25.0
 
 require (
 	cloud.google.com/go/spanner v1.91.0
-	github.com/IBM/sarama v1.48.1
+	github.com/IBM/sarama v1.48.2
 	github.com/PagerDuty/go-pagerduty v1.8.0
 	github.com/ProtonMail/go-crypto v1.4.1
 	github.com/go-kit/kit v0.13.0
