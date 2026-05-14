@@ -8,7 +8,7 @@ menubar: docs-menu
 
 # File Submission
 
-ACH is a fixed-width file format used to debit or credit bank accounts. Often businesses will use this payment method to collect or distribute funds to their customers/users. The main record within an ACH file to accomplish this [EntryDetail records are created](https://moov-io.github.io/ach/file-structure/#entry-detail-record) to specify the amount, account, and description. For more details refer to Gusto's [post covering how ACH works](https://engineering.gusto.com/how-ach-works-a-developer-perspective-part-4/) from a developer point of view.
+ACH is a fixed-width file format used to debit or credit bank accounts. Often businesses will use this payment method to collect or distribute funds to their customers/users. The main record within an ACH file to accomplish this [EntryDetail records are created](https://moov-io.github.io/ach/file-structure/#entry-detail-record) to specify the amount, account, and description. For more details refer to Gusto's developer-focused series: [How ACH Works: A Developer Perspective, Part 1](https://engineering.gusto.com/how-ach-works-a-developer-perspective-part-1-339d3e7bea1), [Part 2](https://engineering.gusto.com/how-ach-works-a-developer-perspective-part-2-7a890638c4dd), and [Part 3](https://engineering.gusto.com/how-ach-works-a-developer-perspective-part-3-cd98728cf31f).
 
 ACHGateway does not cover the business rules or Nacha requirements of creating ACH files. ACHGateway does allow files to be submitted and queued for their eventual delivery to the Federal Reserve. There are "cutoff windows" throughout a banking day to flush files from ODFI's to RDFI's (receiving financial institutions).
 
