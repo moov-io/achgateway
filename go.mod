@@ -2,7 +2,7 @@
 
 module github.com/moov-io/achgateway
 
-go 1.25.8
+go 1.26
 
 require (
 	cloud.google.com/go/spanner v1.91.0
@@ -14,7 +14,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/igrmk/treemap/v2 v2.0.1
-	github.com/jlaffaye/ftp v0.2.0
+	github.com/jlaffaye/ftp v0.2.1
 	github.com/moov-io/ach v1.61.1
 	github.com/moov-io/base v0.61.2
 	github.com/moov-io/cryptfs v0.11.0
