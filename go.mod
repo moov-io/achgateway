@@ -24,7 +24,7 @@ require (
 	github.com/ory/mail/v3 v3.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.23.2
-	github.com/rickar/cal/v2 v2.1.27
+	github.com/rickar/cal/v2 v2.1.28
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sethvargo/go-retry v0.3.0
 	github.com/slack-go/slack v0.25.0
