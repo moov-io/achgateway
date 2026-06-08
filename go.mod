@@ -35,9 +35,9 @@ require (
 	gocloud.dev v0.46.0
 	gocloud.dev/pubsub/kafkapubsub v0.46.0
 	goftp.io/server v0.4.1
-	golang.org/x/crypto v0.52.0
-	golang.org/x/sync v0.20.0
-	golang.org/x/text v0.37.0
+	golang.org/x/crypto v0.53.0
+	golang.org/x/sync v0.21.0
+	golang.org/x/text v0.38.0
 	google.golang.org/api v0.283.0
 )
 
@@ -210,7 +210,7 @@ require (
 	golang.org/x/exp v0.0.0-20260529124908-c761662dc8c9 // indirect
 	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
-	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	google.golang.org/genproto v0.0.0-20260504160031-60b97b32f348 // indirect
