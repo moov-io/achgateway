@@ -16,7 +16,7 @@ require (
 	github.com/igrmk/treemap/v2 v2.0.1
 	github.com/jlaffaye/ftp v0.2.1
 	github.com/moov-io/ach v1.61.1
-	github.com/moov-io/base v0.61.2
+	github.com/moov-io/base v0.61.3
 	github.com/moov-io/cryptfs v0.11.0
 	github.com/moov-io/go-ftp v0.4.0
 	github.com/moov-io/go-sftp v0.16.1
@@ -61,7 +61,7 @@ require (
 	cel.dev/expr v0.25.1 // indirect
 	cloud.google.com/go v0.123.0 // indirect
 	cloud.google.com/go/alloydb v1.26.0 // indirect
-	cloud.google.com/go/alloydbconn v1.18.2 // indirect
+	cloud.google.com/go/alloydbconn v1.18.3 // indirect
 	cloud.google.com/go/auth v0.20.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
