@@ -25,29 +25,29 @@
    "entryDetails": [
     {
      "id": "entry-1",
-     "transactionCode": 27,
+     "transactionCode": 26,
      "RDFIIdentification": "12400005",
      "checkDigit": "4",
      "DFIAccountNumber": "9809524995",
      "amount": 684,
-     "individualName": "College of Eastern Idaho",
+     "individualName": "COLLEGE OF EASTERN IDAHO",
      "discretionaryData": " ",
      "addendaRecordIndicator": 0,
      "traceNumber": "041215660000001",
-     "category": "Forward"
+     "category": "Debit"
     },
     {
      "id": "entry-2",
-     "transactionCode": 27,
+     "transactionCode": 26,
      "RDFIIdentification": "12100024",
      "checkDigit": "8",
      "DFIAccountNumber": "5565371720",
      "amount": 251,
-     "individualName": "Maria Maldonado",
+     "individualName": "MARIA MALDONADO",
      "discretionaryData": " ",
      "addendaRecordIndicator": 0,
      "traceNumber": "041215660000002",
-     "category": "Forward"
+     "category": "Debit"
     }
    ],
    "batchControl": {
@@ -74,6 +74,19 @@
  },
  "metadata": {
   "ein": "922786717",
-  "stateTaxID": "03-615677-00-9"
+  "stateTaxID": "03-615677-00-9",
+  "authorizationStatus": "Paper Authorization Signed",
+  "authorizedDebitors": [
+   {
+    "name": "College of Eastern Idaho",
+    "accountNumber": "9809524995",
+    "routingNumber": "12400005"
+   },
+   {
+    "name": "Maria Maldonado",
+    "accountNumber": "5565371720",
+    "routingNumber": "12100024"
+   }
+  ]
  }
 }
