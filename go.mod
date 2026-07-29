@@ -5,8 +5,8 @@ module github.com/moov-io/achgateway
 go 1.26
 
 require (
-	cloud.google.com/go/spanner v1.93.0
-	github.com/IBM/sarama v1.60.0
+	cloud.google.com/go/spanner v1.94.0
+	github.com/IBM/sarama v1.60.1
 	github.com/PagerDuty/go-pagerduty v1.8.0
 	github.com/ProtonMail/go-crypto v1.4.1
 	github.com/go-kit/kit v0.13.0
@@ -14,8 +14,8 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/igrmk/treemap/v2 v2.0.1
-	github.com/jlaffaye/ftp v0.2.1
-	github.com/moov-io/ach v1.61.3
+	github.com/jlaffaye/ftp v0.2.2
+	github.com/moov-io/ach v1.61.4
 	github.com/moov-io/base v0.61.3
 	github.com/moov-io/cryptfs v0.11.0
 	github.com/moov-io/go-ftp v0.4.0
@@ -169,7 +169,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/term v0.5.0 // indirect
-	github.com/moov-io/iso4217 v0.3.2 // indirect
+	github.com/moov-io/iso4217 v0.4.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
