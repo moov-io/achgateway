@@ -26,8 +26,8 @@ import (
 	"github.com/jlaffaye/ftp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"goftp.io/server"
-	"goftp.io/server/driver/file"
+	"goftp.io/server/v2"
+	"goftp.io/server/v2/driver/file"
 )
 
 var (
@@ -51,20 +51,25 @@ func createTestFTPServer(t *testing.T) (*server.Server, error) {
 		t.Fatal(err)
 	}
 
-	opts := &server.ServerOpts{
+	driver, err := file.NewDriver(rootFTPPath)
+	if err != nil {
+		return nil, err
+	}
+	opts := &server.Options{
 		Auth: &server.SimpleAuth{
 			Name:     "moov",
 			Password: "password",
 		},
-		Factory: &file.DriverFactory{
-			RootPath: rootFTPPath,
-			Perm:     server.NewSimplePerm("test", "test"),
-		},
+		Driver:   driver,
+		Perm:     server.NewSimplePerm("test", "test"),
 		Hostname: "localhost",
 		Port:     port(),
 		Logger:   &server.DiscardLogger{},
 	}
-	svc := server.NewServer(opts)
+	svc, err := server.NewServer(opts)
+	if err != nil {
+		return nil, err
+	}
 	if svc == nil {
 		return nil, errors.New("nil FTP server")
 	}
@@ -370,8 +375,10 @@ func TestFTP__DeleteMissing(t *testing.T) {
 	defer svc.Shutdown()
 
 	ctx := context.Background()
+	// goftp.io/server/v2 returns 550 when DELE targets a missing path
 	err := agent.Delete(ctx, "/missing.txt")
-	require.NoError(t, err)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "550")
 }
 
 func TestFTP_GetReconciliationFiles(t *testing.T) {
