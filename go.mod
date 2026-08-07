@@ -20,7 +20,7 @@ require (
 	github.com/moov-io/cryptfs v0.11.0
 	github.com/moov-io/go-ftp v0.4.0
 	github.com/moov-io/go-sftp v0.16.1
-	github.com/ory/dockertest/v3 v3.12.0
+	github.com/ory/dockertest/v4 v4.0.0
 	github.com/ory/dockertest/v4 v4.0.0
 	github.com/ory/mail/v3 v3.0.0
 	github.com/pkg/errors v0.9.1
@@ -35,7 +35,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.45.0
 	gocloud.dev v0.46.0
 	gocloud.dev/pubsub/kafkapubsub v0.46.0
-	goftp.io/server v0.4.1
+	goftp.io/server/v2 v2.0.3
 	goftp.io/server/v2 v2.0.3
 	golang.org/x/crypto v0.54.0
 	golang.org/x/sync v0.22.0
