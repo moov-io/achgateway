@@ -1,0 +1,111 @@
+{
+ "id": "file-01",
+ "fileHeader": {
+  "id": "header-01",
+  "immediateDestination": "231380104",
+  "immediateOrigin": "1922786717",
+  "fileCreationDate": "260727",
+  "fileIDModifier": "A",
+  "immediateDestinationName": "Federal Reserve Bank",
+  "immediateOriginName": "M&J CLEANING AND SANITIZING"
+ },
+ "batches": [
+  {
+   "batchHeader": {
+    "id": "batch-01",
+    "serviceClassCode": 225,
+    "companyName": "M&J CLEANING AND SANITIZING",
+    "companyIdentification": "1922786717",
+    "standardEntryClassCode": "PPD",
+    "companyEntryDescription": "CLEANING",
+    "effectiveEntryDate": "2026-07-27T00:00:00Z",
+    "ODFIIdentification": "04121566",
+    "batchNumber": 1
+   },
+   "entryDetails": [
+    {
+     "id": "entry-1",
+     "transactionCode": 26,
+     "RDFIIdentification": "12400005",
+     "checkDigit": "4",
+     "DFIAccountNumber": "9809524995",
+     "amount": 684,
+     "individualName": "COLLEGE OF EASTERN IDAHO",
+     "discretionaryData": " ",
+     "addendaRecordIndicator": 0,
+     "traceNumber": "041215660000001",
+     "category": "Debit"
+    },
+    {
+     "id": "entry-2",
+     "transactionCode": 26,
+     "RDFIIdentification": "12100024",
+     "checkDigit": "8",
+     "DFIAccountNumber": "5565371720",
+     "amount": 251,
+     "individualName": "MARIA MALDONADO",
+     "discretionaryData": " ",
+     "addendaRecordIndicator": 0,
+     "traceNumber": "041215660000002",
+     "category": "Debit"
+    },
+    {
+     "id": "entry-3",
+     "transactionCode": 22,
+     "RDFIIdentification": "04121566",
+     "checkDigit": "3",
+     "DFIAccountNumber": "2071167505956",
+     "amount": 935,
+     "individualName": "MJ CLEANING AND SANITIZING",
+     "discretionaryData": " ",
+     "addendaRecordIndicator": 0,
+     "traceNumber": "041215660000003",
+     "category": "Credit"
+    }
+   ],
+   "batchControl": {
+    "id": "batch-control-01",
+    "serviceClassCode": 225,
+    "entryAddendaCount": 3,
+    "entryHash": 24500029,
+    "totalDebit": 935,
+    "totalCredit": 935,
+    "companyIdentification": "1922786717",
+    "ODFIIdentification": "04121566",
+    "batchNumber": 1
+   }
+  }
+ ],
+ "fileControl": {
+  "id": "file-control-01",
+  "batchCount": 1,
+  "blockCount": 1,
+  "entryAddendaCount": 3,
+  "entryHash": 24500029,
+  "totalDebit": 935,
+  "totalCredit": 935
+ },
+ "metadata": {
+  "ein": "922786717",
+  "stateTaxID": "03-615677-00-9",
+  "authorizationStatus": "Paper Authorization Signed",
+  "mj_receiving_account": {
+   "bank": "Sutton Bank",
+   "routingNumber": "041215663",
+   "accountNumber": "2071167505956",
+   "companyName": "M&J CLEANING AND SANITIZING"
+  },
+  "authorizedDebitors": [
+   {
+    "name": "College of Eastern Idaho",
+    "accountNumber": "9809524995",
+    "routingNumber": "12400005"
+   },
+   {
+    "name": "Maria Maldonado",
+    "accountNumber": "5565371720",
+    "routingNumber": "12100024"
+   }
+  ]
+ }
+}
