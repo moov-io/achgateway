@@ -20,7 +20,7 @@ require (
 	github.com/moov-io/cryptfs v0.11.0
 	github.com/moov-io/go-ftp v0.4.0
 	github.com/moov-io/go-sftp v0.16.2
-	github.com/ory/dockertest/v3 v3.12.0
+	github.com/ory/dockertest/v4 v4.0.0
 	github.com/ory/dockertest/v4 v4.0.0
 	github.com/ory/mail/v3 v3.0.0
 	github.com/pkg/errors v0.9.1
