@@ -15,7 +15,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/igrmk/treemap/v2 v2.0.1
 	github.com/jlaffaye/ftp v0.2.2
-	github.com/moov-io/ach v1.63.1
+	github.com/moov-io/ach v1.63.2
 	github.com/moov-io/base v0.63.0
 	github.com/moov-io/cryptfs v0.11.0
 	github.com/moov-io/go-ftp v0.4.0
@@ -38,7 +38,7 @@ require (
 	goftp.io/server/v2 v2.0.3
 	golang.org/x/crypto v0.54.0
 	golang.org/x/sync v0.22.0
-	golang.org/x/text v0.40.0
+	golang.org/x/text v0.41.0
 	google.golang.org/api v0.292.0
 )
 
