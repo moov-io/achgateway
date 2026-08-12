@@ -211,19 +211,22 @@ func TestMerging_mappings(t *testing.T) {
 	require.True(t, cancelResponse.Successful)
 
 	canceledFiles := []string{"foo2.ach"}
-	mappings, err := m.buildDirMapping(filepath.Join("mergable", "SD-testing"), canceledFiles)
-	require.NoError(t, err)
+	mappings, mapErrs := m.buildDirMapping(filepath.Join("mergable", "SD-testing"), canceledFiles)
+	require.Empty(t, mapErrs)
 
-	for it := mappings.Iterator(); it.Valid(); it.Next() {
-		switch it.Value() {
-		case "ppd-debit.ach", "duplicate-trace.ach":
-			require.Contains(t, it.Key(), "076401255655291")
-		case "ppd-debit2.ach":
-			require.Contains(t, it.Key(), "076401255655292")
-		case "ppd-debit3.ach":
-			require.Contains(t, it.Key(), "076401255655293")
-		case "ppd-debit4.ach":
-			require.Contains(t, it.Key(), "076401255655294")
+	for key, filenames := range mappings {
+		require.NotEmpty(t, filenames)
+		for _, filename := range filenames {
+			switch filename {
+			case "ppd-debit.ach", "duplicate-trace.ach":
+				require.Contains(t, key, "076401255655291")
+			case "ppd-debit2.ach":
+				require.Contains(t, key, "076401255655292")
+			case "ppd-debit3.ach":
+				require.Contains(t, key, "076401255655293")
+			case "ppd-debit4.ach":
+				require.Contains(t, key, "076401255655294")
+			}
 		}
 	}
 
@@ -239,21 +242,23 @@ func TestMerging_mappings(t *testing.T) {
 	require.True(t, validateOpts.RequireABAOrigin)
 	require.False(t, validateOpts.AllowZeroBatches)
 
-	mapped := m.findInputFilepaths(mappings, merged)
+	mapped, leftover := m.findInputFilepaths(mappings, merged)
 	require.Len(t, mapped, 1)
+	require.Zero(t, leftover)
 
 	expected := []string{"duplicate-trace.ach", "ppd-debit.ach", "ppd-debit2.ach", "ppd-debit3.ach", "ppd-debit4.ach"}
 	require.ElementsMatch(t, expected, mapped[0].InputFilepaths)
 	require.Equal(t, "MAPPING-0.ach", mapped[0].UploadedFilename)
+	require.Empty(t, missingMappedInputFiles(expected, mapped))
 	require.Len(t, mapped[0].ACHFile.Batches, 2)
 }
 
-func enqueueFile(t *testing.T, merging XferMerging, path string) {
-	t.Helper()
+func enqueueFile(tb testing.TB, merging XferMerging, path string) {
+	tb.Helper()
 
 	file, err := ach.ReadFile(path)
 	if err != nil {
-		t.Fatalf("reading %s failed: %v", path, err)
+		tb.Fatalf("reading %s failed: %v", path, err)
 	}
 
 	// Add ValidateOpts to a special file
@@ -261,17 +266,17 @@ func enqueueFile(t *testing.T, merging XferMerging, path string) {
 	switch filename {
 	case "ppd-debit.ach":
 		fd, err := os.Open(filepath.Join(dir, "ppd-debit.json"))
-		require.NoError(t, err)
+		require.NoError(tb, err)
 		defer fd.Close()
 
 		var opts ach.ValidateOpts
 		err = json.NewDecoder(fd).Decode(&opts)
-		require.NoError(t, err)
+		require.NoError(tb, err)
 
 		file.SetValidation(&opts)
 
 	case "duplicate-trace.ach":
-		require.NoError(t, file.Create()) // fix EntryHash
+		require.NoError(tb, file.Create()) // fix EntryHash
 	}
 
 	err = merging.HandleXfer(context.Background(), incoming.ACHFile{
@@ -280,7 +285,7 @@ func enqueueFile(t *testing.T, merging XferMerging, path string) {
 		File:     file,
 	})
 	if err != nil {
-		t.Fatalf("handling xfer %s failed: %v", path, err)
+		tb.Fatalf("handling xfer %s failed: %v", path, err)
 	}
 }
 

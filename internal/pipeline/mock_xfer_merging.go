@@ -45,8 +45,7 @@ func (merge *MockXferMerging) HandleCancel(_ context.Context, cancel incoming.Ca
 }
 
 func (merge *MockXferMerging) WithEachMerged(ctx context.Context, f func(context.Context, int, upload.Agent, *ach.File) (string, error)) (mergedFiles, error) {
-	if merge.Err != nil {
-		return nil, merge.Err
-	}
-	return merge.merged, nil
+	// Match production: partial merged results may accompany an error so
+	// callers can still emit FileUploaded for what succeeded.
+	return merge.merged, merge.Err
 }
