@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/moov-io/base"
+	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/stime"
 
 	"github.com/stretchr/testify/require"
@@ -25,7 +26,7 @@ func TestCutoffTimes(t *testing.T) {
 	timeService := stime.NewSystemTimeService()
 	next := time.Now().UTC().Add(time.Minute).Format("15:04")
 
-	cutoffs, err := ForCutoffTimes(timeService, "UTC", []string{next})
+	cutoffs, err := ForCutoffTimes(log.NewTestLogger(), timeService, "UTC", []string{next})
 	require.NoError(t, err)
 	defer cutoffs.Stop()
 
@@ -42,15 +43,15 @@ func TestCutoffTimes(t *testing.T) {
 func TestCutoffTimesErr(t *testing.T) {
 	timeService := stime.NewSystemTimeService()
 
-	_, err := ForCutoffTimes(timeService, "bad_zone", nil)
+	_, err := ForCutoffTimes(log.NewTestLogger(), timeService, "bad_zone", nil)
 	if err == nil {
 		t.Error("expected error")
 	}
-	_, err = ForCutoffTimes(timeService, time.Local.String(), nil)
+	_, err = ForCutoffTimes(log.NewTestLogger(), timeService, time.Local.String(), nil)
 	if err == nil {
 		t.Error("expected error")
 	}
-	_, err = ForCutoffTimes(timeService, time.Local.String(), []string{"bad:time"})
+	_, err = ForCutoffTimes(log.NewTestLogger(), timeService, time.Local.String(), []string{"bad:time"})
 	if err == nil {
 		t.Error("expected error")
 	}
@@ -58,7 +59,7 @@ func TestCutoffTimesErr(t *testing.T) {
 
 func TestCutoffTimes__firstCutoff(t *testing.T) {
 	timeService := stime.NewSystemTimeService()
-	ct, err := ForCutoffTimes(timeService, "America/New_York", []string{"16:15", "08:30", "12:00"})
+	ct, err := ForCutoffTimes(log.NewTestLogger(), timeService, "America/New_York", []string{"16:15", "08:30", "12:00"})
 	require.NoError(t, err)
 	defer ct.Stop()
 
@@ -71,7 +72,7 @@ func TestCutoffTimes__Holiday(t *testing.T) {
 	timeService := stime.NewStaticTimeService()
 	timeService.Change(holiday)
 
-	ct, err := ForCutoffTimes(timeService, "America/New_York", []string{"15:30"})
+	ct, err := ForCutoffTimes(log.NewTestLogger(), timeService, "America/New_York", []string{"15:30"})
 	require.NoError(t, err)
 	defer ct.Stop()
 
