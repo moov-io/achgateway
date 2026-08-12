@@ -46,6 +46,9 @@ This event alerts to a problem with a file in the queue, such as a structural or
             // ach.File JSON
         }
     },
-	"error": "batches out of order"
+    "error": "batches out of order",
+    "hostname": "achgateway-0"
 }
 ```
+
+`FileUploaded` is emitted independently for every successfully mapped input file after a cutoff. One produce failure does not prevent the remaining events from being sent. When merge/upload reports a partial failure, ACHGateway still emits `FileUploaded` for the inputs that mapped successfully and surfaces both the merge error and any emit errors together.
