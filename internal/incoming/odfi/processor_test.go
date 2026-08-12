@@ -85,6 +85,25 @@ func TestProcessor(t *testing.T) {
 	require.Equal(t, fmt.Sprintf("odfi/ftp.foo.com/testdata/%s/HMBRAD_ACHEXPORT_1001_08_19_2022_09_10", yyyymmdd), ms.SavedFilepath)
 }
 
+func TestProcessDir_MissingDir(t *testing.T) {
+	logger := log.NewTestLogger()
+	alerters, _ := alerting.NewAlerters(service.ErrorAlerting{})
+	err := processDir(context.Background(), logger, filepath.Join(t.TempDir(), "missing"), alerters, nil, ach.ValidateOpts{}, nil)
+	require.NoError(t, err)
+}
+
+func TestPersistInboundFile_SkipsEmpty(t *testing.T) {
+	saver := &AuditSaver{
+		storage:  &audittrail.MockStorage{},
+		hostname: "ftp.foo.com/",
+	}
+	err := persistInboundFile(context.Background(), saver, "inbound/empty.ach", []byte("   \n"))
+	require.NoError(t, err)
+
+	ms := saver.storage.(*audittrail.MockStorage)
+	require.Empty(t, ms.SavedFilepath)
+}
+
 func TestProcessor_populateHashes(t *testing.T) {
 	file, err := ach.ReadFile(filepath.Join("testdata", "forward.ach"))
 	require.ErrorContains(t, err, ach.ErrFileHeader.Error())

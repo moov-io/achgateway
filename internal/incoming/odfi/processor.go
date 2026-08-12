@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/moov-io/ach"
@@ -104,6 +105,9 @@ func ProcessFiles(ctx context.Context, logger log.Logger, dl *downloadedFiles, a
 func processDir(ctx context.Context, logger log.Logger, dir string, alerters alerting.Alerters, auditSaver *AuditSaver, validation ach.ValidateOpts, fileProcessors Processors) error {
 	infos, err := os.ReadDir(dir)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
 		return fmt.Errorf("reading %s: %v", dir, err)
 	}
 
@@ -149,16 +153,9 @@ func processFile(ctx context.Context, logger log.Logger, path string, alerters a
 	file.ID = hash(bs)
 	populateHashes(&file)
 
-	dir, filename := filepath.Split(path)
-	dir = filepath.Base(dir)
-
 	// Persist the file if needed
-	if auditSaver != nil {
-		path := fmt.Sprintf("odfi/%s/%s/%s/%s", auditSaver.hostname, dir, time.Now().Format("2006-01-02"), filename)
-		err = auditSaver.save(ctx, path, bs)
-		if err != nil {
-			return fmt.Errorf("audittrail %s error: %v", path, err)
-		}
+	if err := persistInboundFile(ctx, auditSaver, path, bs); err != nil {
+		return err
 	}
 
 	// Pass the file off to our handler
@@ -174,6 +171,22 @@ func processFile(ctx context.Context, logger log.Logger, path string, alerters a
 		return fmt.Errorf("processing %s error: %v", path, err)
 	}
 
+	return nil
+}
+
+func persistInboundFile(ctx context.Context, auditSaver *AuditSaver, path string, bs []byte) error {
+	if auditSaver == nil || len(bytes.TrimSpace(bs)) == 0 {
+		return nil
+	}
+
+	dir, filename := filepath.Split(path)
+	dir = filepath.Base(dir)
+	hostname := strings.TrimSuffix(auditSaver.hostname, "/")
+	auditPath := fmt.Sprintf("odfi/%s/%s/%s/%s", hostname, dir, time.Now().Format("2006-01-02"), filename)
+
+	if err := auditSaver.save(ctx, auditPath, bs); err != nil {
+		return fmt.Errorf("audittrail %s error: %w", auditPath, err)
+	}
 	return nil
 }
 

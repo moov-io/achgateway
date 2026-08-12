@@ -58,6 +58,13 @@ func TestCleanupErr(t *testing.T) {
 	}
 }
 
+func TestCleanup_MissingDirs(t *testing.T) {
+	agent := &upload.MockAgent{}
+	dl := &downloadedFiles{dir: t.TempDir()}
+	err := Cleanup(context.Background(), log.NewTestLogger(), agent, dl)
+	require.NoError(t, err)
+}
+
 func Test_CleanupEmptyFiles_InboundPath_Success(t *testing.T) {
 	agent := &upload.MockAgent{}
 
