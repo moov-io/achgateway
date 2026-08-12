@@ -26,6 +26,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/moov-io/ach"
@@ -40,7 +41,6 @@ import (
 	"github.com/moov-io/achgateway/internal/transform"
 	"github.com/moov-io/achgateway/internal/upload"
 	"github.com/moov-io/achgateway/pkg/models"
-	"github.com/moov-io/base"
 	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/stime"
 	"github.com/moov-io/base/strx"
@@ -48,6 +48,7 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/sync/errgroup"
 )
 
 type aggregator struct {
@@ -98,7 +99,7 @@ func newAggregator(logger log.Logger, eventEmitter events.Emitter, shard service
 	}).Logf("setup %T output formatter", outputFormatter)
 
 	timeService := stime.NewSystemTimeService()
-	cutoffs, err := schedule.ForCutoffTimes(timeService, shard.Cutoffs.Timezone, shard.Cutoffs.Windows)
+	cutoffs, err := schedule.ForCutoffTimes(logger, timeService, shard.Cutoffs.Timezone, shard.Cutoffs.Windows)
 	if err != nil {
 		return nil, fmt.Errorf("error creating cutoffs: %v", err)
 	}
@@ -236,16 +237,27 @@ func (xfagg *aggregator) withEachFile(when time.Time) error {
 	))
 	defer span.End()
 
-	merged, err := xfagg.merger.WithEachMerged(ctx, xfagg.runTransformers)
-	if err != nil {
-		logger.Error().LogErrorf("ERROR inside WithEachMerged: %v", err)
-		return fmt.Errorf("merging ACH files: %v", err)
+	// WithEachMerged may return partial results with an error (e.g. some files
+	// uploaded/mapped and others unmapped). Always emit FileUploaded for what
+	// mapped successfully, then surface the error so on-call is alerted.
+	merged, mergeErr := xfagg.merger.WithEachMerged(ctx, xfagg.runTransformers)
+	if mergeErr != nil {
+		mergeErr = fmt.Errorf("WithEachMerged: %w", mergeErr)
+		logger.Error().LogError(mergeErr)
+		span.RecordError(mergeErr)
 	}
 
 	if err := xfagg.emitFilesUploaded(ctx, merged); err != nil {
-		logger.Error().LogErrorf("ERROR sending files uploaded event: %v", err)
+		err = fmt.Errorf("sending FileUploaded events: %w", err)
+		logger.Error().LogError(err)
+		span.RecordError(err)
+		// Join so emit failures are never dropped when merge already failed.
+		mergeErr = errors.Join(mergeErr, err)
 	}
 
+	if mergeErr != nil {
+		return fmt.Errorf("merging ACH files: %w", mergeErr)
+	}
 	return nil
 }
 
@@ -260,49 +272,121 @@ func (xfagg *aggregator) manualCutoff(waiter manuallyTriggeredCutoff) {
 	))
 	defer span.End()
 
-	if merged, err := xfagg.merger.WithEachMerged(ctx, xfagg.runTransformers); err != nil {
-		logger.Error().LogErrorf("ERROR inside manual WithEachMerged: %v", err)
-		waiter.C <- err
-	} else {
-		// Publish event of File uploads
-		if err := xfagg.emitFilesUploaded(ctx, merged); err != nil {
-			logger.Error().LogErrorf("ERROR sending manual files uploaded event: %v", err)
-		}
-		waiter.C <- err
+	// Emit FileUploaded for any successfully mapped files even when merge
+	// reports unmapped leftovers or partial upload failures.
+	merged, mergeErr := xfagg.merger.WithEachMerged(ctx, xfagg.runTransformers)
+	if mergeErr != nil {
+		mergeErr = fmt.Errorf("manual WithEachMerged: %w", mergeErr)
+		logger.Error().LogError(mergeErr)
+		span.RecordError(mergeErr)
 	}
+	if err := xfagg.emitFilesUploaded(ctx, merged); err != nil {
+		err = fmt.Errorf("sending manual FileUploaded events: %w", err)
+		logger.Error().LogError(err)
+		span.RecordError(err)
+		// Join so emit failures are never dropped when merge already failed.
+		mergeErr = errors.Join(mergeErr, err)
+	}
+	waiter.C <- mergeErr
 
 	logger.Info().With(log.Fields{
 		"shard": log.String(xfagg.shard.Name),
 	}).Log("ended manual cutoff window processing")
 }
 
+// fileUploadedEmitLimit caps concurrent FileUploaded produces.
+//
+// This limit is about *our* side: avoid spawning one goroutine per input
+// (10k–100k on large cutoffs) when the event producer is already the bottleneck.
+// 128 is enough to keep the producer fed without a goroutine stampede.
+const fileUploadedEmitLimit = 128
+
 func (xfagg *aggregator) emitFilesUploaded(ctx context.Context, merged mergedFiles) error {
-	var el base.ErrorList
+	ctx, span := telemetry.StartSpan(ctx, "emit-file-uploaded", trace.WithAttributes(
+		attribute.String("achgateway.shard", xfagg.shard.Name),
+	))
+	defer span.End()
+
+	var inputFilepaths int
+	uploadedFilenames := make([]string, 0, len(merged))
+
+	// Attempt every FileUploaded independently. One produce failure must not
+	// prevent the remaining events from being sent. errgroup.Wait only returns
+	// the first error, so we also collect every failure in sendErrs for ops.
+	var (
+		g        errgroup.Group
+		mu       sync.Mutex
+		sendErrs []error
+	)
+	g.SetLimit(fileUploadedEmitLimit)
+
+	missingEmitter := xfagg.eventEmitter == nil
+	if missingEmitter {
+		err := fmt.Errorf("missing event emitter for FileUploaded on shard %v", xfagg.shard.Name)
+		xfagg.logger.Error().LogError(err)
+		span.RecordError(err)
+		// Still walk inputs for metrics, but there is nothing to produce.
+	}
+
 	for i := range merged {
+		inputFilepaths += len(merged[i].InputFilepaths)
+		uploadedFilenames = append(uploadedFilenames, merged[i].UploadedFilename)
+
 		for k := range merged[i].InputFilepaths {
 			// FileID's don't have .ach suffix
 			_, filename := filepath.Split(merged[i].InputFilepaths[k])
-			filename = strings.TrimSuffix(filename, ".ach")
+			filename = trimACHExtension(filename)
 
-			evt := models.Event{
-				Event: models.FileUploaded{
-					FileID:     filename,
-					ShardKey:   merged[i].Shard,
-					Filename:   merged[i].UploadedFilename,
-					UploadedAt: time.Now(),
-				},
+			if missingEmitter {
+				continue
 			}
 
-			err := xfagg.eventEmitter.Send(ctx, evt)
-			if err != nil {
-				el.Add(err)
-			}
+			fileID := filename
+			uploadedName := merged[i].UploadedFilename
+			shardKey := merged[i].Shard
+
+			g.Go(func() error {
+				evt := models.Event{
+					Event: models.FileUploaded{
+						FileID:     fileID,
+						ShardKey:   shardKey,
+						Filename:   uploadedName,
+						UploadedAt: time.Now(),
+					},
+				}
+
+				err := xfagg.eventEmitter.Send(ctx, evt)
+				if err != nil {
+					err = fmt.Errorf("FileUploaded file_id=%s filename=%s: %w", fileID, uploadedName, err)
+					mu.Lock()
+					sendErrs = append(sendErrs, err)
+					mu.Unlock()
+					return err
+				}
+				return nil
+			})
 		}
 	}
-	if el.Empty() {
+
+	// Block until every produce finishes. Discard Wait's first-error return —
+	// sendErrs already holds the full multi-error set for the caller.
+	_ = g.Wait() //nolint:errcheck // intentional: all per-goroutine errors are collected in sendErrs; Wait's first-error return would drop the rest
+
+	span.SetAttributes(
+		attribute.Int("achgateway.input_filepaths", inputFilepaths),
+		attribute.Int("achgateway.file_uploaded_errors", len(sendErrs)),
+		attribute.Int("achgateway.file_uploaded_emit_limit", fileUploadedEmitLimit),
+		attribute.StringSlice("achgateway.uploaded_filename", uploadedFilenames),
+	)
+
+	if missingEmitter {
+		return fmt.Errorf("missing event emitter for FileUploaded on shard %v (%d events skipped)", xfagg.shard.Name, inputFilepaths)
+	}
+	if len(sendErrs) == 0 {
 		return nil
 	}
-	return el
+	// Prefer a multi-error so operators see how many emits failed, not only the first.
+	return errors.Join(sendErrs...)
 }
 
 func (xfagg *aggregator) runTransformers(ctx context.Context, index int, agent upload.Agent, outgoing *ach.File) (string, error) {

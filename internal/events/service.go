@@ -48,13 +48,24 @@ func NewEmitter(logger log.Logger, cfg *service.EventsConfig) (Emitter, error) {
 }
 
 type MockEmitter struct {
-	mu   sync.Mutex
-	sent []models.Event
+	mu      sync.Mutex
+	sent    []models.Event
+	sendErr error
+}
+
+func (e *MockEmitter) SetSendError(err error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.sendErr = err
 }
 
 func (e *MockEmitter) Send(_ context.Context, evt models.Event) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+
+	if e.sendErr != nil {
+		return e.sendErr
+	}
 
 	// Compute the full cycle of events like real implementations do
 	bs, err := compliance.Protect(nil, evt)
