@@ -24,7 +24,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/fs"
 	"maps"
 	"path/filepath"
 	"slices"
@@ -142,18 +141,20 @@ func (m *filesystemMerging) HandleCancel(ctx context.Context, cancel incoming.Ca
 	fileID := strings.TrimSuffix(cancel.FileID, ".ach")
 	path := filepath.Join("mergable", m.shard.Name, fileID+".ach")
 
-	// Check if the file exists already
+	// Probe existence, then close before rename. Windows cannot rename a file
+	// that still has an open handle.
 	originalFile, _ := m.storage.Open(path)
+	originalFileWasFound := originalFile != nil
 	if originalFile != nil {
-		defer originalFile.Close()
+		originalFile.Close()
 	}
 
-	// Check if the canceled file exists already
-	var canceledFile fs.File
-	if originalFile == nil {
-		canceledFile, _ = m.storage.Open(path + ".canceled")
+	var canceledFileWasFound bool
+	if !originalFileWasFound {
+		canceledFile, _ := m.storage.Open(path + ".canceled")
+		canceledFileWasFound = canceledFile != nil
 		if canceledFile != nil {
-			defer canceledFile.Close()
+			canceledFile.Close()
 		}
 	}
 
@@ -163,8 +164,6 @@ func (m *filesystemMerging) HandleCancel(ctx context.Context, cancel incoming.Ca
 		span.RecordError(err)
 	}
 
-	originalFileWasFound := originalFile != nil
-	canceledFileWasFound := canceledFile != nil
 	successfulReplace := err == nil
 
 	span.SetAttributes(
