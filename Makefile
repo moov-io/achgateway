@@ -2,6 +2,7 @@
 # generated-from:8ef700b33a05ab58ec9e7fd3ad1a0d8a99a742beeefc09d26bc7e4b6dd2ad699 DO NOT REMOVE, DO UPDATE
 
 PLATFORM=$(shell uname -s | tr '[:upper:]' '[:lower:]')
+ARCH ?= $(shell go env GOARCH)
 PWD := $(shell pwd)
 
 ifndef VERSION
@@ -56,6 +57,22 @@ docker-push:
 	docker push moov/achgateway:${VERSION}
 	docker push moov/achgateway:latest
 
+# Native per-arch image used by release.yml. Run on an amd64 or arm64 host
+# (or pass --platform via DOCKER_DEFAULT_PLATFORM) so the Dockerfile builds
+# without QEMU. Example: make docker-build-arch ARCH=arm64
+.PHONY: docker-build-arch docker-push-arch docker-manifest
+docker-build-arch: update
+	docker build --pull --platform linux/$(ARCH) --build-arg VERSION=${VERSION} -t moov/achgateway:${VERSION}-$(ARCH) -f Dockerfile .
+
+docker-push-arch:
+	docker push moov/achgateway:${VERSION}-$(ARCH)
+
+docker-manifest:
+	docker manifest create moov/achgateway:${VERSION} moov/achgateway:${VERSION}-amd64 moov/achgateway:${VERSION}-arm64
+	docker manifest push moov/achgateway:${VERSION}
+	docker manifest create moov/achgateway:latest moov/achgateway:${VERSION}-amd64 moov/achgateway:${VERSION}-arm64
+	docker manifest push moov/achgateway:latest
+
 .PHONY: dev-docker
 dev-docker: update
 	docker build --pull --build-arg VERSION=${DEV_VERSION} -t moov/achgateway:${DEV_VERSION} -f Dockerfile .
@@ -93,9 +110,13 @@ AUTHORS:
 	@$(file >>$@,# For how it is generated, see `make AUTHORS`.)
 	@echo "$(shell git log --format='\n%aN <%aE>' | LC_ALL=C.UTF-8 sort -uf)" >> $@
 
-dist: clean build
+# Cross-compile is safe: this module does not use cgo. Override ARCH to
+# produce another architecture, e.g. make dist ARCH=arm64
+.PHONY: dist
+dist: update
+	@mkdir -p bin
 ifeq ($(OS),Windows_NT)
-	CGO_ENABLED=1 GOOS=windows go build -o bin/achgateway.exe cmd/achgateway/*
+	CGO_ENABLED=0 GOOS=windows GOARCH=$(ARCH) go build -mod=vendor -ldflags "-X github.com/moov-io/achgateway.Version=${VERSION}" -o bin/achgateway.exe github.com/moov-io/achgateway/cmd/achgateway
 else
-	CGO_ENABLED=1 GOOS=$(PLATFORM) go build -o bin/achgateway-$(PLATFORM)-amd64 cmd/achgateway/*
+	CGO_ENABLED=0 GOOS=$(PLATFORM) GOARCH=$(ARCH) go build -mod=vendor -ldflags "-X github.com/moov-io/achgateway.Version=${VERSION}" -o bin/achgateway-$(PLATFORM)-$(ARCH) github.com/moov-io/achgateway/cmd/achgateway
 endif
