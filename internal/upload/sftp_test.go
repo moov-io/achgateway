@@ -26,11 +26,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/moov-io/base/log"
-	"github.com/ory/dockertest/v3"
+	"github.com/ory/dockertest/v4"
 )
 
 type sftpDeployment struct {
-	res   *dockertest.Resource
+	res   dockertest.Resource
 	agent *SFTPTransferAgent
 
 	dir string // temporary directory
@@ -61,31 +61,25 @@ func spawnSFTP(t *testing.T) *sftpDeployment {
 	dir, uid, gid := mkdir(t)
 
 	// Start our Docker image
-	pool, err := dockertest.NewPool("")
-	require.NoError(t, err)
-	resource, err := pool.RunWithOptions(&dockertest.RunOptions{
-		Repository: "atmoz/sftp",
-		Tag:        "latest",
+	pool := dockertest.NewPoolT(t, "")
+	resource := pool.RunT(t, "atmoz/sftp",
+		dockertest.WithTag("latest"),
 		// set user and group to grant write permissions
-		Cmd: []string{
+		dockertest.WithCmd([]string{
 			fmt.Sprintf("demo:password:%d:%d:upload", uid, gid),
-		},
-		Mounts: []string{
+		}),
+		dockertest.WithMounts([]string{
 			dir + ":/home/demo/upload",
-		},
-	})
-	// Force container to shutdown prior to checking if it failed
-	t.Cleanup(func() {
-		if resource != nil {
-			require.NoError(t, resource.Close())
-			pool.Purge(resource)
-		}
-	})
-	require.NoError(t, err)
+		}),
+		dockertest.WithoutReuse(),
+	)
 
 	addr := "localhost:" + resource.GetPort("22/tcp")
 
-	var agent *SFTPTransferAgent
+	var (
+		agent *SFTPTransferAgent
+		err   error
+	)
 	for i := 0; i < 10; i++ {
 		if agent != nil {
 			break
@@ -102,7 +96,7 @@ func spawnSFTP(t *testing.T) *sftpDeployment {
 		require.NoError(t, agent.Close())
 	})
 
-	err = pool.Retry(func() error {
+	err = pool.Retry(t.Context(), 0, func() error {
 		return agent.Ping()
 	})
 	require.NoError(t, err)

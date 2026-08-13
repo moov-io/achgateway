@@ -7,24 +7,18 @@ package notify
 import (
 	"net"
 	"testing"
-	"time"
 
 	"github.com/moov-io/base/docker"
+	"github.com/ory/dockertest/v4"
 	"github.com/stretchr/testify/require"
-
-	"github.com/ory/dockertest/v3"
 )
 
 type mailslurpDeployment struct {
-	container *dockertest.Resource
+	container dockertest.Resource
 }
 
 func (dep *mailslurpDeployment) SMTPPort() string {
 	return dep.container.GetPort("1025/tcp")
-}
-
-func (dep *mailslurpDeployment) Close() error {
-	return dep.container.Close()
 }
 
 func spawnMailslurp(t *testing.T) *mailslurpDeployment {
@@ -32,23 +26,17 @@ func spawnMailslurp(t *testing.T) *mailslurpDeployment {
 		t.Skip("skipping docker test")
 	}
 
-	pool, err := dockertest.NewPool("")
-	require.NoError(t, err)
-
-	container, err := pool.RunWithOptions(&dockertest.RunOptions{
-		Repository:   "oryd/mailslurper",
-		Tag:          "latest-smtps",
-		ExposedPorts: []string{"1025"},
-	})
-	require.NoError(t, err)
+	pool := dockertest.NewPoolT(t, "")
+	container := pool.RunT(t, "oryd/mailslurper",
+		dockertest.WithTag("latest-smtps"),
+		dockertest.WithoutReuse(),
+	)
 
 	dep := &mailslurpDeployment{
 		container: container,
 	}
 
-	err = pool.Retry(func() error {
-		time.Sleep(1 * time.Second)
-
+	err := pool.Retry(t.Context(), 0, func() error {
 		conn, err := net.Dial("tcp", "localhost:"+dep.SMTPPort())
 		if err != nil {
 			return err
