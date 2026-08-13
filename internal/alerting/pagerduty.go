@@ -59,7 +59,7 @@ func (pd *PagerDuty) AlertError(e error) error {
 
 	// Accumulate the call points which got us here
 	details := make(map[string]string)
-	for i := 1; i < 5; i++ {
+	for i := 1; i < 7; i++ {
 		if _, file, line, ok := runtime.Caller(i); ok {
 			caller := fmt.Sprintf("%s:%d", file, line)
 
@@ -67,6 +67,7 @@ func (pd *PagerDuty) AlertError(e error) error {
 			details[fmt.Sprintf("trace_%d", i)] = caller
 		}
 	}
+	details["hostname"] = hostName
 
 	dedupKey := fmt.Sprintf("%x", sha256.Sum256(stacktrace.Bytes()))
 

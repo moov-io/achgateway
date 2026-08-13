@@ -8,9 +8,11 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/moov-io/base"
+	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/stime"
 
 	"github.com/rickar/cal/v2"
@@ -22,9 +24,11 @@ import (
 type CutoffTimes struct {
 	C chan *Day
 
+	logger      log.Logger
 	sched       *cron.Cron
 	firstCutoff string
 	timeService stime.TimeService
+	timestamps  []string
 }
 
 type Day struct {
@@ -39,11 +43,13 @@ type Day struct {
 	FirstWindow bool
 }
 
-func ForCutoffTimes(timeService stime.TimeService, tz string, timestamps []string) (*CutoffTimes, error) {
+func ForCutoffTimes(logger log.Logger, timeService stime.TimeService, tz string, timestamps []string) (*CutoffTimes, error) {
 	ct := &CutoffTimes{
 		C:           make(chan *Day),
+		logger:      logger,
 		sched:       cron.New(),
 		timeService: timeService,
+		timestamps:  timestamps,
 	}
 
 	if len(timestamps) > 0 {
@@ -61,6 +67,9 @@ func ForCutoffTimes(timeService stime.TimeService, tz string, timestamps []strin
 func (ct *CutoffTimes) Stop() {
 	if ct == nil {
 		return
+	}
+	if ct.logger != nil {
+		ct.logger.Info().Logf("shutting down scheduling for %v cutoff windows", strings.Join(ct.timestamps, ","))
 	}
 	if ct.C != nil {
 		close(ct.C)

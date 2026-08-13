@@ -24,7 +24,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/fs"
+	"maps"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -40,7 +40,6 @@ import (
 	"github.com/moov-io/base/strx"
 	"github.com/moov-io/base/telemetry"
 
-	"github.com/igrmk/treemap/v2"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -142,18 +141,20 @@ func (m *filesystemMerging) HandleCancel(ctx context.Context, cancel incoming.Ca
 	fileID := strings.TrimSuffix(cancel.FileID, ".ach")
 	path := filepath.Join("mergable", m.shard.Name, fileID+".ach")
 
-	// Check if the file exists already
+	// Probe existence, then close before rename. Windows cannot rename a file
+	// that still has an open handle.
 	originalFile, _ := m.storage.Open(path)
+	originalFileWasFound := originalFile != nil
 	if originalFile != nil {
-		defer originalFile.Close()
+		originalFile.Close()
 	}
 
-	// Check if the canceled file exists already
-	var canceledFile fs.File
-	if originalFile == nil {
-		canceledFile, _ = m.storage.Open(path + ".canceled")
+	var canceledFileWasFound bool
+	if !originalFileWasFound {
+		canceledFile, _ := m.storage.Open(path + ".canceled")
+		canceledFileWasFound = canceledFile != nil
 		if canceledFile != nil {
-			defer canceledFile.Close()
+			canceledFile.Close()
 		}
 	}
 
@@ -163,8 +164,6 @@ func (m *filesystemMerging) HandleCancel(ctx context.Context, cancel incoming.Ca
 		span.RecordError(err)
 	}
 
-	originalFileWasFound := originalFile != nil
-	canceledFileWasFound := canceledFile != nil
 	successfulReplace := err == nil
 
 	span.SetAttributes(
@@ -240,22 +239,48 @@ func (m *filesystemMerging) getNonCanceledMatches(ctx context.Context, dir strin
 		attribute.Int("achgateway.negative_matches", len(negativeMatches)),
 	)
 
-	var out []string
+	// Canceled files are written by HandleCancel as "<path>.canceled" where path
+	// is the original ".ach" path (e.g. "dir/foo.ach.canceled"). Older/manual
+	// layouts may use "dir/foo.canceled" beside "dir/foo.ach".
+	//
+	// storage.Glob is non-recursive on a single directory, so every RelativePath
+	// shares the same dir prefix — full-stem equality is sufficient and avoids
+	// basename false positives across unrelated directories.
+	canceledStems := make(map[string]struct{}, len(negativeMatches))
+	for j := range negativeMatches {
+		stem := strings.TrimSuffix(negativeMatches[j].RelativePath, ".canceled")
+		canceledStems[stem] = struct{}{}
+	}
+
+	out := make([]string, 0, len(positiveMatches))
 	for i := range positiveMatches {
-		exclude := false
-		for j := range negativeMatches {
-			// We match when a "XXX.ach.canceled" filepath exists and so we can't
-			// include "XXX.ach" has a filepath from this function.
-			if strings.HasPrefix(negativeMatches[j].RelativePath, positiveMatches[i].RelativePath) {
-				exclude = true
-				break
+		path := positiveMatches[i].RelativePath
+		if _, skip := canceledStems[path]; skip {
+			continue
+		}
+		// "dir/foo.ach" canceled as "dir/foo.canceled"
+		if stem, ok := stripACHExtension(path); ok {
+			if _, skip := canceledStems[stem]; skip {
+				continue
 			}
 		}
-		if !exclude {
-			out = append(out, positiveMatches[i].RelativePath)
-		}
+		out = append(out, path)
 	}
 	return out, nil
+}
+
+func (m *filesystemMerging) createMergeConditions() ach.Conditions {
+	var mergeConditions ach.Conditions
+	if m.shard.Mergable.Conditions != nil {
+		mergeConditions = *m.shard.Mergable.Conditions
+	}
+
+	// Always cap the MaxDollarAmount at Nacha's file-level debit/credit limit.
+	if mergeConditions.MaxDollarAmount == 0 || mergeConditions.MaxDollarAmount > ach.NachaFileDebitCreditLimit {
+		mergeConditions.MaxDollarAmount = ach.NachaFileDebitCreditLimit
+	}
+
+	return mergeConditions
 }
 
 func (m *filesystemMerging) createMergeDirOptions(canceledFiles []string) *ach.MergeDirOptions {
@@ -266,6 +291,9 @@ func (m *filesystemMerging) createMergeDirOptions(canceledFiles []string) *ach.M
 	}
 }
 
+// WithEachMerged does the heavy lifting of coordinating ach.MergeDir, flattening the merged files,
+// saving merged files to the local cache, and uploading them to the remote server. After all that
+// it generates mappings for what files were put into which uploaded files.
 func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.Context, int, upload.Agent, *ach.File) (string, error)) (mergedFiles, error) {
 	// move the current directory so it's isolated and easier to debug later on
 	dir, err := m.isolateMergableDir(ctx)
@@ -281,31 +309,66 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 
 	logger := m.logger.Set("shardName", log.String(m.shard.Name))
 
-	// Merge the files together
-	var mergeConditions ach.Conditions
-	if m.shard.Mergable.Conditions != nil {
-		mergeConditions = *m.shard.Mergable.Conditions
-	}
-
+	// We need to exclude whatever files have been canceled
 	canceledFiles, err := m.getCanceledFiles(ctx, dir)
 	if err != nil {
 		return nil, fmt.Errorf("problem listing %s for canceled files: %w", dir, err)
 	}
 
+	// Snapshot expected inputs before merge/upload work so later local cache
+	// writes under uploaded/ cannot affect the FileUploaded completeness check.
+	// (storage.Glob is non-recursive; listing early keeps the contract explicit.)
 	var el base.ErrorList
-
-	opts := m.createMergeDirOptions(canceledFiles)
-	files, err := m.mergeDir(ctx, dir, mergeConditions, opts)
-	if err != nil {
-		el.Add(fmt.Errorf("unable to merge files: %v", err))
+	expectedInputs, listErr := m.getNonCanceledMatches(ctx, dir)
+	if listErr != nil {
+		el.Add(fmt.Errorf("listing input files in %s: %w", dir, listErr))
+		expectedInputs = nil
 	}
 
-	// Remove the directory if there are no files, otherwise setup an inner dir for the uploaded file.
-	if len(files) == 0 {
-		// delete the new directory as there's nothing to merge
+	// Merge the files together
+	mergeConditions := m.createMergeConditions()
+	opts := m.createMergeDirOptions(canceledFiles)
+
+	files, mergeErr := m.mergeDir(ctx, dir, mergeConditions, opts)
+	if mergeErr != nil {
+		el.Add(fmt.Errorf("unable to merge files: %w", mergeErr))
+	}
+
+	// Only remove an empty isolated directory when merge succeeded and produced
+	// nothing. Never delete on merge failure — MergeDir returns nil files with
+	// an error, and wiping the dir would destroy every input ACH in the cutoff.
+	//
+	// Return immediately after a successful empty cleanup so we do not recreate
+	// the directory via MkdirAll(uploaded/) below. buildDirMapping runs only
+	// after this check (no mapping work / mapErrs on the empty-success path).
+	if len(files) == 0 && mergeErr == nil {
 		if err := m.storage.RmdirAll(dir); err != nil {
 			el.Add(err)
 		}
+		// Surface pre-merge listing errors (and cleanup failures) even when empty.
+		if !el.Empty() {
+			return nil, el
+		}
+		return nil, nil
+	}
+
+	// Build entry→input mapping before upload so we can match FileUploaded after.
+	// Multiple input files may share an entry identity (same Nacha content under
+	// different file_ids) — that is allowed: merge keeps every entry, and the
+	// mapping stores a queue of filenames per key so each file_id still gets an event.
+	mappings, mapErrs := m.buildDirMapping(dir, canceledFiles)
+	for _, mapErr := range mapErrs {
+		span.RecordError(mapErr)
+		el.Add(mapErr)
+	}
+	if dupFiles := crossFileDuplicateIdentityFiles(mappings); len(dupFiles) > 0 {
+		// Observability only — do not block upload or fail the cutoff.
+		span.SetAttributes(
+			attribute.Int("achgateway.duplicate_entry_identity_files", len(dupFiles)),
+			attribute.StringSlice("achgateway.duplicate_entry_identity_filenames", sampleStrings(dupFiles, 20)),
+		)
+		logger.Info().Logf("%d input file(s) share duplicate entry identity (all will upload and map): %s",
+			len(dupFiles), summarizeFilenames(dupFiles, 20))
 	}
 
 	uploadedDir := filepath.Join(dir, "uploaded")
@@ -318,62 +381,118 @@ func (m *filesystemMerging) WithEachMerged(ctx context.Context, f func(context.C
 	}
 	logger.Logf("found %T agent", agent)
 
-	// Write each file to local cache
+	// Prepare each merged file (flatten / local save). Never return
+	// early from this loop — record the error and continue so later files still upload.
 	for i := range files {
-		// Optionally Flatten Batches
+		// Optionally Flatten Batches. ach.File.FlattenBatches returns a new file
+		// on success and does not mutate the receiver on error — keep the original
+		// and still upload so money moves; surface the flatten error for ops.
 		if m.shard.Mergable.FlattenBatches != nil {
-			if file, err := m.flattenBatches(ctx, files[i]); err != nil {
-				el.Add(err)
+			if file, flatErr := m.flattenBatches(ctx, files[i]); flatErr != nil {
+				flatErr = fmt.Errorf("flatten batches for merged file %d: %w", i, flatErr)
+				span.RecordError(flatErr)
+				el.Add(flatErr)
 			} else {
 				files[i] = file
 			}
 		}
 
-		// Write our file to the mergable directory
-		if err := m.saveMergedFile(ctx, uploadedDir, files[i]); err != nil {
-			err = fmt.Errorf("problem writing merged file: %v", err)
-			span.RecordError(err)
-			el.Add(err)
+		// Best-effort local uploaded/ cache for audit/debug. A save failure must
+		// not block the ODFI upload — money movement takes priority; surface the
+		// error so operators know the local copy is missing.
+		if saveErr := m.saveMergedFile(ctx, uploadedDir, files[i]); saveErr != nil {
+			saveErr = fmt.Errorf("writing merged file %d to local cache: %w", i, saveErr)
+			span.RecordError(saveErr)
+			el.Add(saveErr)
+			logger.Error().Logf("local cache save failed for merged file %d; continuing with ODFI upload: %v", i, saveErr)
+		}
+	}
+
+	// Write each prepared file to the remote agent. Upload failures are recorded
+	// but never abort the remaining files in the batch.
+	//
+	// notUploaded holds ACH files that were prepared but not successfully uploaded
+	// (prep skip or upload error). We map their inputs only to exclude them from
+	// the unmapped-input error — they already have a more specific error in el
+	// and must not receive FileUploaded.
+	var merged []mergedFile
+	var notUploaded mergedFiles
+	successfulRemoteWrites := 0
+	eligibleUploads := 0
+	for i := range files {
+		eligibleUploads++
+
+		filename, upErr := f(ctx, i, agent, files[i]) // upload
+		if upErr != nil {
+			upErr = fmt.Errorf("problem uploading merged file %d: %w", i, upErr)
+			span.RecordError(upErr)
+			el.Add(upErr)
+			notUploaded = append(notUploaded, mergedFile{ACHFile: files[i]})
 			continue
 		}
-	}
 
-	// Write each file to the remote agent
-	var merged []mergedFile
-	successfulRemoteWrites := 0
-	for i := range files {
-		filename, err := f(ctx, i, agent, files[i]) // upload
-		if err != nil {
-			err = fmt.Errorf("problem from callback: %v", err)
-			span.RecordError(err)
-			el.Add(err)
-		} else {
-			merged = append(merged, mergedFile{
-				UploadedFilename: filename,
-				ACHFile:          files[i],
-				Shard:            m.shard.Name,
-			})
-			successfulRemoteWrites++
+		merged = append(merged, mergedFile{
+			UploadedFilename: filename,
+			ACHFile:          files[i],
+			Shard:            m.shard.Name,
+		})
+		successfulRemoteWrites++
 
-			if i > 1 && i%10 == 0 {
-				logger.Logf("written (%d/%d) files to remote agent", successfulRemoteWrites, len(files))
-			}
+		if successfulRemoteWrites > 1 && successfulRemoteWrites%10 == 0 {
+			logger.Logf("written (%d/%d) files to remote agent", successfulRemoteWrites, eligibleUploads)
 		}
 	}
-	logger.Logf("wrote %d of %d files to remote agent", successfulRemoteWrites, len(files))
+	logger.Logf("wrote %d of %d files to remote agent", successfulRemoteWrites, eligibleUploads)
 
 	span.SetAttributes(
 		attribute.Int("achgateway.successful_remote_writes", successfulRemoteWrites),
 	)
 
-	// Build a mapping of BatchHeader + EntryDetail from dir (input files)
-	mappings, err := m.buildDirMapping(dir, canceledFiles)
-	if err != nil {
-		el.Add(err)
+	// From the pre-upload mapping match each input against merged/uploaded files.
+	// Clone because findInputFilepaths deletes keys as it matches.
+	var leftoverEntryKeys int
+	if mappings != nil {
+		merged, leftoverEntryKeys = m.findInputFilepaths(maps.Clone(mappings), merged)
+		// Account for not-uploaded outputs so their inputs are not double-reported
+		// as "unmapped" when prep/upload errors already explain the miss.
+		if len(notUploaded) > 0 {
+			notUploaded, _ = m.findInputFilepaths(maps.Clone(mappings), notUploaded)
+		}
 	}
 
-	// From that mapping match each one against the merged/uploaded files
-	merged = m.findInputFilepaths(mappings, merged)
+	// Completeness: inputs not present on any successful upload AND not explained
+	// by a prep/upload failure on their merged output.
+	accounted := make(mergedFiles, 0, len(merged)+len(notUploaded))
+	accounted = append(accounted, merged...)
+	accounted = append(accounted, notUploaded...)
+	unmapped := missingMappedInputFiles(expectedInputs, accounted)
+	mappedCount := countMappedInputFiles(merged)
+
+	span.SetAttributes(
+		attribute.Int("achgateway.expected_input_files", len(expectedInputs)),
+		attribute.Int("achgateway.mapped_input_files", mappedCount),
+		attribute.Int("achgateway.unmapped_input_files", len(unmapped)),
+		// leftoverEntryKeys is remaining identity-queue slots (not distinct file IDs).
+		attribute.Int("achgateway.unmapped_entry_keys", leftoverEntryKeys),
+	)
+	// Only flag genuine mapping gaps when money moved. Total prep/upload failure
+	// already surfaces via those errors without an unmapped double-count.
+	if len(unmapped) > 0 && successfulRemoteWrites > 0 {
+		sample := unmapped
+		if len(sample) > 20 {
+			sample = sample[:20]
+		}
+		span.SetAttributes(attribute.StringSlice("achgateway.unmapped_filenames", sample))
+		recordUnmappedInputFiles(m.shard.Name, len(unmapped))
+
+		unmappedErr := fmt.Errorf("%d input file(s) in %s were not mapped to an uploaded file (FileUploaded will not be emitted for them): %s",
+			len(unmapped), dir, summarizeFilenames(unmapped, 20))
+		logger.Error().LogError(unmappedErr)
+		span.RecordError(unmappedErr)
+		el.Add(unmappedErr)
+	} else if len(unmapped) > 0 {
+		span.SetAttributes(attribute.StringSlice("achgateway.unmapped_filenames", sampleStrings(unmapped, 20)))
+	}
 
 	if el.Empty() {
 		return merged, nil
@@ -385,6 +504,8 @@ func (m *filesystemMerging) mergeDir(ctx context.Context, dir string, mergeCondi
 	_, span := telemetry.StartSpan(ctx, "ach-merge-dir", trace.WithAttributes(
 		attribute.String("achgateway.shard", m.shard.Name),
 		attribute.String("achgateway.dir", dir),
+		attribute.Int("achgateway.merge_max_lines", mergeConditions.MaxLines),
+		attribute.Int64("achgateway.merge_max_dollar_amount", mergeConditions.MaxDollarAmount),
 	))
 	defer span.End()
 
@@ -407,36 +528,80 @@ func (m *filesystemMerging) flattenBatches(ctx context.Context, file *ach.File) 
 	return file.FlattenBatches()
 }
 
+// fileAcceptor builds a MergeDir AcceptFile callback.
+// canceledFiles must be basenames from getCanceledFiles (e.g. "foo.ach"), already
+// stripped of the ".canceled" suffix — matched against filepath.Base of each walk path.
 func fileAcceptor(canceledFiles []string) func(string) ach.FileAcceptance {
+	// O(1) lookup instead of slices.Contains on every path during MergeDir walks.
+	canceled := make(map[string]struct{}, len(canceledFiles))
+	for _, name := range canceledFiles {
+		// Index basename only — getCanceledFiles always returns basenames.
+		canceled[filepath.Base(name)] = struct{}{}
+	}
+
 	return func(path string) ach.FileAcceptance {
 		// Reject canceled files
 		if strings.Contains(path, ".canceled") {
 			return ach.SkipFile
 		}
 		_, filename := filepath.Split(path)
-		if slices.Contains(canceledFiles, filename) {
+		if _, skip := canceled[filename]; skip {
 			return ach.SkipFile
 		}
 
-		// Only accept .ach files
-		if strings.Contains(path, ".ach") {
+		// Only accept .ach files (case-insensitive, allocation-free suffix check)
+		if hasACHExtension(path) {
 			return ach.AcceptFile
 		}
 		return ach.SkipFile
 	}
 }
 
-// buildDirMapping computes a tree of the input files and their entries together so that we can quickly find
+// hasACHExtension reports whether path ends with ".ach" ignoring case.
+func hasACHExtension(path string) bool {
+	return len(path) >= 4 && strings.EqualFold(path[len(path)-4:], ".ach")
+}
+
+// stripACHExtension returns path without a trailing ".ach"/".ACH" suffix.
+func stripACHExtension(path string) (string, bool) {
+	if !hasACHExtension(path) {
+		return path, false
+	}
+	return path[:len(path)-4], true
+}
+
+// trimACHExtension returns path without a trailing ".ach"/".ACH" suffix, or
+// path unchanged when the suffix is absent.
+func trimACHExtension(path string) string {
+	if stem, ok := stripACHExtension(path); ok {
+		return stem
+	}
+	return path
+}
+
+// entryFileMapping maps entry identity keys to the input filename(s) they came from.
+// A key may map to multiple filenames when distinct file_ids carry identical ACH
+// entry content — moov-io/ach keeps each entry, and we must emit FileUploaded for each.
+type entryFileMapping map[string][]string
+
+// buildDirMapping computes a map of the input files and their entries together so that we can quickly find
 // where they were merged into.
-func (m *filesystemMerging) buildDirMapping(dir string, canceledFiles []string) (*treemap.TreeMap[string, string], error) {
-	tree := treemap.New[string, string]()
+//
+// Errors reading individual input files are collected and returned without aborting the walk —
+// remaining files still contribute to the mapping so FileUploaded can be emitted for them.
+// A directory-level ReadDir failure returns a nil map and a single error.
+func (m *filesystemMerging) buildDirMapping(dir string, canceledFiles []string) (entryFileMapping, []error) {
+	mappings := make(entryFileMapping)
+	// seen[identityKey][filename] for O(1) dedupe while building queues.
+	seen := make(map[string]map[string]struct{})
 
 	fds, err := m.storage.ReadDir(dir)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 
 	acceptor := fileAcceptor(canceledFiles)
+	var errs []error
 
 	for i := range fds {
 		path := fds[i].Name()
@@ -452,16 +617,18 @@ func (m *filesystemMerging) buildDirMapping(dir string, canceledFiles []string) 
 			continue
 		}
 
-		err = m.accumulateMappings(tree, filepath.Join(dir, path))
-		if err != nil {
-			return nil, fmt.Errorf("accumulating mappings from %s failed: %w", path, err)
+		fullPath := filepath.Join(dir, path)
+		if err := m.accumulateMappings(mappings, seen, fullPath); err != nil {
+			errs = append(errs, fmt.Errorf("accumulating mappings from %s failed: %w", path, err))
+			// Continue so one bad input does not block FileUploaded for the rest.
+			continue
 		}
 	}
 
-	return tree, nil
+	return mappings, errs
 }
 
-func (m *filesystemMerging) accumulateMappings(tree *treemap.TreeMap[string, string], path string) error {
+func (m *filesystemMerging) accumulateMappings(mappings entryFileMapping, seen map[string]map[string]struct{}, path string) error {
 	fd, err := m.storage.Open(path)
 	if err != nil {
 		return fmt.Errorf("opening %s failed: %w", path, err)
@@ -494,26 +661,98 @@ func (m *filesystemMerging) accumulateMappings(tree *treemap.TreeMap[string, str
 
 	_, filename := filepath.Split(path)
 
-	// Add each BatchHeader and Entry to the map
+	// Queue each BatchHeader+Entry under its identity key.
+	//
+	//   - Same entry under different file_ids → each file_id is queued (upload
+	//     each entry; FileUploaded for each file_id).
+	//   - Same file_id already queued for this key → skip (idempotent re-queue /
+	//     duplicate rows in one file only need one FileUploaded for that file_id).
 	for i := range file.Batches {
 		bh := file.Batches[i].GetHeader().String()
 
 		entries := file.Batches[i].GetEntries()
 
-		for m := range entries {
-			key := makeKey(bh, entries[m])
-			tree.Set(key, filename)
+		for idx := range entries {
+			if entries[idx] == nil {
+				continue
+			}
+			key := makeKey(bh, entries[idx])
+			if seen[key] == nil {
+				seen[key] = make(map[string]struct{})
+			}
+			if _, exists := seen[key][filename]; exists {
+				continue
+			}
+			seen[key][filename] = struct{}{}
+			mappings[key] = append(mappings[key], filename)
 		}
 	}
 
 	return nil
 }
 
-func makeKey(bh string, entry *ach.EntryDetail) string {
-	// copy off the BatchNumber from our header, it's modified when merging
-	return fmt.Sprintf("%87.87s%s", bh, entry.String())
+// crossFileDuplicateIdentityFiles returns sorted unique basenames that share an
+// entry identity key with at least one other distinct input file.
+func crossFileDuplicateIdentityFiles(mappings entryFileMapping) []string {
+	if len(mappings) == 0 {
+		return nil
+	}
+	seen := make(map[string]struct{})
+	for _, names := range mappings {
+		uniq := uniqueSortedStrings(names)
+		if len(uniq) < 2 {
+			continue
+		}
+		for _, name := range uniq {
+			seen[name] = struct{}{}
+		}
+	}
+	if len(seen) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(seen))
+	for name := range seen {
+		out = append(out, name)
+	}
+	slices.Sort(out)
+	return out
 }
 
+func uniqueSortedStrings(in []string) []string {
+	if len(in) == 0 {
+		return nil
+	}
+	out := slices.Clone(in)
+	slices.Sort(out)
+	return slices.Compact(out)
+}
+
+func mappingLeftoverCount(mappings entryFileMapping) int {
+	n := 0
+	for _, names := range mappings {
+		n += len(names)
+	}
+	return n
+}
+
+func makeKey(bh string, entry *ach.EntryDetail) string {
+	// Callers skip nil entries — do not return "" (would collide in the mapping).
+	//
+	// NACHA BatchHeader.String() is always 94 chars; we drop the trailing 7-char
+	// BatchNumber (merge renumbers batches). Preserve the historical
+	// fmt.Sprintf("%87.87s") contract: truncate long headers and left-pad short
+	// ones so keys stay stable if a non-standard header ever appears.
+	switch {
+	case len(bh) > 87:
+		bh = bh[:87]
+	case len(bh) < 87:
+		bh = strings.Repeat(" ", 87-len(bh)) + bh
+	}
+	// Avoid fmt.Sprintf: concatenation is faster and allocates one string.
+	return bh + entry.String()
+}
+
+// mergedFile represents a single merged file structure used in the merging and uploading process.
 type mergedFile struct {
 	InputFilepaths   []string
 	UploadedFilename string
@@ -523,30 +762,111 @@ type mergedFile struct {
 
 type mergedFiles []mergedFile
 
-func (m *filesystemMerging) findInputFilepaths(mappings *treemap.TreeMap[string, string], merged mergedFiles) mergedFiles {
+// findInputFilepaths matches merged ACH entries back to their input filenames.
+// It returns the merged files with InputFilepaths populated and the number of
+// leftover mapping slots (input entry identities not matched — typically none
+// after a full merge).
+//
+// When several input files share one entry identity, each matching merged entry
+// consumes one queued filename so every file_id can receive FileUploaded.
+func (m *filesystemMerging) findInputFilepaths(mappings entryFileMapping, merged mergedFiles) (mergedFiles, int) {
 	// Compare each merged file against mappings
 	for i := range merged {
+		if merged[i].ACHFile == nil {
+			continue
+		}
 		for j := range merged[i].ACHFile.Batches {
 			batch := merged[i].ACHFile.Batches[j]
 
 			bh := batch.GetHeader().String()
 			entries := batch.GetEntries()
 
-			for m := range entries {
-				key := makeKey(bh, entries[m])
+			for idx := range entries {
+				if entries[idx] == nil {
+					continue
+				}
+				key := makeKey(bh, entries[idx])
 
-				filename, found := mappings.Get(key)
-				if found {
-					merged[i].InputFilepaths = append(merged[i].InputFilepaths, filename)
-					mappings.Del(key)
+				names := mappings[key]
+				if len(names) == 0 {
+					continue
+				}
+				merged[i].InputFilepaths = append(merged[i].InputFilepaths, names[0])
+				if len(names) == 1 {
+					delete(mappings, key)
+				} else {
+					mappings[key] = names[1:]
 				}
 			}
 		}
 
+		// Compact duplicate basenames from multi-entry inputs in one merged file.
+		// Safe: isolateMergableDir is flat (no nested ACH dirs), and accumulateMappings
+		// stores filepath.Base only — two distinct inputs cannot share a basename.
 		slices.Sort(merged[i].InputFilepaths)
 		merged[i].InputFilepaths = slices.Compact(merged[i].InputFilepaths)
 	}
-	return merged
+	return merged, mappingLeftoverCount(mappings)
+}
+
+// missingMappedInputFiles returns base filenames from expectedInputs that do not
+// appear in any merged file's InputFilepaths. expectedInputs may be relative paths.
+func missingMappedInputFiles(expectedInputs []string, merged mergedFiles) []string {
+	if len(expectedInputs) == 0 {
+		return nil
+	}
+
+	mapped := make(map[string]struct{}, len(expectedInputs))
+	for i := range merged {
+		for _, p := range merged[i].InputFilepaths {
+			mapped[filepath.Base(p)] = struct{}{}
+		}
+	}
+
+	var missing []string
+	seen := make(map[string]struct{}, len(expectedInputs))
+	for _, p := range expectedInputs {
+		name := filepath.Base(p)
+		if name == "" || name == "." || name == string(filepath.Separator) {
+			continue
+		}
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		if _, ok := mapped[name]; !ok {
+			missing = append(missing, name)
+		}
+	}
+	slices.Sort(missing)
+	return missing
+}
+
+func countMappedInputFiles(merged mergedFiles) int {
+	seen := make(map[string]struct{})
+	for i := range merged {
+		for _, p := range merged[i].InputFilepaths {
+			seen[filepath.Base(p)] = struct{}{}
+		}
+	}
+	return len(seen)
+}
+
+func summarizeFilenames(names []string, limit int) string {
+	if len(names) == 0 {
+		return ""
+	}
+	if limit <= 0 || len(names) <= limit {
+		return strings.Join(names, ", ")
+	}
+	return fmt.Sprintf("%s, ... (+%d more)", strings.Join(names[:limit], ", "), len(names)-limit)
+}
+
+func sampleStrings(names []string, limit int) []string {
+	if limit <= 0 || len(names) <= limit {
+		return names
+	}
+	return names[:limit]
 }
 
 func (m *filesystemMerging) saveMergedFile(ctx context.Context, dir string, file *ach.File) error {

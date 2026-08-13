@@ -482,12 +482,12 @@ func (fr *FileReceiver) processACHFile(ctx context.Context, file incoming.ACHFil
 
 	acceptFileResponse, acceptFileErr := agg.acceptFile(ctx, file)
 	if acceptFileErr != nil {
-		// Delete the record from files table
+		// Delete the record from files table so a later retry can become the winner.
 		deleteErr := fr.fileRepository.Cleanup(ctx, acceptanceData)
 		if deleteErr != nil {
-			logger.Error().LogErrorf("unable to cleanup files table: %v", err)
+			logger.Error().LogErrorf("unable to cleanup files table: %v", deleteErr)
 		}
-		return logger.Error().LogErrorf("problem accepting file: %v", err).Err()
+		return logger.Error().LogErrorf("problem accepting file: %v", acceptFileErr).Err()
 	}
 
 	fr.QueueFileResponses <- acceptFileResponse

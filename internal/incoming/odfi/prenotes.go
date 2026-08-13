@@ -85,9 +85,8 @@ func (pc *prenoteEmitter) Handle(ctx context.Context, logger log.Logger, file Fi
 		for j := range entries {
 			if ok, _ := isPrenoteEntry(entries[j]); !ok {
 				continue
-			} else {
-				batch.Entries = append(batch.Entries, entries[j])
 			}
+			batch.Entries = append(batch.Entries, entries[j])
 
 			logger = logger.With(log.Fields{
 				"origin":      log.String(file.ACHFile.Header.ImmediateOrigin),
@@ -100,6 +99,9 @@ func (pc *prenoteEmitter) Handle(ctx context.Context, logger log.Logger, file Fi
 				"destination", file.ACHFile.Header.ImmediateDestination,
 				"transactionCode", strconv.Itoa(entries[j].TransactionCode),
 			).Add(1)
+		}
+		if len(batch.Entries) > 0 {
+			batches = append(batches, batch)
 		}
 	}
 	if len(batches) > 0 {

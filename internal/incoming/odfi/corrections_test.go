@@ -20,6 +20,7 @@ package odfi
 import (
 	"testing"
 
+	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/log"
@@ -41,4 +42,13 @@ func TestCorrections(t *testing.T) {
 
 	emitter := CorrectionEmitter(cfg, eventsService)
 	require.NotNil(t, emitter)
+}
+
+func TestIsCorrectionFile(t *testing.T) {
+	require.False(t, isCorrectionFile(File{}))
+	require.False(t, isCorrectionFile(File{ACHFile: ach.NewFile()}))
+
+	file := ach.NewFile()
+	file.NotificationOfChange = []ach.Batcher{ach.NewBatchCOR(ach.NewBatchHeader())}
+	require.True(t, isCorrectionFile(File{ACHFile: file}))
 }

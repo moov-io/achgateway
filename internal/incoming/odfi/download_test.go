@@ -19,8 +19,10 @@ package odfi
 
 import (
 	"context"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/moov-io/achgateway/internal/upload"
@@ -36,11 +38,12 @@ func TestDownloader__deleteFiles(t *testing.T) {
 	}
 
 	agent := &upload.MockAgent{}
-	dl, err := factory.setup(agent)
+	dl, err := factory.setup()
 	require.NoError(t, err)
 
 	// write a file and expect it to be deleted
 	path := filepath.Join(dl.dir, agent.InboundPath(), "foo.ach")
+	require.NoError(t, os.MkdirAll(filepath.Dir(path), 0750))
 	if err := os.WriteFile(path, []byte("testing"), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -65,11 +68,12 @@ func TestDownloader__deleteEmptyDirs(t *testing.T) {
 	}
 
 	agent := &upload.MockAgent{}
-	dl, err := factory.setup(agent)
+	dl, err := factory.setup()
 	require.NoError(t, err)
 
 	// write a file and expect it to be deleted
 	path := filepath.Join(dl.dir, agent.InboundPath(), "foo.ach")
+	require.NoError(t, os.MkdirAll(filepath.Dir(path), 0750))
 	if err := os.WriteFile(path, []byte("testing"), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -90,4 +94,58 @@ func TestDownloader__deleteEmptyDirs(t *testing.T) {
 	if _, err := os.Stat(path); err != nil {
 		t.Error(err)
 	}
+}
+
+func TestDownloader_Setup_DoesNotCreatePathDirs(t *testing.T) {
+	factory := &downloaderImpl{
+		logger:  log.NewTestLogger(),
+		baseDir: t.TempDir(),
+	}
+	dl, err := factory.setup()
+	require.NoError(t, err)
+
+	agent := &upload.MockAgent{}
+	_, err = os.Stat(filepath.Join(dl.dir, agent.InboundPath()))
+	require.True(t, os.IsNotExist(err))
+	_, err = os.Stat(filepath.Join(dl.dir, agent.ReconciliationPath()))
+	require.True(t, os.IsNotExist(err))
+	_, err = os.Stat(filepath.Join(dl.dir, agent.ReturnPath()))
+	require.True(t, os.IsNotExist(err))
+}
+
+func TestSaveFilepaths_EmptyListing_DoesNotCreateDir(t *testing.T) {
+	dir := t.TempDir()
+	dest := filepath.Join(dir, "inbound")
+	err := saveFilepaths(context.Background(), log.NewTestLogger(), &upload.MockAgent{}, nil, dest)
+	require.NoError(t, err)
+	_, err = os.Stat(dest)
+	require.True(t, os.IsNotExist(err))
+}
+
+func TestSaveFilepaths_OnlyDirectoryMarkers_DoesNotCreateDir(t *testing.T) {
+	dir := t.TempDir()
+	dest := filepath.Join(dir, "inbound")
+	err := saveFilepaths(context.Background(), log.NewTestLogger(), &upload.MockAgent{}, []string{"inbound", "inbound/"}, dest)
+	require.NoError(t, err)
+	_, err = os.Stat(dest)
+	require.True(t, os.IsNotExist(err))
+}
+
+func TestSaveFilepaths_SkipsDirectoryMarkers(t *testing.T) {
+	dir := t.TempDir()
+	dest := filepath.Join(dir, "inbound")
+
+	agent := &upload.MockAgent{
+		ReadableFile: &upload.File{
+			Filepath: "inbound/foo.ach",
+			Contents: io.NopCloser(strings.NewReader("101 test")),
+		},
+	}
+	err := saveFilepaths(context.Background(), log.NewTestLogger(), agent, []string{"inbound", "inbound/foo.ach"}, dest)
+	require.NoError(t, err)
+
+	_, err = os.Stat(filepath.Join(dest, "inbound"))
+	require.True(t, os.IsNotExist(err), "directory marker must not become a local file")
+	_, err = os.Stat(filepath.Join(dest, "foo.ach"))
+	require.NoError(t, err)
 }

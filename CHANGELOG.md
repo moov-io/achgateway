@@ -2,6 +2,29 @@
 
 Please refer to the [Github Releases](https://github.com/moov-io/achgateway/releases) page for future updates.
 
+IMPROVEMENTS
+
+- pipeline: never abort a cutoff early on a per-file flatten/upload error; remaining files still upload
+- pipeline: preserve isolated input files when `MergeDir` fails instead of deleting the cutoff directory
+- pipeline: map duplicate entry identities across distinct `fileID`s so each queued file still gets `FileUploaded`
+- pipeline: emit `FileUploaded` for successfully mapped files even when merge reports leftover/unmapped inputs
+- pipeline: join FileUploaded emit errors with merge failures so neither is dropped
+- pipeline: bound concurrent FileUploaded emits to avoid a goroutine stampede on large cutoffs
+- pipeline: fail the cutoff when isolated inputs cannot be mapped to an uploaded file
+- pipeline: exclude failed uploads from unmapped-input errors (avoid double-counting)
+- pipeline: snapshot expected inputs before writing the local `uploaded/` cache
+- pipeline: stabilize cancel matching so basename collisions cannot skip unrelated files
+- pipeline: cap merge `MaxDollarAmount` at Nacha's file debit/credit limit
+- pipeline: add `ach_unmapped_input_files` Prometheus metric
+- odfi: treat missing local inbound/recon/return dirs as empty instead of failing cleanup/process
+- odfi: only create dest dirs when a real file is saved; skip directory-marker listings
+- odfi: fix always-true return/correction detectors so ExcludeReturns/ExcludeCorrections work
+- odfi: emit prenote events for matching batches and chunk large return files (100 batches)
+- odfi: skip empty inbound audit objects and wrap persist errors
+- schedule: log cutoff windows on shutdown
+- alerting: include hostname and a deeper stack in PagerDuty details
+- docs: document merge isolation, mapping completeness, and FileUploaded emit behavior
+
 ## v0.33.3 (Released 2025-06-24)
 
 BUILD

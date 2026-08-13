@@ -72,6 +72,9 @@ func deleteFilesOnRemote(ctx context.Context, logger log.Logger, agent upload.Ag
 	baseDir := filepath.Join(localDir, suffix)
 	infos, err := os.ReadDir(baseDir)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
 		return fmt.Errorf("reading %s: %v", baseDir, err)
 	}
 

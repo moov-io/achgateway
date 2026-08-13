@@ -130,7 +130,6 @@ func (s *PeriodicScheduler) tickAll() error {
 		ctx, span := telemetry.StartSpan(context.Background(), "odfi-scheduler", trace.WithAttributes(
 			attribute.String("achgateway.shard", shardName),
 		))
-		defer span.End()
 
 		logger.Info().Logf("starting odfi periodic processing for %s", shard.Name)
 		err := s.tick(ctx, logger, shard)
@@ -142,6 +141,7 @@ func (s *PeriodicScheduler) tickAll() error {
 		} else {
 			logger.Info().Logf("finished odfi periodic processing for %s", shard.Name)
 		}
+		span.End()
 	}
 	return nil
 }

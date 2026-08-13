@@ -66,7 +66,7 @@ func (a *MockAgent) Delete(_ context.Context, path string) error {
 	defer a.mu.Unlock()
 
 	a.DeletedFile = path
-	return nil
+	return a.Err
 }
 
 func (a *MockAgent) ReadFile(_ context.Context, path string) (*File, error) {

@@ -63,7 +63,10 @@ func (pc *correctionProcessor) Type() string {
 }
 
 func isCorrectionFile(file File) bool {
-	return len(file.ACHFile.NotificationOfChange) >= 0
+	if file.ACHFile == nil {
+		return false
+	}
+	return len(file.ACHFile.NotificationOfChange) > 0
 }
 
 func (pc *correctionProcessor) Handle(ctx context.Context, logger log.Logger, file File) error {
@@ -90,6 +93,7 @@ func (pc *correctionProcessor) Handle(ctx context.Context, logger log.Logger, fi
 	logger = logger.With(log.Fields{
 		"origin":      log.String(file.ACHFile.Header.ImmediateOrigin),
 		"destination": log.String(file.ACHFile.Header.ImmediateDestination),
+		"filename":    log.String(filepath.Base(file.Filepath)),
 	})
 	logger.Logf("inbound: correction for %d batches", len(file.ACHFile.NotificationOfChange))
 

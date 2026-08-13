@@ -63,7 +63,10 @@ func (pc *returnEmitter) Type() string {
 }
 
 func isReturnFile(file File) bool {
-	return len(file.ACHFile.ReturnEntries) >= 0
+	if file.ACHFile == nil {
+		return false
+	}
+	return len(file.ACHFile.ReturnEntries) > 0
 }
 
 func (pc *returnEmitter) Handle(ctx context.Context, logger log.Logger, file File) error {
@@ -76,14 +79,11 @@ func (pc *returnEmitter) Handle(ctx context.Context, logger log.Logger, file Fil
 		return nil // skip the file
 	}
 
-	msg := models.ReturnFile{
-		Filename: filepath.Base(file.Filepath),
-		File:     file.ACHFile,
-	}
-
+	filename := filepath.Base(file.Filepath)
 	logger = logger.With(log.Fields{
 		"origin":      log.String(file.ACHFile.Header.ImmediateOrigin),
 		"destination": log.String(file.ACHFile.Header.ImmediateDestination),
+		"filename":    log.String(filename),
 	})
 	logger.Log("odfi: processing return file")
 
@@ -93,35 +93,59 @@ func (pc *returnEmitter) Handle(ctx context.Context, logger log.Logger, file Fil
 	))
 	defer span.End()
 
-	for i := range file.ACHFile.ReturnEntries {
-		entries := file.ACHFile.ReturnEntries[i].GetEntries()
-		msg.Returns = append(msg.Returns, models.Batch{
-			Header:  file.ACHFile.ReturnEntries[i].GetHeader(),
-			Entries: entries,
-		})
-		for j := range entries {
-			if entries[j].Addenda99 == nil {
-				continue
+	const chunkSize = 100
+	totalBatches := len(file.ACHFile.ReturnEntries)
+	totalChunks := (totalBatches + chunkSize - 1) / chunkSize
+	if totalChunks == 0 {
+		return nil
+	}
+
+	for chunk := 0; chunk < totalChunks; chunk++ {
+		start := chunk * chunkSize
+		end := start + chunkSize
+		if end > totalBatches {
+			end = totalBatches
+		}
+
+		chunkMsg := models.ReturnFile{
+			Filename: filename,
+			File:     file.ACHFile,
+		}
+		if totalChunks > 1 {
+			chunkMsg.Filename = fmt.Sprintf("CHUNK-%d-OF-%d__%s", chunk+1, totalChunks, filename)
+		}
+
+		for i := start; i < end; i++ {
+			entries := file.ACHFile.ReturnEntries[i].GetEntries()
+			chunkMsg.Returns = append(chunkMsg.Returns, models.Batch{
+				Header:  file.ACHFile.ReturnEntries[i].GetHeader(),
+				Entries: entries,
+			})
+			for j := range entries {
+				if entries[j].Addenda99 == nil {
+					continue
+				}
+
+				returnCode := entries[j].Addenda99.ReturnCodeField()
+				if returnCode == nil {
+					returnCode = &ach.ReturnCode{}
+				}
+
+				returnEntriesProcessed.With(
+					"origin", file.ACHFile.Header.ImmediateOrigin,
+					"destination", file.ACHFile.Header.ImmediateDestination,
+					"code", returnCode.Code,
+				).Add(1)
+
+				logger.Log(fmt.Sprintf("odfi: return batch %d entry %d code %s", i, j, returnCode.Code))
 			}
+		}
 
-			returnCode := entries[j].Addenda99.ReturnCodeField()
-			if returnCode == nil {
-				returnCode = &ach.ReturnCode{}
-			}
-
-			returnEntriesProcessed.With(
-				"origin", file.ACHFile.Header.ImmediateOrigin,
-				"destination", file.ACHFile.Header.ImmediateDestination,
-				"code", returnCode.Code,
-			).Add(1)
-
-			logger.With(log.Fields{
-				"origin":      log.String(file.ACHFile.Header.ImmediateOrigin),
-				"destination": log.String(file.ACHFile.Header.ImmediateDestination),
-			}).Log(fmt.Sprintf("odfi: return batch %d entry %d code %s", i, j, returnCode.Code))
+		if err := pc.sendEvent(ctx, chunkMsg); err != nil {
+			return err
 		}
 	}
-	return pc.sendEvent(ctx, msg)
+	return nil
 }
 
 func (pc *returnEmitter) sendEvent(ctx context.Context, event interface{}) error {

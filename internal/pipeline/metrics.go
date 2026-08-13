@@ -62,6 +62,13 @@ var (
 		Name: "ach_upload_errors",
 		Help: "Counter of errors encountered when attempting ACH files upload",
 	}, []string{"shard"})
+
+	// unmappedInputFiles counts input .ach files left in an isolated cutoff directory
+	// that were never matched to an uploaded merged file (so no FileUploaded event).
+	unmappedInputFiles = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Name: "ach_unmapped_input_files",
+		Help: "Counter of isolated input ACH files that failed entry-to-upload mapping (no FileUploaded)",
+	}, []string{"shard"})
 )
 
 func init() {
@@ -86,5 +93,12 @@ func initializeShardMetrics(shardName string) {
 
 	uploadedFilesCounter.With("shard", shardName).Add(0)
 	uploadFilesErrors.With("shard", shardName).Add(0)
+	unmappedInputFiles.With("shard", shardName).Add(0)
+}
 
+func recordUnmappedInputFiles(shardName string, count int) {
+	if count <= 0 {
+		return
+	}
+	unmappedInputFiles.With("shard", shardName).Add(float64(count))
 }

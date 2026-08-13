@@ -43,6 +43,7 @@ There is a [`GET :9494/metrics` endpoint](https://github.com/moov-io/base/tree/m
 - `files_missing_shard_aggregators`: Counter of ACH files unable to be matched with a shard aggregator
 - `ach_uploaded_files`: Counter of ACH files uploaded through the pipeline to the ODFI
 - `ach_upload_errors`: Counter of errors encountered when attempting ACH files upload
+- `ach_unmapped_input_files`: Counter of isolated input ACH files that failed entry-to-upload mapping (no `FileUploaded` event)
 
 ### Remote File Servers
 

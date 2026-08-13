@@ -107,7 +107,7 @@ func (d *downloadedFiles) deleteEmptyDirs(ctx context.Context, agent upload.Agen
 	return nil
 }
 
-func (dl *downloaderImpl) setup(agent upload.Agent) (*downloadedFiles, error) {
+func (dl *downloaderImpl) setup() (*downloadedFiles, error) {
 	dir, err := os.MkdirTemp(dl.baseDir, "download")
 	if err != nil {
 		return nil, err
@@ -115,27 +115,13 @@ func (dl *downloaderImpl) setup(agent upload.Agent) (*downloadedFiles, error) {
 
 	dl.logger.Logf("created directory %s", dir)
 
-	// Create sub-directories for files we download
-	path := filepath.Join(dir, agent.InboundPath())
-	if err := os.MkdirAll(path, 0750); err != nil {
-		return nil, fmt.Errorf("problem creating %s: %v", path, err)
-	}
-	path = filepath.Join(dir, agent.ReconciliationPath())
-	if err := os.MkdirAll(path, 0750); err != nil {
-		return nil, fmt.Errorf("problem creating %s: %v", path, err)
-	}
-	path = filepath.Join(dir, agent.ReturnPath())
-	if err := os.MkdirAll(path, 0750); err != nil {
-		return nil, fmt.Errorf("problem creating %s: %v", path, err)
-	}
-
 	return &downloadedFiles{
 		dir: dir,
 	}, nil
 }
 
 func (dl *downloaderImpl) CopyFilesFromRemote(ctx context.Context, agent upload.Agent, shard *service.Shard) (*downloadedFiles, error) {
-	out, err := dl.setup(agent)
+	out, err := dl.setup()
 	if err != nil {
 		return nil, err
 	}
@@ -186,10 +172,15 @@ func saveFilepaths(ctx context.Context, logger log.Logger, agent upload.Agent, f
 	var firstErr error
 	var errordFilenames []string
 
-	if err := os.MkdirAll(dir, 0750); err != nil {
-		return fmt.Errorf("mkdir %s failed: %w", dir, err)
-	}
 	for i := range filepaths {
+		// Skip directories that would create nested directories
+		if filepath.Base(filepaths[i]) == filepath.Base(dir) {
+			continue
+		}
+		// Create the path dir only when there is a real file to write
+		if err := os.MkdirAll(dir, 0750); err != nil {
+			return fmt.Errorf("creating %s: %w", dir, err)
+		}
 		outPath := filepath.Join(dir, filepath.Base(filepaths[i]))
 		f, err := os.Create(outPath)
 		if err != nil {

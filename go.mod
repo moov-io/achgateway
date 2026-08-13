@@ -13,7 +13,6 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-retryablehttp v0.7.8
-	github.com/igrmk/treemap/v2 v2.0.1
 	github.com/jlaffaye/ftp v0.2.2
 	github.com/moov-io/ach v1.63.3
 	github.com/moov-io/base v0.63.1
@@ -21,7 +20,6 @@ require (
 	github.com/moov-io/go-ftp v0.4.0
 	github.com/moov-io/go-sftp v0.16.2
 	github.com/ory/dockertest/v3 v3.12.0
-	github.com/ory/dockertest/v4 v4.0.0
 	github.com/ory/mail/v3 v3.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.24.1
@@ -51,6 +49,7 @@ require (
 	github.com/envoyproxy/go-control-plane/envoy v1.37.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
+	github.com/igrmk/treemap/v2 v2.0.1 // indirect
 	github.com/moby/sys/user v0.4.0 // indirect
 	github.com/moov-io/iso3166 v0.4.0 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.8.1 // indirect
