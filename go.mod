@@ -14,6 +14,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/jlaffaye/ftp v0.2.2
+	github.com/moby/moby/api v1.54.1
 	github.com/moov-io/ach v1.63.3
 	github.com/moov-io/base v0.63.1
 	github.com/moov-io/cryptfs v0.11.0
@@ -53,7 +54,6 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/igrmk/treemap/v2 v2.0.1 // indirect
-	github.com/moby/moby/api v1.54.1 // indirect
 	github.com/moby/moby/client v0.4.0 // indirect
 	github.com/moov-io/iso3166 v0.4.0 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.8.1 // indirect
