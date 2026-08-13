@@ -378,6 +378,7 @@ github.com/opencontainers/runc v1.2.9 h1:szn/ts2m7YujxUKxGOZYWnb/PCAE+HGa3v+4Mez
 github.com/opencontainers/runc v1.2.9/go.mod h1:PVeJMb4P50vsdTkVmHmZU4Z6EhjSruje+2EFt2PJUBM=
 github.com/ory/dockertest/v3 v3.12.0 h1:3oV9d0sDzlSQfHtIaB5k6ghUCVMVLpAY8hwrqoCyRCw=
 github.com/ory/dockertest/v3 v3.12.0/go.mod h1:aKNDTva3cp8dwOWwb9cWuX84aH5akkxXRvO7KCwWVjE=
+github.com/ory/dockertest/v4 v4.0.0/go.mod h1:b5Ofu8VIxWNhXFvQcLu17pRNQdoUBKtXBW74G4Ygzx8=
 github.com/ory/mail v2.3.1+incompatible/go.mod h1:87D9/1gB6ewElQoN0lXJ0ayfqcj3cW3qCTXh+5E9mfU=
 github.com/ory/mail/v3 v3.0.0 h1:8LFMRj473vGahFD/ntiotWEd4S80FKYFtiZTDfOQ+sM=
 github.com/ory/mail/v3 v3.0.0/go.mod h1:JGAVeZF8YAlxbaFDUHqRZAKBCSeW2w1vuxf28hFbZAw=
