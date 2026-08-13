@@ -52,8 +52,13 @@ func TestCreateFileHandler(t *testing.T) {
 	go func() {
 		time.Sleep(time.Second)
 
+		next := time.Date(2025, time.January, 7, 16, 15, 0, 0, time.UTC)
+		accepted := time.Date(2025, time.January, 7, 13, 37, 0, 0, time.UTC)
 		queueFileResponses <- incoming.QueueACHFileResponse{
-			FileID: "f1",
+			FileID:     "f1",
+			ShardKey:   "s1",
+			NextCutoff: &next,
+			AcceptedAt: &accepted,
 		}
 	}()
 
@@ -81,6 +86,16 @@ func TestCreateFileHandler(t *testing.T) {
 	validateOpts := file.File.GetValidation()
 	require.NotNil(t, validateOpts)
 	require.True(t, validateOpts.PreserveSpaces)
+
+	var resp models.QueueACHFileResponse
+	err = json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	require.Equal(t, "f1", resp.FileID)
+	require.Equal(t, "s1", resp.ShardKey)
+	require.NotNil(t, resp.NextCutoff)
+	require.Equal(t, "2025-01-07T16:15:00Z", resp.NextCutoff.UTC().Format(time.RFC3339))
+	require.NotNil(t, resp.AcceptedAt)
+	require.Equal(t, "2025-01-07T13:37:00Z", resp.AcceptedAt.UTC().Format(time.RFC3339))
 }
 
 func TestCreateFileHandler_Error(t *testing.T) {

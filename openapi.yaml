@@ -77,7 +77,11 @@ paths:
               $ref: 'https://raw.githubusercontent.com/moov-io/ach/master/openapi.yaml#/components/schemas/CreateFile'
       responses:
         '200':
-          description: File accepted successfully without errors.
+          description: File accepted. The response includes the predicted next automated cutoff when it can be computed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueACHFileResponse'
         '400':
           description: Unable to read file, make sure the file is in either valid Nacha or moov-io/ach formatting.
         '500':
@@ -472,3 +476,27 @@ components:
           example:
             "testing": "ERROR processing shard: hostname not found"
             "SD-live": null
+
+    QueueACHFileResponse:
+      description: |
+        Acknowledgement that a file was queued for a later cutoff. Existing clients can keep reading `id`, `shardKey`, and `error`.
+        `nextCutoff` is the next automated window that should upload the file. It is omitted when the time cannot be predicted.
+        A later manual `/trigger-cutoff` can still upload the file earlier.
+      properties:
+        id:
+          type: string
+          example: AE694B55-C103-4FA5-B62E-E4F6F79AD581
+        shardKey:
+          type: string
+          example: testing
+        error:
+          type: string
+          example: ""
+        nextCutoff:
+          type: string
+          format: date-time
+          example: "2025-01-07T16:15:00-05:00"
+        acceptedAt:
+          type: string
+          format: date-time
+          example: "2025-01-07T13:37:00Z"

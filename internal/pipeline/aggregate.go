@@ -189,15 +189,29 @@ func (xfagg *aggregator) Shutdown() {
 func (xfagg *aggregator) acceptFile(ctx context.Context, msg incoming.ACHFile) (incoming.QueueACHFileResponse, error) {
 	err := xfagg.merger.HandleXfer(ctx, msg)
 
+	now := time.Now().In(time.UTC)
 	resp := incoming.QueueACHFileResponse{
-		FileID:   msg.FileID,
-		ShardKey: msg.ShardKey,
+		FileID:     msg.FileID,
+		ShardKey:   msg.ShardKey,
+		AcceptedAt: &now,
 	}
 	if err != nil {
 		resp.Error = err.Error()
+		return resp, err
 	}
 
-	return resp, err
+	nextCutoff, cutoffErr := schedule.NextCutoff(xfagg.shard.Cutoffs.Timezone, xfagg.shard.Cutoffs.Windows, xfagg.shard.Cutoffs.On, now)
+	if cutoffErr != nil {
+		xfagg.logger.Warn().With(log.Fields{
+			"fileID":   log.String(msg.FileID),
+			"shard":    log.String(xfagg.shard.Name),
+			"shardKey": log.String(msg.ShardKey),
+		}).Logf("unable to predict next cutoff: %v", cutoffErr)
+	} else if !nextCutoff.IsZero() {
+		resp.NextCutoff = &nextCutoff
+	}
+
+	return resp, nil
 }
 
 func (xfagg *aggregator) cancelFile(ctx context.Context, msg incoming.CancelACHFile) (models.FileCancellationResponse, error) {

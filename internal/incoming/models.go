@@ -19,6 +19,7 @@ package incoming
 
 import (
 	"errors"
+	"time"
 
 	"github.com/moov-io/ach"
 )
@@ -46,6 +47,12 @@ type QueueACHFileResponse struct {
 	FileID   string `json:"id"`
 	ShardKey string `json:"shardKey"`
 	Error    string `json:"error"`
+
+	// NextCutoff is the next automated cutoff that should upload this file.
+	// It is omitted when the time cannot be predicted. Callers may still receive
+	// the file earlier via a manual cutoff trigger.
+	NextCutoff *time.Time `json:"nextCutoff,omitempty"`
+	AcceptedAt *time.Time `json:"acceptedAt,omitempty"`
 }
 
 type CancelACHFile struct {

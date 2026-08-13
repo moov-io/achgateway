@@ -17,6 +17,15 @@ Example with 30-min ODFI deadline
 | Same-Day | 2:15pm ET | 2:45pm ET | 4:00pm ET | 5:00pm ET |
 | Future Date | 4:15pm ET | 4:45pm ET | 5:30 pm ET | 8:30 am ET (Next Day) |
 
+## Next cutoff
+
+When a file is queued, ACHGateway predicts the next automated cutoff that should upload it and returns that time as `nextCutoff` on the HTTP queue response. The prediction uses the shard's `Cutoffs.Timezone`, `Windows`, and `On` setting:
+
+- `On: banking-days` (default) skips weekends and Federal Reserve holidays
+- `On: all-days` includes holidays but still skips weekends, matching automated processing
+
+A file queued at an exact window time is scheduled for a later window that day, or the first window on the next processing day. Manual [`/trigger-cutoff`](#manual-triggers) processing can still upload the file earlier than `nextCutoff`.
+
 ## Developers
 
 Moov publishes [a `Time` object in moov-io/base](https://pkg.go.dev/github.com/moov-io/base?utm_source=godoc#Time) to assist with calculating banking days and when holidays are observed. There is also a [`bankcron` Docker image](https://github.com/moov-io/bankcron) for running tasks only on banking days.

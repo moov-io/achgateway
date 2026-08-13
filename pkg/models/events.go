@@ -272,6 +272,7 @@ func (evt *QueueACHFile) SetValidation(opts *ach.ValidateOpts) {
 }
 
 // QueueACHFileResponse is a response to the QueueACHFile event signaling if the file was successfully enqueued.
+// NextCutoff is the next automated cutoff that should upload the file and is omitted when it cannot be predicted.
 type QueueACHFileResponse incoming.QueueACHFileResponse
 
 // InvalidQueueFile is an event that achgateway produces when a QueueACHFile could not be processed.
