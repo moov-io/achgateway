@@ -50,8 +50,6 @@ func TestEmailSend(t *testing.T) {
 	if err := sendEmail(ctx, cfg, dialer, msg.Filename, body); err != nil {
 		t.Fatal(err)
 	}
-
-	dep.Close() // remove container after successful tests
 }
 
 func TestEmail__marshalSubject(t *testing.T) {

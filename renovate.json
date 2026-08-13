@@ -7,6 +7,12 @@
     {
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "automerge": true
+    },
+    {
+      "description": "Theme v1 needs dart-sass and breaks GitHub Pages Jekyll 3.9 builds",
+      "matchPackageNames": ["bulma-clean-theme"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
     }
   ]
 }

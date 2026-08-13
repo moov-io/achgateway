@@ -5,26 +5,25 @@
 package notify
 
 import (
+	"crypto/tls"
+	"fmt"
 	"net"
 	"testing"
 	"time"
 
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/network"
 	"github.com/moov-io/base/docker"
+	"github.com/ory/dockertest/v4"
 	"github.com/stretchr/testify/require"
-
-	"github.com/ory/dockertest/v3"
 )
 
 type mailslurpDeployment struct {
-	container *dockertest.Resource
+	container dockertest.Resource
 }
 
 func (dep *mailslurpDeployment) SMTPPort() string {
 	return dep.container.GetPort("1025/tcp")
-}
-
-func (dep *mailslurpDeployment) Close() error {
-	return dep.container.Close()
 }
 
 func spawnMailslurp(t *testing.T) *mailslurpDeployment {
@@ -32,28 +31,56 @@ func spawnMailslurp(t *testing.T) *mailslurpDeployment {
 		t.Skip("skipping docker test")
 	}
 
-	pool, err := dockertest.NewPool("")
-	require.NoError(t, err)
-
-	container, err := pool.RunWithOptions(&dockertest.RunOptions{
-		Repository:   "oryd/mailslurper",
-		Tag:          "latest-smtps",
-		ExposedPorts: []string{"1025"},
-	})
-	require.NoError(t, err)
+	smtpPort := network.MustParsePort("1025/tcp")
+	pool := dockertest.NewPoolT(t, "")
+	container := pool.RunT(t, "oryd/mailslurper",
+		dockertest.WithTag("latest-smtps"),
+		dockertest.WithoutReuse(),
+		// The image does not EXPOSE 1025, so PublishAllPorts will not bind it
+		// unless we mark the port exposed the same way v3 ExposedPorts did.
+		dockertest.WithContainerConfig(func(cfg *container.Config) {
+			if cfg.ExposedPorts == nil {
+				cfg.ExposedPorts = network.PortSet{}
+			}
+			cfg.ExposedPorts[smtpPort] = struct{}{}
+		}),
+	)
 
 	dep := &mailslurpDeployment{
 		container: container,
 	}
 
-	err = pool.Retry(func() error {
-		time.Sleep(1 * time.Second)
-
-		conn, err := net.Dial("tcp", "localhost:"+dep.SMTPPort())
+	// Docker publishes the port before mailslurper is accepting SMTPS.
+	// A TCP dial succeeds via the proxy and the later send then fails with EOF.
+	err := pool.Retry(t.Context(), 2*time.Minute, func() error {
+		port := dep.SMTPPort()
+		if port == "" {
+			return fmt.Errorf("smtp port not published")
+		}
+		conn, err := net.DialTimeout("tcp", net.JoinHostPort("localhost", port), 2*time.Second)
 		if err != nil {
 			return err
 		}
-		return conn.Close()
+		defer conn.Close()
+		_ = conn.SetDeadline(time.Now().Add(2 * time.Second))
+
+		tlsConn := tls.Client(conn, &tls.Config{
+			InsecureSkipVerify: true, //nolint:gosec
+			MinVersion:         tls.VersionTLS12,
+			ServerName:         "localhost",
+		})
+		if err := tlsConn.Handshake(); err != nil {
+			return err
+		}
+		buf := make([]byte, 64)
+		n, err := tlsConn.Read(buf)
+		if err != nil {
+			return err
+		}
+		if n == 0 {
+			return fmt.Errorf("empty smtp banner")
+		}
+		return tlsConn.Close()
 	})
 	require.NoError(t, err)
 
