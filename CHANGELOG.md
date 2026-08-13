@@ -2,6 +2,10 @@
 
 Please refer to the [Github Releases](https://github.com/moov-io/achgateway/releases) page for future updates.
 
+BUG FIXES
+
+- audittrail: do not wrap files already encrypted to the configured GPG key
+
 IMPROVEMENTS
 
 - pipeline: never abort a cutoff early on a per-file flatten/upload error; remaining files still upload

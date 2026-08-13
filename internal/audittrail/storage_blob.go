@@ -5,14 +5,19 @@
 package audittrail
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 
+	"github.com/moov-io/achgateway/internal/gpgx"
 	"github.com/moov-io/achgateway/internal/service"
 	"github.com/moov-io/base/telemetry"
 	"github.com/moov-io/cryptfs"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/ProtonMail/go-crypto/openpgp/armor"
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
@@ -30,6 +35,7 @@ type blobStorage struct {
 	id      string
 	bucket  *blob.Bucket
 	cryptor *cryptfs.FS
+	gpgKeys openpgp.EntityList
 }
 
 func newBlobStorage(cfg *service.AuditTrail) (*blobStorage, error) {
@@ -45,6 +51,10 @@ func newBlobStorage(cfg *service.AuditTrail) (*blobStorage, error) {
 
 	if cfg.GPG != nil {
 		storage.cryptor, err = cryptfs.FromCryptor(cryptfs.NewGPGEncryptorFile(cfg.GPG.KeyFile))
+		if err != nil {
+			return nil, err
+		}
+		storage.gpgKeys, err = gpgx.ReadArmoredKeyFile(cfg.GPG.KeyFile)
 		if err != nil {
 			return nil, err
 		}
@@ -73,7 +83,9 @@ func (bs *blobStorage) SaveFile(ctx context.Context, path string, data []byte) e
 
 	var encrypted []byte
 	var err error
-	if bs.cryptor != nil {
+	// Always encrypt with the configured audittrail key, unless the
+	// payload is already encrypted to that same key.
+	if bs.cryptor != nil && !alreadyEncryptedTo(data, bs.gpgKeys) {
 		encrypted, err = bs.cryptor.Disfigure(data)
 	} else {
 		encrypted = data
@@ -123,4 +135,69 @@ func (bs *blobStorage) GetFile(ctx context.Context, path string) (io.ReadCloser,
 		return nil, fmt.Errorf("get file: %v", err)
 	}
 	return r, nil
+}
+
+func alreadyEncryptedTo(data []byte, keys openpgp.EntityList) bool {
+	if len(keys) == 0 {
+		return false
+	}
+	recipients, err := encryptedToKeyIDs(data)
+	if err != nil || len(recipients) == 0 {
+		return false
+	}
+	ours := keyIDs(keys)
+	for _, recipient := range recipients {
+		if recipient == 0 {
+			continue
+		}
+		for _, oursID := range ours {
+			if recipient == oursID {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func encryptedToKeyIDs(data []byte) ([]uint64, error) {
+	body := bytes.TrimSpace(data)
+	if !bytes.HasPrefix(body, []byte("-----BEGIN PGP ")) {
+		return nil, nil
+	}
+	block, err := armor.Decode(bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	packets := packet.NewReader(block.Body)
+	var ids []uint64
+	for {
+		p, err := packets.Next()
+		if err != nil {
+			if err == io.EOF {
+				return ids, nil
+			}
+			return ids, err
+		}
+		switch p := p.(type) {
+		case *packet.EncryptedKey:
+			ids = append(ids, p.KeyId)
+		case *packet.SymmetricallyEncrypted, *packet.AEADEncrypted:
+			return ids, nil
+		}
+	}
+}
+
+func keyIDs(keys openpgp.EntityList) []uint64 {
+	var ids []uint64
+	for _, entity := range keys {
+		if entity.PrimaryKey != nil {
+			ids = append(ids, entity.PrimaryKey.KeyId)
+		}
+		for i := range entity.Subkeys {
+			if entity.Subkeys[i].PublicKey != nil {
+				ids = append(ids, entity.Subkeys[i].PublicKey.KeyId)
+			}
+		}
+	}
+	return ids
 }
