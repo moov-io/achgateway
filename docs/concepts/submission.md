@@ -36,6 +36,20 @@ POST /shards/{shardKey}/files/{fileID}
 
 The request body may be a [Nacha formatted](https://github.com/moov-io/ach/blob/master/test/testdata/ppd-debit.ach) file or the [moov-io/ach JSON representation](https://github.com/moov-io/ach/blob/master/test/testdata/ppd-valid.json). The incoming file must pass Nacha validation rules enforced by the moov-io/ach library.
 
+A successful HTTP response is JSON and includes the predicted next automated cutoff when it can be computed:
+
+```
+{
+  "id": "uuid",
+  "shardKey": "uuid",
+  "error": "",
+  "nextCutoff": "2025-01-07T16:15:00-05:00",
+  "acceptedAt": "2025-01-07T18:37:00Z"
+}
+```
+
+`nextCutoff` is optional. Existing clients that only read `id`, `shardKey`, and `error` can ignore the new fields. The timestamp is the next configured window for that shard after the file is accepted, using `Cutoffs.On` (`banking-days` by default, or `all-days`). Weekends never have an automated cutoff. A later [manual trigger](../../ops/cutoffs/#manual-triggers) can still upload the file earlier.
+
 ### Stream
 
 ACHGateway can accept files over a "stream" implementation supported by `gocloud.dev/pubsub`. The most common implementation is Kafka and the event format is JSON described by the [`models` package provided with ACHGateway](https://pkg.go.dev/github.com/moov-io/achgateway/pkg/models).

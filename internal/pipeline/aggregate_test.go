@@ -82,9 +82,60 @@ func TestAggregateACHFile(t *testing.T) {
 	require.Equal(t, "ppd-file1", response.FileID)
 	require.Equal(t, "test", response.ShardKey)
 	require.Empty(t, response.Error)
+	require.NotNil(t, response.AcceptedAt)
+	require.False(t, response.AcceptedAt.IsZero())
+	require.NotNil(t, response.NextCutoff)
+	require.False(t, response.NextCutoff.IsZero())
+
+	loc, err := time.LoadLocation("America/Los_Angeles")
+	require.NoError(t, err)
+	require.Equal(t, "10:30", response.NextCutoff.In(loc).Format("15:04"))
 
 	require.NotNil(t, merge.LatestFile)
 	require.Equal(t, "ppd-file1", merge.LatestFile.FileID)
+}
+
+func TestAggregateACHFile_HandleXferError(t *testing.T) {
+	shard := service.Shard{
+		Name: "test",
+		Cutoffs: service.Cutoffs{
+			Timezone: "America/Los_Angeles",
+			Windows:  []string{"10:30"},
+		},
+		UploadAgent: "ftp-live",
+	}
+	uploadAgents := service.UploadAgents{
+		Agents: []service.UploadAgent{
+			{
+				ID:   "ftp-live",
+				Mock: &service.MockAgent{},
+				Paths: service.UploadPaths{
+					Outbound: "/outbound",
+				},
+			},
+		},
+		DefaultAgentID: "ftp-live",
+	}
+	var errorAlerting service.ErrorAlerting
+
+	xfagg, err := newAggregator(log.NewTestLogger(), &events.MockEmitter{}, shard, uploadAgents, errorAlerting)
+	require.NoError(t, err)
+
+	merge := &MockXferMerging{Err: errors.New("disk full")}
+	xfagg.merger = merge
+
+	file, err := ach.ReadFile(filepath.Join("..", "..", "testdata", "ppd-debit.ach"))
+	require.NoError(t, err)
+
+	response, err := xfagg.acceptFile(context.Background(), incoming.ACHFile{
+		FileID:   "ppd-file1",
+		ShardKey: "test",
+		File:     file,
+	})
+	require.EqualError(t, err, "disk full")
+	require.Equal(t, "disk full", response.Error)
+	require.NotNil(t, response.AcceptedAt)
+	require.Nil(t, response.NextCutoff)
 }
 
 func TestAggregate_notifyAfterUpload(t *testing.T) {
