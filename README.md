@@ -29,7 +29,7 @@ If you believe you have identified a security vulnerability please responsibly r
 
 Read through the [project docs](https://moov-io.github.io/achgateway/) to gain an understanding of this project's purpose and how to run it.
 
-We publish a [public Docker image `moov/achgateway`](https://hub.docker.com/r/moov/achgateway/) from Docker Hub or use this repository. No configuration is required to serve on `:8484` and metrics at `:9494/metrics` in Prometheus format.
+We publish a [public Docker image `moov/achgateway`](https://hub.docker.com/r/moov/achgateway/) from Docker Hub (`linux/amd64` and `linux/arm64`) or use this repository. No configuration is required to serve on `:8484` and metrics at `:9494/metrics` in Prometheus format.
 
 Start achgateway and an FTP server:
 ```

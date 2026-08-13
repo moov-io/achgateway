@@ -8,7 +8,7 @@ menubar: docs-menu
 
 # Docker
 
-You can download a [docker image called `moov/achgateway`](https://hub.docker.com/r/moov/achgateway/) from Docker Hub or use this repository. However it's recommended to [download the code repository](https://github.com/moov-io/achgateway) and running `docker compose up` in the root directory.
+You can download a [docker image called `moov/achgateway`](https://hub.docker.com/r/moov/achgateway/) from Docker Hub or use this repository. Release images are published for `linux/amd64` and `linux/arm64`. However it's recommended to [download the code repository](https://github.com/moov-io/achgateway) and running `docker compose up` in the root directory.
 
 ```
 # Inside of ./examples/getting-started/
