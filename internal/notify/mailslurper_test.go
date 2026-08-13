@@ -5,6 +5,7 @@
 package notify
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net"
 	"testing"
@@ -49,16 +50,37 @@ func spawnMailslurp(t *testing.T) *mailslurpDeployment {
 		container: container,
 	}
 
+	// Docker publishes the port before mailslurper is accepting SMTPS.
+	// A TCP dial succeeds via the proxy and the later send then fails with EOF.
 	err := pool.Retry(t.Context(), 2*time.Minute, func() error {
 		port := dep.SMTPPort()
 		if port == "" {
 			return fmt.Errorf("smtp port not published")
 		}
-		conn, err := net.Dial("tcp", net.JoinHostPort("localhost", port))
+		conn, err := net.DialTimeout("tcp", net.JoinHostPort("localhost", port), 2*time.Second)
 		if err != nil {
 			return err
 		}
-		return conn.Close()
+		defer conn.Close()
+		_ = conn.SetDeadline(time.Now().Add(2 * time.Second))
+
+		tlsConn := tls.Client(conn, &tls.Config{
+			InsecureSkipVerify: true, //nolint:gosec
+			MinVersion:         tls.VersionTLS12,
+			ServerName:         "localhost",
+		})
+		if err := tlsConn.Handshake(); err != nil {
+			return err
+		}
+		buf := make([]byte, 64)
+		n, err := tlsConn.Read(buf)
+		if err != nil {
+			return err
+		}
+		if n == 0 {
+			return fmt.Errorf("empty smtp banner")
+		}
+		return tlsConn.Close()
 	})
 	require.NoError(t, err)
 
