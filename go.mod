@@ -16,7 +16,7 @@ require (
 	github.com/jlaffaye/ftp v0.2.2
 	github.com/moby/moby/api v1.55.0
 	github.com/moov-io/ach v1.63.3
-	github.com/moov-io/base v0.63.1
+	github.com/moov-io/base v0.63.2
 	github.com/moov-io/cryptfs v0.11.0
 	github.com/moov-io/go-ftp v0.4.0
 	github.com/moov-io/go-sftp v0.16.2
