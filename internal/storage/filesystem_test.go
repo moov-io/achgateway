@@ -24,6 +24,51 @@ func TestFilesystem(t *testing.T) {
 	require.Equal(t, "nacha", finalContents)
 }
 
+func TestFilesystemRejectsEscape(t *testing.T) {
+	dir := t.TempDir()
+	chest, err := NewFilesystem(dir)
+	require.NoError(t, err)
+
+	parentEscape := filepath.Join(filepath.Dir(dir), "achgateway-escaped.ach")
+	t.Cleanup(func() { os.Remove(parentEscape) })
+
+	err = chest.WriteFile("../achgateway-escaped.ach", []byte("pwn"))
+	require.EqualError(t, err, "invalid path")
+	_, err = os.Stat(parentEscape)
+	require.True(t, os.IsNotExist(err))
+
+	err = chest.WriteFile("/tmp/achgateway-escaped.ach", []byte("pwn"))
+	require.EqualError(t, err, "invalid path")
+
+	err = chest.RmdirAll("..")
+	require.EqualError(t, err, "invalid path")
+	_, err = os.Stat(dir)
+	require.NoError(t, err)
+
+	err = chest.MkdirAll("../outside")
+	require.EqualError(t, err, "invalid path")
+
+	err = chest.ReplaceFile("../old", "ok")
+	require.EqualError(t, err, "invalid path")
+	err = chest.ReplaceFile("ok", "../new")
+	require.EqualError(t, err, "invalid path")
+
+	err = chest.ReplaceDir("../old", "ok")
+	require.EqualError(t, err, "invalid path")
+
+	_, err = chest.Glob("../../*")
+	require.EqualError(t, err, "invalid path")
+
+	_, err = chest.Open("../secret")
+	require.EqualError(t, err, "invalid path")
+
+	err = chest.WriteFile("mergable/SD1/f1.ach", []byte("nacha"))
+	require.NoError(t, err)
+	file, err := chest.Open("mergable/SD1/f1.ach")
+	require.NoError(t, err)
+	require.NoError(t, file.Close())
+}
+
 func setupFilesystemGlobTest(tb testing.TB, iterations int) (Chest, string, int) {
 	tb.Helper()
 

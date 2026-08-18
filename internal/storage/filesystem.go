@@ -28,8 +28,16 @@ func NewFilesystem(root string) (Chest, error) {
 	}, nil
 }
 
+// invalidPath rejects the same escapes Open already blocked: parent
+// segments and absolute paths. filepath.Join treats an absolute element
+// as a new root, so WriteFile("/tmp/x") and WriteFile("../x") would
+// otherwise land outside f.root.
+func invalidPath(path string) bool {
+	return strings.Contains(path, "..") || strings.HasPrefix(path, "/")
+}
+
 func (f *filesystem) Open(path string) (fs.File, error) {
-	if strings.Contains(path, "..") || strings.HasPrefix(path, "/") {
+	if invalidPath(path) {
 		return nil, errors.New("invalid path")
 	}
 
@@ -63,6 +71,9 @@ const (
 )
 
 func (f *filesystem) Glob(pattern string) ([]FileStat, error) {
+	if invalidPath(pattern) {
+		return nil, errors.New("invalid path")
+	}
 	subdir, suffix := filepath.Split(pattern)
 	where := filepath.Join(f.root, subdir)
 
@@ -107,6 +118,9 @@ func (f *filesystem) Glob(pattern string) ([]FileStat, error) {
 }
 
 func (f *filesystem) ReplaceFile(oldpath, newpath string) error {
+	if invalidPath(oldpath) || invalidPath(newpath) {
+		return errors.New("invalid path")
+	}
 	oldpath = filepath.Join(f.root, oldpath)
 	newpath = filepath.Join(f.root, newpath)
 
@@ -126,6 +140,9 @@ func (f *filesystem) ReplaceFile(oldpath, newpath string) error {
 }
 
 func (f *filesystem) ReplaceDir(oldpath, newpath string) error {
+	if invalidPath(oldpath) || invalidPath(newpath) {
+		return errors.New("invalid path")
+	}
 	path := filepath.Join(f.root, oldpath)
 
 	if _, err := os.Stat(path); err != nil && os.IsNotExist(err) {
@@ -138,14 +155,23 @@ func (f *filesystem) ReplaceDir(oldpath, newpath string) error {
 }
 
 func (f *filesystem) MkdirAll(path string) error {
+	if invalidPath(path) {
+		return errors.New("invalid path")
+	}
 	return os.MkdirAll(filepath.Join(f.root, path), 0750)
 }
 
 func (f *filesystem) RmdirAll(path string) error {
+	if invalidPath(path) {
+		return errors.New("invalid path")
+	}
 	return os.RemoveAll(filepath.Join(f.root, path))
 }
 
 func (f *filesystem) WriteFile(path string, contents []byte) error {
+	if invalidPath(path) {
+		return errors.New("invalid path")
+	}
 	dir, path := filepath.Split(path)
 	dir = filepath.Join(f.root, dir)
 
