@@ -281,6 +281,8 @@ github.com/hashicorp/vault/api v1.23.0 h1:gXgluBsSECfRWTSW9niY2jwg2e9mMJc4WoHNv4
 github.com/hashicorp/vault/api v1.23.0/go.mod h1:zransKiB9ftp+kgY8ydjnvCU7Wk8i9L0DYWpXeMj9ko=
 github.com/igrmk/treemap/v2 v2.0.1 h1:Jhy4z3yhATvYZMWCmxsnHO5NnNZBdueSzvxh6353l+0=
 github.com/igrmk/treemap/v2 v2.0.1/go.mod h1:PkTPvx+8OHS8/41jnnyVY+oVsfkaOUZGcr+sfonosd4=
+github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa h1:s+4MhCQ6YrzisK6hFJUX53drDT4UsSW3DEhKn0ifuHw=
+github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa/go.mod h1:a/s9Lp5W7n/DD0VrVoyJ00FbP2ytTPDVOivvn2bMlds=
 github.com/jackc/pgpassfile v1.0.0 h1:/6Hmqy13Ss2zCq62VdNG8tM1wchn8zjSGOBJ6icpsIM=
 github.com/jackc/pgpassfile v1.0.0/go.mod h1:CEx0iS5ambNFdcRtxPj5JhEz+xB6uRky5eyVu/W2HEg=
 github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 h1:iCEnooe7UlwOQYpKFhBabPMi4aNAfoODPEFNiAnClxo=
@@ -348,6 +350,8 @@ github.com/moov-io/base v0.63.1 h1:Jr/CYxfKugWv0WQmMno57ZUHnenAzHoHJ3stX0SWIMA=
 github.com/moov-io/base v0.63.1/go.mod h1:BYDXx00OEqPZMYQQdxf3x3zXdKCrm7FZvHoIArITjqc=
 github.com/moov-io/base v0.63.2 h1:ZbAr8StvwRphZ46El15bTbnJmDHZcArjOqy/0aqNllU=
 github.com/moov-io/base v0.63.2/go.mod h1:MEqa+7MXLHb1EacH3HZlcirgB8TxLalKvu7j+M7BXok=
+github.com/moov-io/base v0.63.3 h1:QjgtSx435TwckC4DhfXwS2SkNU5Q6n2w0Vvpj7xy0lg=
+github.com/moov-io/base v0.63.3/go.mod h1:c1+IS104Fapi7VI0ndTR7/BvKj8trVgJPvrJ21bW4oc=
 github.com/moov-io/cryptfs v0.11.0 h1:5NsLQBQE6AnD29VX71RiV1SNrkEdMVhuajDyqdQY/0M=
 github.com/moov-io/cryptfs v0.11.0/go.mod h1:Aa1js1E3yzajJ2yZXOxyZZlQlAjiEK0BhMZIKDrOHbQ=
 github.com/moov-io/go-ftp v0.4.0 h1:vpexQVEQFUA+SsJk0vkFE63zFm7+AVyiC6klftXbvL0=
