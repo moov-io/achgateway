@@ -393,3 +393,184 @@ func TestMerging_DistinctEntries_StillUpload(t *testing.T) {
 func serviceShard(name string) service.Shard {
 	return service.Shard{Name: name}
 }
+
+type ccdOpts struct {
+	fileID  string
+	amount  int
+	seq     int
+	addenda string // empty = no addenda
+	header  func(*ach.BatchHeader)
+}
+
+func enqueueCCD(t *testing.T, merging XferMerging, shardKey string, opts ccdOpts) {
+	t.Helper()
+
+	file := ach.NewFile()
+	file.SetHeader(staticFileHeader())
+
+	bh := mockBatchPPDHeader()
+	bh.ServiceClassCode = ach.MixedDebitsAndCredits
+	bh.StandardEntryClassCode = ach.CCD
+	bh.CompanyEntryDescription = "PAYMENT"
+	if opts.header != nil {
+		opts.header(bh)
+	}
+
+	batch := ach.NewBatchCCD(bh)
+	entry := mockPPDEntryDetail()
+	entry.Amount = opts.amount
+	entry.TransactionCode = ach.CheckingCredit
+	entry.SetTraceNumber(bh.ODFIIdentification, opts.seq)
+	if opts.addenda != "" {
+		a := ach.NewAddenda05()
+		a.PaymentRelatedInformation = opts.addenda
+		entry.AddendaRecordIndicator = 1
+		entry.AddAddenda05(a)
+	}
+	batch.AddEntry(entry)
+	require.NoError(t, batch.Create())
+	file.AddBatch(batch)
+	require.NoError(t, file.Create())
+
+	err := merging.HandleXfer(context.Background(), incoming.ACHFile{
+		FileID:   opts.fileID,
+		ShardKey: shardKey,
+		File:     file,
+	})
+	require.NoError(t, err)
+}
+
+func TestMerging_MergeEqualHeader_DifferentDiscretionaryData_MapsAll(t *testing.T) {
+	// MergeDir combines batches with BatchHeader.Equal, which ignores
+	// CompanyDiscretionaryData. Entries from the second file land under the
+	// first file's header, so a mapping key built from header.String()[:87]
+	// misses those inputs.
+	const shard = "SD-disc"
+	merging, _ := testMergingSetup(t, serviceShard(shard))
+
+	enqueueCCD(t, merging, shard, ccdOpts{fileID: "disc-a.ach", amount: 1000, seq: 1})
+	enqueueCCD(t, merging, shard, ccdOpts{
+		fileID:  "disc-b.ach",
+		amount:  2000,
+		seq:     2,
+		addenda: "INV*1001",
+		header: func(bh *ach.BatchHeader) {
+			bh.CompanyDiscretionaryData = "CODE1"
+		},
+	})
+
+	merged, err := merging.WithEachMerged(context.Background(), func(_ context.Context, idx int, _ upload.Agent, _ *ach.File) (string, error) {
+		return fmt.Sprintf("disc-out-%d.ach", idx), nil
+	})
+	require.NoError(t, err)
+	require.Len(t, merged, 1)
+	require.ElementsMatch(t, []string{"disc-a.ach", "disc-b.ach"}, merged[0].InputFilepaths)
+}
+
+func TestMerging_MergeEqualHeader_DifferentDescriptiveDate_MapsAll(t *testing.T) {
+	const shard = "SD-descdate"
+	merging, _ := testMergingSetup(t, serviceShard(shard))
+
+	enqueueCCD(t, merging, shard, ccdOpts{fileID: "date-a.ach", amount: 1111, seq: 10})
+	enqueueCCD(t, merging, shard, ccdOpts{
+		fileID:  "date-b.ach",
+		amount:  2222,
+		seq:     11,
+		addenda: "INV*1002",
+		header: func(bh *ach.BatchHeader) {
+			bh.CompanyDescriptiveDate = "Sep 01"
+		},
+	})
+
+	merged, err := merging.WithEachMerged(context.Background(), func(_ context.Context, idx int, _ upload.Agent, _ *ach.File) (string, error) {
+		return fmt.Sprintf("date-out-%d.ach", idx), nil
+	})
+	require.NoError(t, err)
+	require.Len(t, merged, 1)
+	require.ElementsMatch(t, []string{"date-a.ach", "date-b.ach"}, merged[0].InputFilepaths)
+}
+
+func TestMerging_MergeEqualHeader_CompanyNameCase_MapsAll(t *testing.T) {
+	const shard = "SD-case"
+	merging, _ := testMergingSetup(t, serviceShard(shard))
+
+	enqueueCCD(t, merging, shard, ccdOpts{fileID: "case-a.ach", amount: 3333, seq: 20})
+	enqueueCCD(t, merging, shard, ccdOpts{
+		fileID:  "case-b.ach",
+		amount:  4444,
+		seq:     21,
+		addenda: "INV*1003",
+		header: func(bh *ach.BatchHeader) {
+			bh.CompanyName = "acme corporation"
+		},
+	})
+
+	merged, err := merging.WithEachMerged(context.Background(), func(_ context.Context, idx int, _ upload.Agent, _ *ach.File) (string, error) {
+		return fmt.Sprintf("case-out-%d.ach", idx), nil
+	})
+	require.NoError(t, err)
+	require.Len(t, merged, 1)
+	require.ElementsMatch(t, []string{"case-a.ach", "case-b.ach"}, merged[0].InputFilepaths)
+}
+
+func TestMerging_MergeEqualHeader_DifferentOriginatorStatus_MapsAll(t *testing.T) {
+	const shard = "SD-origstat"
+	merging, _ := testMergingSetup(t, serviceShard(shard))
+
+	enqueueCCD(t, merging, shard, ccdOpts{
+		fileID: "orig-a.ach", amount: 5555, seq: 30,
+		header: func(bh *ach.BatchHeader) {
+			bh.OriginatorStatusCode = 1
+		},
+	})
+	enqueueCCD(t, merging, shard, ccdOpts{
+		fileID:  "orig-b.ach",
+		amount:  6666,
+		seq:     31,
+		addenda: "INV*1004",
+		header: func(bh *ach.BatchHeader) {
+			bh.OriginatorStatusCode = 2
+		},
+	})
+
+	merged, err := merging.WithEachMerged(context.Background(), func(_ context.Context, idx int, _ upload.Agent, _ *ach.File) (string, error) {
+		return fmt.Sprintf("orig-out-%d.ach", idx), nil
+	})
+	require.NoError(t, err)
+	require.Len(t, merged, 1)
+	require.ElementsMatch(t, []string{"orig-a.ach", "orig-b.ach"}, merged[0].InputFilepaths)
+}
+
+func TestMerging_CCDAddenda_MixedWithNonAddenda_MapsAll(t *testing.T) {
+	const shard = "SD-addenda-mix"
+	merging, _ := testMergingSetup(t, serviceShard(shard))
+
+	enqueueCCD(t, merging, shard, ccdOpts{fileID: "plain-1.ach", amount: 1000, seq: 1})
+	enqueueCCD(t, merging, shard, ccdOpts{fileID: "addenda-a.ach", amount: 2000, seq: 2, addenda: "INV*2001"})
+	enqueueCCD(t, merging, shard, ccdOpts{fileID: "plain-2.ach", amount: 3000, seq: 3})
+	enqueueCCD(t, merging, shard, ccdOpts{fileID: "addenda-b.ach", amount: 4000, seq: 4, addenda: "INV*2002"})
+
+	merged, err := merging.WithEachMerged(context.Background(), func(_ context.Context, idx int, _ upload.Agent, _ *ach.File) (string, error) {
+		return fmt.Sprintf("mix-out-%d.ach", idx), nil
+	})
+	require.NoError(t, err)
+	require.Len(t, merged, 1)
+	require.ElementsMatch(t, []string{"plain-1.ach", "addenda-a.ach", "plain-2.ach", "addenda-b.ach"}, merged[0].InputFilepaths)
+}
+
+func TestMakeKey_MatchesMergeEqualNotFullHeaderString(t *testing.T) {
+	entry := mockPPDEntryDetail()
+
+	a := mockBatchPPDHeader()
+	b := mockBatchPPDHeader()
+	b.CompanyDiscretionaryData = "CODE1"
+	b.CompanyDescriptiveDate = "Sep 01"
+	b.SettlementDate = "123"
+	b.OriginatorStatusCode = 2
+	b.CompanyName = "acme corporation"
+	b.BatchNumber = 99
+
+	require.True(t, a.Equal(b), "precondition: merge would combine these batches")
+	require.NotEqual(t, a.String()[:87], b.String()[:87], "precondition: full header strings differ")
+	require.Equal(t, makeKey(a, entry), makeKey(b, entry), "mapping key must follow BatchHeader.Equal, not String()[:87]")
+}
