@@ -66,17 +66,19 @@ func TestMakeKey_StripsBatchNumber(t *testing.T) {
 	bh2.BatchNumber = 99
 
 	entry := mockPPDEntryDetail()
-	k1 := makeKey(bh1.String(), entry)
-	k2 := makeKey(bh2.String(), entry)
+	k1 := makeKey(bh1, entry)
+	k2 := makeKey(bh2, entry)
 	require.Equal(t, k1, k2, "keys must ignore batch number so merge renumbering still matches")
 	require.NotContains(t, k1, "0000099")
 }
 
 func TestMakeKey_ShortHeader(t *testing.T) {
 	entry := mockPPDEntryDetail()
-	// Short/empty headers should not panic
-	require.NotEmpty(t, makeKey("", entry))
-	require.NotEmpty(t, makeKey("short", entry))
+	// Nil headers / entries should not panic or collide with a real key.
+	require.NotEmpty(t, makeKey(nil, entry))
+	nilKey := makeKey(nil, nil)
+	require.NotEmpty(t, nilKey)
+	require.NotEqual(t, makeKey(nil, entry), nilKey)
 }
 
 func TestMerging_HandleCancel_MissingFile(t *testing.T) {
