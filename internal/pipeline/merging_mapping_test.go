@@ -225,7 +225,7 @@ func TestAccumulateMappings_DuplicateEntryIdentityQueuesBoth(t *testing.T) {
 	require.NoError(t, m.accumulateMappings(mappings, seen, "iso/first.ach"))
 	require.NoError(t, m.accumulateMappings(mappings, seen, "iso/second.ach"))
 
-	key := makeKey(batch.GetHeader().String(), entry)
+	key := makeKey(batch.GetHeader(), entry)
 	require.ElementsMatch(t, []string{"first.ach", "second.ach"}, mappings[key])
 	require.Equal(t, []string{"first.ach", "second.ach"}, crossFileDuplicateIdentityFiles(mappings))
 }
@@ -286,7 +286,7 @@ func TestFindInputFilepaths_DuplicateIdentityConsumesQueue(t *testing.T) {
 		return f
 	}
 
-	key := makeKey(mockBatchPPDHeader().String(), func() *ach.EntryDetail {
+	key := makeKey(mockBatchPPDHeader(), func() *ach.EntryDetail {
 		e := mockPPDEntryDetail()
 		e.Amount = 50
 		e.SetTraceNumber(mockBatchPPDHeader().ODFIIdentification, 9)

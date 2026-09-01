@@ -27,6 +27,7 @@ import (
 	"maps"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -668,7 +669,7 @@ func (m *filesystemMerging) accumulateMappings(mappings entryFileMapping, seen m
 	//   - Same file_id already queued for this key → skip (idempotent re-queue /
 	//     duplicate rows in one file only need one FileUploaded for that file_id).
 	for i := range file.Batches {
-		bh := file.Batches[i].GetHeader().String()
+		bh := file.Batches[i].GetHeader()
 
 		entries := file.Batches[i].GetEntries()
 
@@ -735,21 +736,38 @@ func mappingLeftoverCount(mappings entryFileMapping) int {
 	return n
 }
 
-func makeKey(bh string, entry *ach.EntryDetail) string {
-	// Callers skip nil entries — do not return "" (would collide in the mapping).
-	//
-	// NACHA BatchHeader.String() is always 94 chars; we drop the trailing 7-char
-	// BatchNumber (merge renumbers batches). Preserve the historical
-	// fmt.Sprintf("%87.87s") contract: truncate long headers and left-pad short
-	// ones so keys stay stable if a non-standard header ever appears.
-	switch {
-	case len(bh) > 87:
-		bh = bh[:87]
-	case len(bh) < 87:
-		bh = strings.Repeat(" ", 87-len(bh)) + bh
+func makeKey(bh *ach.BatchHeader, entry *ach.EntryDetail) string {
+	// Callers skip nil entries. Do not return "" — that would collide in the mapping.
+	if entry == nil {
+		return "\x00nil-entry"
 	}
-	// Avoid fmt.Sprintf: concatenation is faster and allocates one string.
-	return bh + entry.String()
+
+	// MergeDir combines batches with BatchHeader.Equal, then copies entries under
+	// the first matching header. Equal ignores CompanyDiscretionaryData,
+	// CompanyDescriptiveDate, SettlementDate, OriginatorStatusCode, and company
+	// name case — all of which appear in BatchHeader.String()[:87] (and BatchNumber,
+	// which merge also rewrites). Keys built from the original 87-char header
+	// therefore miss after merge, so FileUploaded is not emitted for those inputs.
+	var b strings.Builder
+	if bh != nil {
+		b.Grow(96 + 94)
+		b.WriteString(strconv.Itoa(bh.ServiceClassCode))
+		b.WriteByte('|')
+		b.WriteString(strings.ToUpper(bh.CompanyName))
+		b.WriteByte('|')
+		b.WriteString(bh.CompanyIdentification)
+		b.WriteByte('|')
+		b.WriteString(bh.StandardEntryClassCode)
+		b.WriteByte('|')
+		b.WriteString(bh.CompanyEntryDescription)
+		b.WriteByte('|')
+		b.WriteString(bh.EffectiveEntryDate)
+		b.WriteByte('|')
+		b.WriteString(bh.ODFIIdentification)
+		b.WriteByte('|')
+	}
+	b.WriteString(entry.String())
+	return b.String()
 }
 
 // mergedFile represents a single merged file structure used in the merging and uploading process.
@@ -778,7 +796,7 @@ func (m *filesystemMerging) findInputFilepaths(mappings entryFileMapping, merged
 		for j := range merged[i].ACHFile.Batches {
 			batch := merged[i].ACHFile.Batches[j]
 
-			bh := batch.GetHeader().String()
+			bh := batch.GetHeader()
 			entries := batch.GetEntries()
 
 			for idx := range entries {
