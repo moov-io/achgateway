@@ -2,7 +2,7 @@
 
 module github.com/moov-io/achgateway
 
-go 1.26
+go 1.26.0
 
 require (
 	cloud.google.com/go/spanner v1.95.0
@@ -38,7 +38,7 @@ require (
 	golang.org/x/crypto v0.55.0
 	golang.org/x/sync v0.22.0
 	golang.org/x/text v0.41.0
-	google.golang.org/api v0.296.0
+	google.golang.org/api v0.297.0
 )
 
 require (
