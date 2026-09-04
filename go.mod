@@ -14,7 +14,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/jlaffaye/ftp v0.2.4
-	github.com/moby/moby/api v1.55.0
+	github.com/moby/moby/api v1.56.0
 	github.com/moov-io/ach v1.63.3
 	github.com/moov-io/base v0.63.3
 	github.com/moov-io/cryptfs v0.11.0
