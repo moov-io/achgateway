@@ -174,6 +174,7 @@ func TestProcessor_MultiReturnCorrection(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		msg, err := sub.Receive(ctx)
 		require.NoError(t, err)
+		msg.Ack()
 
 		evt, _ := models.ReadWithOpts(msg.Body, &ach.ValidateOpts{
 			AllowMissingFileHeader:  true,

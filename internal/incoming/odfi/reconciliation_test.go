@@ -49,10 +49,15 @@ func TestCreditReconciliation(t *testing.T) {
 	// Add a bunch of batches and entries
 	ed := file.Batches[0].GetEntries()[0]
 	require.NotNil(t, ed)
+	if len(ed.Addenda05) == 0 {
+		ed.AddendaRecordIndicator = 0
+	}
 
 	// Add batches and entries to file
 	for i := 2; i < 500; i++ {
 		entry := *ed
+		entry.Addenda05 = nil
+		entry.AddendaRecordIndicator = 0
 		entry.SetTraceNumber("32327427", i)
 
 		// Keep batches to a certain size
