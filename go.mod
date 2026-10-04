@@ -27,7 +27,7 @@ require (
 	github.com/rickar/cal/v2 v2.1.31
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sethvargo/go-retry v0.4.0
-	github.com/slack-go/slack v0.30.0
+	github.com/slack-go/slack v0.30.1
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/otel v1.47.0
