@@ -21,6 +21,7 @@ GEM
     ffi (1.17.4-aarch64-linux-gnu)
     ffi (1.17.4-arm64-darwin)
     ffi (1.17.4-x86_64-darwin)
+    ffi (1.17.4-x86_64-linux-gnu)
     forwardable-extended (2.6.0)
     http_parser.rb (0.8.1)
     i18n (1.15.2)
@@ -40,7 +41,7 @@ GEM
       rouge (>= 1.7, < 4)
       safe_yaml (~> 1.0)
       webrick (>= 1.0)
-    jekyll-feed (0.17.0)
+    jekyll-feed (0.18.0)
       jekyll (>= 3.7, < 5.0)
     jekyll-paginate (1.1.0)
     jekyll-remote-theme (0.6.2)
@@ -92,6 +93,7 @@ PLATFORMS
   universal-darwin-21
   universal-darwin-22
   universal-darwin-23
+  x86_64-linux
 
 DEPENDENCIES
   bulma-clean-theme (< 1.0)
