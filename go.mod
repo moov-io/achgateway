@@ -15,7 +15,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/jlaffaye/ftp v0.2.4
 	github.com/moby/moby/api v1.56.1
-	github.com/moov-io/ach v1.65.2
+	github.com/moov-io/ach v1.66.0
 	github.com/moov-io/base v0.66.0
 	github.com/moov-io/cryptfs v0.11.1
 	github.com/moov-io/go-ftp v0.4.0
