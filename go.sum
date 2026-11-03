@@ -517,6 +517,8 @@ github.com/moov-io/ach v1.66.0 h1:K0q/sZSDiU/gpk26fr8YgoReGlJGY7ako01d3FvZtdk=
 github.com/moov-io/ach v1.66.0/go.mod h1:tV93qs5GGGKjz0BVOGYzJ5YpcoFif4H9SfOplI1TpEo=
 github.com/moov-io/ach v1.67.0 h1:8Ls3qet8/7DmzKBciVAIdDYtr/ALBmzC0+ro1xFik7c=
 github.com/moov-io/ach v1.67.0/go.mod h1:VCs0DIdMwkHLJdasz2rPGofcIPEHTNUfusMzRx7XrMc=
+github.com/moov-io/ach v1.68.0 h1:NZYt9POueKl2qSuUtwIDYDBBFsWYYNpZXeGAYEHIkiE=
+github.com/moov-io/ach v1.68.0/go.mod h1:VCs0DIdMwkHLJdasz2rPGofcIPEHTNUfusMzRx7XrMc=
 github.com/moov-io/base v0.63.1 h1:Jr/CYxfKugWv0WQmMno57ZUHnenAzHoHJ3stX0SWIMA=
 github.com/moov-io/base v0.63.1/go.mod h1:BYDXx00OEqPZMYQQdxf3x3zXdKCrm7FZvHoIArITjqc=
 github.com/moov-io/base v0.63.2 h1:ZbAr8StvwRphZ46El15bTbnJmDHZcArjOqy/0aqNllU=
@@ -628,6 +630,8 @@ github.com/slack-go/slack v0.32.0 h1:N9zo22Hoz5Hx+rXwtRZSdkJP/3FrQ24eBGSf3A5S3EE
 github.com/slack-go/slack v0.32.0/go.mod h1:ph5iUlM1bUhqOeRynzryiWfkv6vVElt5JbhXbhtApsI=
 github.com/slack-go/slack v0.33.0 h1:9pEEf1KbdlydQKuro3pyUcq6mVR6Ozwy1dOOn/GgK2I=
 github.com/slack-go/slack v0.33.0/go.mod h1:ph5iUlM1bUhqOeRynzryiWfkv6vVElt5JbhXbhtApsI=
+github.com/slack-go/slack v0.34.0 h1:qt8BsCUCQso9ZfHVL05i3xdWvn0BM26yEFXm1lOBKRo=
+github.com/slack-go/slack v0.34.0/go.mod h1:swfK2lWHa2StZ3TXdUdK9sBzcC+oDXpW+jsHd5PoPRM=
 github.com/spf13/afero v1.15.0 h1:b/YBCLWAJdFWJTN9cLhiXXcD7mzKn9Dm86dNnfyQw1I=
 github.com/spf13/afero v1.15.0/go.mod h1:NC2ByUVxtQs4b3sIUphxK0NioZnmxgyCrfzeuq8lxMg=
 github.com/spf13/cast v1.10.0 h1:h2x0u2shc1QuLHfxi+cTJvs30+ZAHOGRic8uyGTDWxY=
