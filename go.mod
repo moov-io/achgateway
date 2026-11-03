@@ -15,7 +15,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/jlaffaye/ftp v0.2.4
 	github.com/moby/moby/api v1.56.1
-	github.com/moov-io/ach v1.67.0
+	github.com/moov-io/ach v1.68.0
 	github.com/moov-io/base v0.66.0
 	github.com/moov-io/cryptfs v0.11.1
 	github.com/moov-io/go-ftp v0.4.0
@@ -27,7 +27,7 @@ require (
 	github.com/rickar/cal/v2 v2.1.32
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sethvargo/go-retry v0.5.0
-	github.com/slack-go/slack v0.33.0
+	github.com/slack-go/slack v0.34.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/otel v1.47.0
