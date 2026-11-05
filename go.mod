@@ -16,7 +16,7 @@ require (
 	github.com/jlaffaye/ftp v0.2.4
 	github.com/moby/moby/api v1.56.1
 	github.com/moov-io/ach v1.68.0
-	github.com/moov-io/base v0.66.0
+	github.com/moov-io/base v0.67.0
 	github.com/moov-io/cryptfs v0.11.1
 	github.com/moov-io/go-ftp v0.4.0
 	github.com/moov-io/go-sftp v0.16.2
@@ -27,7 +27,7 @@ require (
 	github.com/rickar/cal/v2 v2.1.32
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sethvargo/go-retry v0.5.0
-	github.com/slack-go/slack v0.34.0
+	github.com/slack-go/slack v0.35.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/otel v1.47.0
@@ -66,7 +66,7 @@ require (
 	cel.dev/expr v0.25.3 // indirect
 	cloud.google.com/go v0.123.0 // indirect
 	cloud.google.com/go/alloydb v1.31.0 // indirect
-	cloud.google.com/go/alloydbconn v1.19.2 // indirect
+	cloud.google.com/go/alloydbconn v1.19.3 // indirect
 	cloud.google.com/go/auth v0.24.1-0.20261001053825-dbc26066f70a // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.3.1 // indirect
 	cloud.google.com/go/compute/metadata v0.10.0 // indirect
@@ -128,7 +128,7 @@ require (
 	github.com/google/wire v0.7.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.24 // indirect
 	github.com/googleapis/gax-go/v2 v2.27.0 // indirect
-	github.com/googleapis/go-sql-spanner v1.27.0 // indirect
+	github.com/googleapis/go-sql-spanner v1.28.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.31.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -143,7 +143,7 @@ require (
 	github.com/hashicorp/vault/api v1.23.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/pgx/v5 v5.11.0 // indirect
+	github.com/jackc/pgx/v5 v5.12.0 // indirect
 	github.com/jackc/puddle/v2 v2.2.3 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
 	github.com/jcmturner/dnsutils/v2 v2.0.0 // indirect
