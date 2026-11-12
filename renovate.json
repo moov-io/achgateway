@@ -14,6 +14,16 @@
       "automerge": true
     },
     {
+      "description": "The docs Gemfile pins jekyll ~> 3.10; disable major updates",
+      "matchPackageNames": [
+        "jekyll"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
+    },
+    {
       "description": "Theme v1 needs dart-sass and breaks GitHub Pages Jekyll 3.9 builds",
       "matchPackageNames": [
         "bulma-clean-theme"
