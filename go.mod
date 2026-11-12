@@ -32,7 +32,7 @@ require (
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/otel v1.47.0
 	go.opentelemetry.io/otel/trace v1.47.0
-	gocloud.dev v0.48.1
+	gocloud.dev v0.49.0
 	gocloud.dev/pubsub/kafkapubsub v0.48.2
 	goftp.io/server/v2 v2.0.3
 	golang.org/x/crypto v0.59.0
