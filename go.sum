@@ -841,6 +841,7 @@ gocloud.dev/pubsub/kafkapubsub v0.48.0 h1:AU9x3FNp827lCAC3K0IDc7u9q0zPJeKXyMnkB5
 gocloud.dev/pubsub/kafkapubsub v0.48.0/go.mod h1:XeOiJ5Fgj4aMXnGJPG+Wtvn9rGI0ln3x8oiyXGK0/ec=
 gocloud.dev/pubsub/kafkapubsub v0.48.2 h1:Q1oYn+Y8AWGdMUw8wCZ+GRozSsrMj5goXGbmBTkgOmQ=
 gocloud.dev/pubsub/kafkapubsub v0.48.2/go.mod h1:Qw8BNy4ykwPlVsnzZhglRw7cjveR5LHi+ABEgHO48+M=
+gocloud.dev/pubsub/kafkapubsub v0.49.0 h1:PvyuK+sKuXr9+vXffaxIiSCAz9ipKp8s2otEtfJx/ic=
 gocloud.dev/pubsub/kafkapubsub v0.49.0/go.mod h1:BGaRWBwe1TmsvYeBnvDhd3iOr4b3+jDL2+AJvdY6VcQ=
 goftp.io/server/v2 v2.0.3 h1:iz6Gxj7f2SFQVxrj0s1is+gueE6O9yTc+Ab0vtQ6Zn4=
 goftp.io/server/v2 v2.0.3/go.mod h1:Fl1WdcV7fx1pjOWx7jEHb7tsJ8VwE7+xHu6bVJ6r2qg=
