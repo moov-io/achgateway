@@ -17,7 +17,7 @@ require (
 	github.com/moby/moby/api v1.57.0
 	github.com/moov-io/ach v1.68.0
 	github.com/moov-io/base v0.68.2
-	github.com/moov-io/cryptfs v0.11.1
+	github.com/moov-io/cryptfs v0.12.0
 	github.com/moov-io/go-ftp v0.4.0
 	github.com/moov-io/go-sftp v0.16.2
 	github.com/ory/dockertest/v4 v4.0.1
@@ -38,7 +38,7 @@ require (
 	golang.org/x/crypto v0.59.0
 	golang.org/x/sync v0.25.0
 	golang.org/x/text v0.44.0
-	google.golang.org/api v0.315.0
+	google.golang.org/api v0.316.0
 )
 
 require (
