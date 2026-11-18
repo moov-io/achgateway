@@ -15,7 +15,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/jlaffaye/ftp v0.2.4
 	github.com/moby/moby/api v1.57.0
-	github.com/moov-io/ach v1.68.0
+	github.com/moov-io/ach v1.68.1
 	github.com/moov-io/base v0.68.2
 	github.com/moov-io/cryptfs v0.12.0
 	github.com/moov-io/go-ftp v0.4.0
@@ -197,7 +197,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.47.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.11.1 // indirect
 	golang.org/x/exp v0.0.0-20261014143641-f0251eb4aa3e // indirect
-	golang.org/x/net v0.62.0 // indirect
+	golang.org/x/net v0.63.0 // indirect
 	golang.org/x/oauth2 v0.38.0 // indirect
 	golang.org/x/sys v0.50.0 // indirect
 	golang.org/x/time v0.16.0 // indirect
