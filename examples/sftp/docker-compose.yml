@@ -1,0 +1,30 @@
+version: '3.7'
+
+# SFTP walkthrough (no Kafka). From this directory:
+#   docker compose up
+# Then from the repository root:
+#   curl -XPOST "http://localhost:8484/shards/foo/files/f6" --data @./testdata/ppd-debit.ach
+#   curl -XPUT "http://localhost:9494/trigger-cutoff" --data '{"shardNames":["testing"]}'
+# Uploaded files appear in testdata/sftp-server/outbound/ (mounted into the SFTP container).
+
+services:
+  achgateway:
+    image: moov/achgateway:latest
+    ports:
+      - "8484:8484"
+      - "9494:9494"
+    volumes:
+      - "./:/conf/"
+    environment:
+      APP_CONFIG: "/conf/config.yml"
+    depends_on:
+      - sftp
+
+  sftp:
+    image: atmoz/sftp:latest
+    ports:
+      - "2222:22"
+    volumes:
+      - "../../testdata/sftp-server:/home/demo"
+    command:
+      - "demo:password:::inbound,outbound,reconciliation,returned"

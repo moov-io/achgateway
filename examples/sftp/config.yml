@@ -1,0 +1,41 @@
+# Local ACH Gateway configuration that uploads over SFTP.
+# Pair with examples/sftp/docker-compose.yml (atmoz/sftp) or any SFTP server
+# listening on localhost:2222 with user demo / password password and
+# inbound, outbound, reconciliation, and returned directories.
+#
+#   APP_CONFIG=./examples/sftp/config.yml go run ./cmd/achgateway
+ACHGateway:
+  Admin:
+    BindAddress: ":9494"
+  Inbound:
+    HTTP:
+      BindAddress: ":8484"
+  Sharding:
+    Shards:
+      - name: "testing"
+        cutoffs:
+          timezone: "America/New_York"
+          windows:
+            - "10:30"
+            - "16:30"
+        uploadAgent: "local-sftp"
+        output:
+          format: "nacha"
+    Mappings:
+      - shardKey: "foo"
+        shardName: "testing"
+    Default: "testing"
+  Upload:
+    agents:
+      - id: "local-sftp"
+        sftp:
+          hostname: "localhost:2222"
+          username: "demo"
+          password: "password"
+        paths:
+          inbound: "/inbound/"
+          outbound: "/outbound/"
+          reconciliation: "/reconciliation/"
+          return: "/returned/"
+    merging:
+      directory: "./storage/"

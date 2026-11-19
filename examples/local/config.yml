@@ -1,0 +1,45 @@
+# Minimal local configuration for running ACH Gateway without Docker or Kafka.
+# Files POSTed to /shards/foo/files/{fileID} are accepted into the "testing" shard
+# and uploaded at cutoff (or via PUT /trigger-cutoff on the admin port) to the
+# local FTP agent. Point APP_CONFIG at this file:
+#
+#   APP_CONFIG=./examples/local/config.yml go run ./cmd/achgateway
+#
+# Or after `make install && make build`:
+#
+#   APP_CONFIG=./examples/local/config.yml ./bin/achgateway
+ACHGateway:
+  Admin:
+    BindAddress: ":9494"
+  Inbound:
+    HTTP:
+      BindAddress: ":8484"
+  Sharding:
+    Shards:
+      - name: "testing"
+        cutoffs:
+          timezone: "America/New_York"
+          windows:
+            - "10:30"
+            - "16:30"
+        uploadAgent: "local-ftp"
+        output:
+          format: "nacha"
+    Mappings:
+      - shardKey: "foo"
+        shardName: "testing"
+    Default: "testing"
+  Upload:
+    agents:
+      - id: "local-ftp"
+        ftp:
+          hostname: "localhost:2121"
+          username: "admin"
+          password: "123456"
+        paths:
+          inbound: "/inbound/"
+          outbound: "/outbound/"
+          reconciliation: "/reconciliation/"
+          return: "/returned/"
+    merging:
+      directory: "./storage/"

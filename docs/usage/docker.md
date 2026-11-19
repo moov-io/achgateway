@@ -8,91 +8,81 @@ menubar: docs-menu
 
 # Docker
 
-You can download a [docker image called `moov/achgateway`](https://hub.docker.com/r/moov/achgateway/) from Docker Hub or use this repository. Release images are published for `linux/amd64` and `linux/arm64`. However it's recommended to [download the code repository](https://github.com/moov-io/achgateway) and running `docker compose up` in the root directory.
+You can download a [docker image called `moov/achgateway`](https://hub.docker.com/r/moov/achgateway/) from Docker Hub or use this repository. Release images are published for `linux/amd64` and `linux/arm64`.
+
+The image listens on `:8484` (public API) and `:9494` (admin / metrics) with no extra config, but **submitting and uploading files requires `Sharding` and `Upload` configuration**. The root `docker-compose.yml` only starts supporting services (MySQL, FTP, SFTP, Kafka) — it does not include an `achgateway` service.
+
+The example that runs ACH Gateway plus FTP and Kafka is [`examples/getting-started/`](https://github.com/moov-io/achgateway/tree/master/examples/getting-started). It mounts `examples/getting-started/config.yml` via `APP_CONFIG`. To run without Docker, see [Run from source or binary](/usage/source/). For SFTP instead of FTP, see the [SFTP walkthrough](/usage/sftp/).
 
 ```
-# Inside of ./examples/getting-started/
-$ docker compose up achgateway
-...
-achgateway_1  | ts=2021-06-18T23:38:06Z msg="public listening on :8484" version=v0.4.1 level=info app=achgateway
-achgateway_1  | ts=2021-06-18T23:38:06Z msg="listening on [::]:9494" version=v0.4.1 level=info app=achgateway
+# From ./examples/getting-started/
+$ docker compose up
 ```
+
+```
+achgateway-1  | ts=2026-11-16T16:10:06Z msg="public listening on :8484 for HTTP" app=achgateway level=info version=v0.37.1
+achgateway-1  | ts=2026-11-16T16:10:06Z msg="listening on [::]:9494" app=achgateway level=info version=v0.37.1
+```
+
+The admin port (`:9494`) has no authentication. Do not expose it publicly.
 
 ### Submitting a file
 
+Run curl from the **repository root** so `./testdata/…` resolves (those files are not inside `examples/getting-started/`).
+
 Submit a file to achgateway (Nacha ACH format):
+
 ```
-$ curl -XPOST "http://localhost:8484/shards/foo/files/f6" --data @./testdata/ppd-debit.ach
-...
-achgateway_1  | ts=2021-06-18T23:38:16Z msg="begin handle received ACHFile=f6 of 1918 bytes" level=info app=achgateway version=v0.4.1
-achgateway_1  | ts=2021-06-18T23:38:16Z msg="finished handling ACHFile=f6" level=info app=achgateway version=v0.4.1
+$ curl -sS -XPOST "http://localhost:8484/shards/foo/files/f6" --data @./testdata/ppd-debit.ach
 ```
 
-Submit a file to achgateway (moov-io ACH JSON format):
+```json
+{
+  "id": "f6",
+  "shardKey": "foo",
+  "error": "",
+  "nextCutoff": "2026-11-16T16:30:00-05:00",
+  "acceptedAt": "2026-11-16T16:10:06.92573243Z"
+}
 ```
-$ curl -XPOST "http://localhost:8484/shards/foo/files/f4" --data @./testdata/ppd-valid.json
-...
-achgateway_1  | ts=2021-06-18T23:38:16Z msg="begin handle received ACHFile=f4 of 1918 bytes" level=info app=achgateway version=v0.4.1
-achgateway_1  | ts=2021-06-18T23:38:16Z msg="finished handling ACHFile=f4" level=info app=achgateway version=v0.4.1
+
+```
+achgateway-1  | ts=2026-11-16T16:10:06Z msg="accepted ACH file" app=achgateway fileID=f6 level=info shardKey=foo shardName=testing version=v0.37.1
+```
+
+The URL uses shard **key** `foo`. `Sharding.Mappings` in the getting-started config maps that key to shard **name** `testing`. Cutoff triggers use shard names.
+
+Submit a file to achgateway (moov-io ACH JSON format):
+
+```
+$ curl -sS -XPOST "http://localhost:8484/shards/foo/files/f4" --data @./testdata/ppd-valid.json
 ```
 
 ### Uploading files (to your ODFI)
 
-Initiate cutoff time processing (aka upload to your ODFI):
-```
-$ curl -XPUT "http://localhost:9494/trigger-cutoff" --data '{"shardNames":["foo"]}'
-achgateway_1  | ts=2021-06-18T23:38:20Z msg="starting manual cutoff window processing" level=info app=achgateway version=v0.4.1
-achgateway_1  | ts=2021-06-18T23:38:20Z msg="processing mergable directory foo" level=info app=achgateway version=v0.4.1 shardKey=foo
-achgateway_1  | ts=2021-06-18T23:38:20Z msg="found *upload.FTPTransferAgent agent" version=v0.4.1 shardKey=foo level=info app=achgateway
-achgateway_1  | ts=2021-06-18T23:38:20Z msg="found 1 matching ACH files: []string{\"storage-1/20210618-233820/foo/f4.ach\"}" tenantID=foo level=info app=achgateway version=v0.4.1
-achgateway_1  | ts=2021-06-18T23:38:20Z msg="merged 1 files into 1 files" level=info app=achgateway version=v0.4.1 tenantID=foo
-```
-
-### View the uploaded file:
-
-Using the [achcli](https://github.com/moov-io/ach#command-line) tool to view ACH files in a human readable format.
+Initiate cutoff time processing (aka upload to your ODFI) on the admin port, with the **shard name**:
 
 ```
-$ achcli ./testdata/ftp-server/outbound/20210618-233820-231380104.ach
-Describing ACH file './testdata/ftp-server/outbound/20210618-233820-231380104.ach'
+$ curl -sS -XPUT "http://localhost:9494/trigger-cutoff" --data '{"shardNames":["testing"]}'
+```
 
-  Origin     OriginName   Destination  DestinationName  FileCreationDate  FileCreationTime
-  121042882  Wells Fargo  231380104    Citadel          181008            0101
+```
+achgateway-1  | ts=2026-11-16T16:10:07Z msg="starting manual cutoff window processing" app=achgateway level=info shard=testing version=v0.37.1
+achgateway-1  | ts=2026-11-16T16:10:07Z msg="found *upload.FTPTransferAgent agent" app=achgateway level=info shardName=testing version=v0.37.1
+```
 
-  BatchNumber  SECCode  ServiceClassCode                CompanyName  DiscretionaryData  Identification  EntryDescription  DescriptiveDate
-  1            PPD      200 (Mixed Debits and Credits)  Wells Fargo                     121042882       Trans. Des
+### View the uploaded file
 
-    TransactionCode       RDFIIdentification  AccountNumber      Amount  Name                    TraceNumber      Category
-    22 (Checking Credit)  23138010            81967038518        100000  Steven Tander           121042880000001
+With the getting-started FTP service, uploads land under `testdata/ftp-server/outbound/` (mounted into the FTP container). Use [`achcli` from moov-io/ach](https://github.com/moov-io/ach#command-line) from the repository root:
 
-    TransactionCode      RDFIIdentification  AccountNumber      Amount  Name                    TraceNumber      Category
-    27 (Checking Debit)  12104288            17124411           100000  My ODFI                 121042880000002
-
-  ServiceClassCode                EntryAddendaCount  EntryHash  TotalDebits  TotalCredits  MACCode  ODFIIdentification  BatchNumber
-  200 (Mixed Debits and Credits)  2                  35242298   100000       100000                 12104288            1
-
-  BatchCount  BlockCount  EntryAddendaCount  TotalDebitAmount  TotalCreditAmount
-  1           1           2                  100000            100000
+```
+$ achcli ./testdata/ftp-server/outbound/<uploaded-file>.ach
 ```
 
 ### Process files from your ODFI
 
+The getting-started config enables `Inbound.ODFI`. Trigger inbound processing on the admin port:
+
 ```
-$ curl -XPUT "http://localhost:9494/trigger-inbound"
-achgateway_1  | ts=2021-06-18T23:39:06Z msg="starting odfi periodic processing for testing" level=info app=achgateway version=v0.4.1
-achgateway_1  | ts=2021-06-18T23:39:06Z msg="start retrieving and processing of inbound files in ftp:2121" level=info app=achgateway version=v0.4.1
-achgateway_1  | ts=2021-06-18T23:39:06Z msg="created directory storage-1/download318650464" level=info app=achgateway version=v0.4.1
-achgateway_1  | ts=2021-06-18T23:39:06Z msg="*upload.FTPTransferAgent found 1 inbound files in /returned/" app=achgateway version=v0.4.1 level=info
-achgateway_1  | ts=2021-06-18T23:39:06Z msg="saved return-WEB.ach at storage-1/download318650464/returned/return-WEB.ach" level=info app=achgateway version=v0.4.1
-achgateway_1  | ts=2021-06-18T23:39:06Z msg="*upload.FTPTransferAgent found 1 reconciliation files in /reconciliation/" level=info app=achgateway version=v0.4.1
-achgateway_1  | ts=2021-06-18T23:39:06Z msg="saved ppd-debit.ach at storage-1/download318650464/reconciliation/ppd-debit.ach" level=info app=achgateway version=v0.4.1
-achgateway_1  | ts=2021-06-18T23:39:06Z msg="*upload.FTPTransferAgent found 1 return files in /returned/" level=info app=achgateway version=v0.4.1
-achgateway_1  | ts=2021-06-18T23:39:06Z msg="saved return-WEB.ach at storage-1/download318650464/returned/return-WEB.ach" level=info app=achgateway version=v0.4.1
-achgateway_1  | ts=2021-06-18T23:39:06Z msg="odfi: processing return file" app=achgateway version=v0.4.1 origin=691000134 destination=091400606 level=info
-achgateway_1  | ts=2021-06-18T23:39:06Z msg="odfi: return batch 0 entry 0 code R01" app=achgateway origin=691000134 destination=091400606 version=v0.4.1 level=info
-achgateway_1  | ts=2021-06-18T23:39:06Z msg="odfi: return batch 1 entry 0 code R03" version=v0.4.1 level=info app=achgateway origin=691000134 destination=091400606
-achgateway_1  | ts=2021-06-18T23:39:06Z msg="cleanup: deleted remote file /returned/return-WEB.ach" version=v0.4.1 level=info app=achgateway
-achgateway_1  | ts=2021-06-18T23:39:06Z msg="cleanup: deleted remote file /reconciliation/ppd-debit.ach" level=info app=achgateway version=v0.4.1
-achgateway_1  | ts=2021-06-18T23:39:06Z msg="cleanup: deleted remote file /returned/return-WEB.ach" level=info app=achgateway version=v0.4.1
-achgateway_1  | ts=2021-06-18T23:39:06Z msg="finished odfi periodic processing for testing" app=achgateway version=v0.4.1 level=info
+$ curl -sS -XPUT "http://localhost:9494/trigger-inbound"
 ```
