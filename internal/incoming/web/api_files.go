@@ -161,6 +161,9 @@ func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// Match CancelFileHandler: clients often append .ach to the file ID.
+	fileID = strings.TrimSuffix(fileID, ".ach")
+
 	ctx, span := telemetry.StartSpan(r.Context(), "create-file-handler", trace.WithAttributes(
 		attribute.String("achgateway.shardKey", shardKey),
 		attribute.String("achgateway.fileID", fileID),
@@ -212,8 +215,19 @@ func (c *FilesController) CreateFileHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(queueFileStatus(response))
 	json.NewEncoder(w).Encode(response)
+}
+
+func queueFileStatus(response incoming.QueueACHFileResponse) int {
+	if response.Error == "" {
+		return http.StatusOK
+	}
+	if response.Error == "timeout exceeded" {
+		return http.StatusGatewayTimeout
+	}
+	// Missing shard/aggregator (and other pipeline failures) are client-visible errors.
+	return http.StatusBadRequest
 }
 
 func (c *FilesController) readBody(req *http.Request) ([]byte, error) {

@@ -421,9 +421,10 @@ func (fr *FileReceiver) getAggregator(ctx context.Context, shardKey string) *agg
 		fr.logger.Warn().With(log.Fields{
 			"shard_key":  log.String(shardKey),
 			"shard_name": log.String(shardName),
-		}).Log("found no shard so using default shard")
+			"default":    log.String(fr.defaultShardName),
+		}).Logf("found no shard named %s, using default shard %s", shardName, fr.defaultShardName)
 
-		telemetry.RecordError(ctx, fmt.Errorf("shardKey=%s shardName%s not found", shardKey, shardName))
+		telemetry.RecordError(ctx, fmt.Errorf("shardKey=%s shardName=%s not found, using default %s", shardKey, shardName, fr.defaultShardName))
 
 		agg, exists = fr.shardAggregators[fr.defaultShardName]
 		if !exists {
@@ -454,7 +455,15 @@ func (fr *FileReceiver) processACHFile(ctx context.Context, file incoming.ACHFil
 	// Pull Aggregator from the config
 	agg := fr.getAggregator(ctx, file.ShardKey)
 	if agg == nil {
-		return fmt.Errorf("no aggregator for shard key %s found", file.ShardKey)
+		err := fmt.Errorf("no aggregator for shard key %s found", file.ShardKey)
+		// Unblock HTTP callers waiting on QueueFileResponses (otherwise they hang
+		// until the request timeout, if any).
+		fr.QueueFileResponses <- incoming.QueueACHFileResponse{
+			FileID:   file.FileID,
+			ShardKey: file.ShardKey,
+			Error:    err.Error(),
+		}
+		return err
 	}
 
 	logger := fr.logger.With(log.Fields{
@@ -508,7 +517,12 @@ func (fr *FileReceiver) cancelACHFile(ctx context.Context, cancel *models.Cancel
 	// Get the Aggregator from the config
 	agg := fr.getAggregator(ctx, cancel.ShardKey)
 	if agg == nil {
-		return nil
+		fr.CancellationResponses <- models.FileCancellationResponse{
+			FileID:     cancel.FileID,
+			ShardKey:   cancel.ShardKey,
+			Successful: false,
+		}
+		return fmt.Errorf("no aggregator for shard key %s found", cancel.ShardKey)
 	}
 
 	logger := fr.logger.With(log.Fields{
