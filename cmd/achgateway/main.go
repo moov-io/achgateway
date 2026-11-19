@@ -20,6 +20,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"os"
 
 	"github.com/moov-io/achgateway"
@@ -30,6 +32,29 @@ import (
 )
 
 func main() {
+	fs := flag.NewFlagSet("achgateway", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	fs.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: achgateway [options]\n\n")
+		fmt.Fprintf(os.Stderr, "ACH Gateway queues ACH files and uploads them to an ODFI at cutoff times.\n")
+		fmt.Fprintf(os.Stderr, "Configuration is loaded from configs/config.default.yml and optional files\n")
+		fmt.Fprintf(os.Stderr, "specified by APP_CONFIG and APP_CONFIG_SECRETS.\n\n")
+		fmt.Fprintf(os.Stderr, "Options:\n")
+		fs.PrintDefaults()
+	}
+	showVersion := fs.Bool("version", false, "print the version and exit")
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		// flag already printed the error and usage for -h / parse errors
+		if err == flag.ErrHelp {
+			os.Exit(0)
+		}
+		os.Exit(2)
+	}
+	if *showVersion {
+		fmt.Println(achgateway.Version)
+		os.Exit(0)
+	}
+
 	env := &internal.Environment{
 		Logger: log.NewDefaultLogger().Set("app", log.String("achgateway")).Set("version", log.String(achgateway.Version)),
 	}
