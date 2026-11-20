@@ -29,6 +29,7 @@ import (
 	"github.com/moov-io/ach"
 	"github.com/moov-io/achgateway/internal/events"
 	"github.com/moov-io/achgateway/internal/files"
+	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/incoming/stream"
 	"github.com/moov-io/achgateway/internal/incoming/stream/streamtest"
 	"github.com/moov-io/achgateway/internal/service"
@@ -332,4 +333,52 @@ func TestFileReceiver_AcceptFileErr(t *testing.T) {
 
 	// We should see an error, but can clear ms.WriteFileErr and retry
 	// TODO(adam):
+}
+
+func TestProcessACHFile_NoAggregatorResponds(t *testing.T) {
+	file, err := ach.ReadFile(filepath.Join("..", "..", "testdata", "ppd-debit.ach"))
+	require.NoError(t, err)
+
+	responses := make(chan incoming.QueueACHFileResponse, 1)
+	fr := &FileReceiver{
+		logger:             log.NewTestLogger(),
+		shardRepository:    shards.NewInMemoryRepository(),
+		shardAggregators:   map[string]*aggregator{},
+		fileRepository:     &files.MockRepository{},
+		QueueFileResponses: responses,
+	}
+
+	err = fr.processACHFile(context.Background(), incoming.ACHFile{
+		FileID:   "f6",
+		ShardKey: "foo",
+		File:     file,
+	})
+	require.EqualError(t, err, "no aggregator for shard key foo found")
+
+	select {
+	case resp := <-responses:
+		require.Equal(t, "f6", resp.FileID)
+		require.Equal(t, "foo", resp.ShardKey)
+		require.Equal(t, "no aggregator for shard key foo found", resp.Error)
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for QueueACHFileResponse; missing aggregator used to hang HTTP callers")
+	}
+}
+
+func TestGetAggregator_UsesConfigMappings(t *testing.T) {
+	fr := &FileReceiver{
+		logger:           log.NewTestLogger(),
+		defaultShardName: "testing",
+		shardRepository: shards.NewInMemoryRepository(service.ShardMapping{
+			ShardKey:  "foo",
+			ShardName: "testing",
+		}),
+		shardAggregators: map[string]*aggregator{
+			"testing": {shard: service.Shard{Name: "testing"}},
+		},
+	}
+
+	agg := fr.getAggregator(context.Background(), "foo")
+	require.NotNil(t, agg)
+	require.Equal(t, "testing", agg.shard.Name)
 }

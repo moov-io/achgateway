@@ -9,6 +9,10 @@
   items:
     - name: Docker
       link: /usage/docker/
+    - name: Run from source or binary
+      link: /usage/source/
+    - name: SFTP
+      link: /usage/sftp/
     # - name: Kubernetes
     #   link: /usage/kubernetes/
     - name: Configuration

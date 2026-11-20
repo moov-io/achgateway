@@ -197,7 +197,8 @@ func NewEnvironment(env *Environment) (*Environment, error) {
 		fileRepository = files.NewMockRepository()
 	}
 	if shardRepository == nil {
-		shardRepository = shards.NewInMemoryRepository()
+		// Honor Sharding.Mappings from config when no database is configured.
+		shardRepository = shards.NewInMemoryRepository(env.Config.Sharding.Mappings...)
 	}
 
 	fileReceiver, err := pipeline.Start(ctx, env.Logger, env.Config, shardRepository, fileRepository, httpSub)

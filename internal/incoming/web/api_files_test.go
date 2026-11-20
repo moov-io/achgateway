@@ -123,7 +123,7 @@ func TestCreateFileHandler_Error(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req) // blocking call
-	require.Equal(t, http.StatusOK, w.Code)
+	require.Equal(t, http.StatusBadRequest, w.Code)
 
 	var resp models.QueueACHFileResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)

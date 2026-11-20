@@ -24,10 +24,15 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/moov-io/achgateway/internal/dbtest"
+	"github.com/moov-io/achgateway/internal/incoming"
 	"github.com/moov-io/achgateway/internal/service"
+	"github.com/moov-io/achgateway/internal/storage"
 	"github.com/moov-io/base/log"
 	"github.com/moov-io/base/stime"
 
@@ -146,4 +151,83 @@ func TestEnvironment__Ping(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, w.Code)
 	require.Equal(t, "PONG", w.Body.String())
+}
+
+func TestEnvironment_MissingAggregatorReturns400(t *testing.T) {
+	env, err := NewEnvironment(&Environment{
+		Logger: log.NewTestLogger(),
+		Config: &service.Config{},
+	})
+	require.NoError(t, err)
+	t.Cleanup(env.Shutdown)
+
+	bs, err := os.ReadFile(filepath.Join("..", "testdata", "ppd-debit.ach"))
+	require.NoError(t, err)
+
+	req := httptest.NewRequest("POST", "/shards/foo/files/f6", bytes.NewReader(bs))
+	w := httptest.NewRecorder()
+
+	started := time.Now()
+	env.PublicRouter.ServeHTTP(w, req)
+	require.Less(t, time.Since(started), 3*time.Second, "handler should fail quickly instead of hanging")
+	require.Equal(t, http.StatusBadRequest, w.Code)
+
+	var resp incoming.QueueACHFileResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	require.Equal(t, "f6", resp.FileID)
+	require.Equal(t, "foo", resp.ShardKey)
+	require.Contains(t, resp.Error, "no aggregator for shard key foo found")
+}
+
+func TestEnvironment_StaticShardMappings(t *testing.T) {
+	dir := t.TempDir()
+	env, err := NewEnvironment(&Environment{
+		Logger: log.NewTestLogger(),
+		Config: &service.Config{
+			Sharding: service.Sharding{
+				Default: "testing",
+				Shards: []service.Shard{
+					{
+						Name: "testing",
+						Cutoffs: service.Cutoffs{
+							Timezone: "America/New_York",
+							Windows:  []string{"12:00"},
+						},
+						UploadAgent: "mock",
+					},
+				},
+				Mappings: []service.ShardMapping{
+					{ShardKey: "foo", ShardName: "testing"},
+				},
+			},
+			Upload: service.UploadAgents{
+				Agents: []service.UploadAgent{
+					{ID: "mock", Mock: &service.MockAgent{}},
+				},
+				Merging: service.Merging{
+					Storage: storage.Config{
+						Filesystem: storage.FilesystemConfig{
+							Directory: dir,
+						},
+					},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+	t.Cleanup(env.Shutdown)
+
+	bs, err := os.ReadFile(filepath.Join("..", "testdata", "ppd-debit.ach"))
+	require.NoError(t, err)
+
+	req := httptest.NewRequest("POST", "/shards/foo/files/f6", bytes.NewReader(bs))
+	w := httptest.NewRecorder()
+	env.PublicRouter.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
+
+	var resp incoming.QueueACHFileResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	require.Equal(t, "f6", resp.FileID)
+	require.Equal(t, "foo", resp.ShardKey)
+	require.Empty(t, resp.Error)
 }

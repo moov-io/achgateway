@@ -5,4 +5,4 @@
 
 package achgateway
 
-var Version string
+var Version = "dev"
