@@ -6,7 +6,7 @@ go 1.26.0
 
 require (
 	cloud.google.com/go/spanner v1.96.1
-	github.com/IBM/sarama v1.61.1
+	github.com/IBM/sarama v1.62.0
 	github.com/PagerDuty/go-pagerduty v1.8.0
 	github.com/ProtonMail/go-crypto v1.5.2
 	github.com/go-kit/kit v0.13.0
@@ -156,7 +156,7 @@ require (
 	github.com/jcmturner/gofork v1.7.6 // indirect
 	github.com/jcmturner/gokrb5/v8 v8.4.4 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
-	github.com/klauspost/compress v1.20.3 // indirect
+	github.com/klauspost/compress v1.20.4 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/lib/pq v1.12.3 // indirect
