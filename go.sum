@@ -418,6 +418,8 @@ github.com/sethvargo/go-retry v0.5.0 h1:JYfFKmVJ8ER06GReN1efzc5cm52BrVsFVzmcHiKJ
 github.com/sethvargo/go-retry v0.5.0/go.mod h1:tvsjdKG6xfiCx4LSiUZ06kcv38xvdVQwv8R6/VnnVWg=
 github.com/sethvargo/go-retry v0.6.0 h1:FyceERFjz2QVNLXeB7dbDkKlJRUhGf/M7PrfrkHn3BA=
 github.com/sethvargo/go-retry v0.6.0/go.mod h1:JpLL2+Q6sMCuaK1j4au0G4Lllk4teCN+XAB/XdP69GQ=
+github.com/sethvargo/go-retry v0.7.0 h1:XabVInMKXGnyobTTstUqsssy9r3rCYoA05hJEbI/V+g=
+github.com/sethvargo/go-retry v0.7.0/go.mod h1:JpLL2+Q6sMCuaK1j4au0G4Lllk4teCN+XAB/XdP69GQ=
 github.com/slack-go/slack v0.36.0 h1:YZTAijN2MWhKgpH22kxcygiRK+V9N+UW8yXlPIMpoOo=
 github.com/slack-go/slack v0.36.0/go.mod h1:D7yMVdS5Yidk5fDP+U6aySggGrRV9Gzs5L5nr7C5DoM=
 github.com/spf13/afero v1.15.0 h1:b/YBCLWAJdFWJTN9cLhiXXcD7mzKn9Dm86dNnfyQw1I=
